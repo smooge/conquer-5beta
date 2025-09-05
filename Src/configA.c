@@ -152,7 +152,30 @@ char *cfg_help = "  'hjkl'-select item  ' ',DEL-cycle  'c',ESC-change item  'q'-
 static int col_width, col_length;
 static int cfg_world;
 
-/* ZEROWORLD -- Routine to initialize the entire world */
+/*
+ * zeroworld - Initialize world by clearing all existing nations
+ *
+ * Prepares the world for creation by destroying any existing nations
+ * and resetting the global nation pointer array. Used during world
+ * generation to ensure a clean starting state.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Destroys all existing nations if remake flag is TRUE
+ *   - Sets all nation pointers in world.np[] array to NULL
+ *   - Calls dest_ntn() for each existing nation
+ *
+ * Notes:
+ *   - Only destroys nations if global remake flag is TRUE
+ *   - Critical for world regeneration scenarios
+ *   - Ensures no orphaned nation data remains
+ *   - Part of world initialization sequence
+ */
 void
 zeroworld PARM_0(void)
 {
@@ -171,7 +194,39 @@ zeroworld PARM_0(void)
   }
 }
 
-/* BLD_DEFAULTS -- The routine sets the default world creation values */
+/*
+ * bld_defaults - Set default values for all world creation parameters
+ *
+ * Initializes the world structure with balanced default values suitable
+ * for standard gameplay. Sets terrain percentages, combat parameters,
+ * NPC populations, and game mechanics to well-tested defaults.
+ *
+ * Default Categories:
+ * - Map settings: standard size, hexagonal coordinates
+ * - Terrain: balanced water/land ratio, moderate mountains
+ * - Combat: standard dice, damage, and mercenary values
+ * - NPCs: moderate populations of all races
+ * - Economic: balanced trade good distribution
+ * - Access: demigod permissions and security settings
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets all world configuration parameters to defaults
+ *   - Initializes demigod to current LOGIN user
+ *   - Sets passwords to initial values
+ *   - Configures map type, size, and gameplay parameters
+ *
+ * Notes:
+ *   - Uses DFLT_* constants for standard values
+ *   - Called during initial world creation
+ *   - Can be reset via 'R' command in configuration interface
+ *   - Provides balanced gameplay for new worlds
+ */
 static void
 bld_defaults PARM_0(void)
 {
@@ -236,7 +291,42 @@ bld_defaults PARM_0(void)
   world.latestart = DFLT_LATESTART;
 }
 
-/* BLD_ITEM -- Show an item of information */
+/*
+ * bld_item - Display a single configuration item with current value
+ *
+ * Renders one line of the configuration interface showing the parameter
+ * name, dots for alignment, and current value. Handles all different
+ * data types and formats values appropriately for display.
+ *
+ * Display Format:
+ * "Parameter Name.........Current Value"
+ *
+ * Value Formatting:
+ * - Percentages shown with % symbol
+ * - Signed values shown with +/- prefix
+ * - Boolean values shown as True/False
+ * - Special values like "disabled" or "ntn comm"
+ * - Decimal values shown with proper precision
+ *
+ * Parameters:
+ *   x - X coordinate for display positioning
+ *   y - Y coordinate for display positioning
+ *   itemnum - Index of configuration item to display
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes formatted text to screen at specified coordinates
+ *   - Uses global col_width for alignment calculations
+ *   - Accesses global world configuration variables
+ *
+ * Notes:
+ *   - Handles all BLD_OPTIONS configuration parameters
+ *   - Password fields show empty string for security
+ *   - Error handling for invalid item numbers
+ *   - Part of configuration interface display system
+ */
 static void
 bld_item PARM_3 (int, x, int, y, int, itemnum)
 {
@@ -500,7 +590,36 @@ bld_item PARM_3 (int, x, int, y, int, itemnum)
   
 }
 
-/* BLD_DISPLAY -- The routine shows all of the information for building */
+/*
+ * bld_display - Render the complete configuration interface screen
+ *
+ * Displays all configuration options in a multi-column layout with
+ * the currently selected item highlighted. Calculates positioning
+ * based on screen size and number of options.
+ *
+ * Layout:
+ * - Multiple columns to fit screen width
+ * - Items arranged top-to-bottom, left-to-right
+ * - Current selection highlighted with standout mode
+ * - Proper spacing between columns
+ *
+ * Parameters:
+ *   curnum - Index of currently selected configuration item
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls bld_item() for each configuration option
+ *   - Applies standout highlighting to current selection
+ *   - Uses global col_width and col_length for layout
+ *
+ * Notes:
+ *   - Layout adapts to different screen sizes
+ *   - Highlighting makes current selection clear to user
+ *   - Part of interactive configuration system
+ *   - Called on every screen refresh
+ */
 static void
 bld_display PARM_1(int, curnum)
 {
@@ -527,7 +646,38 @@ bld_display PARM_1(int, curnum)
   }
 }
 
-/* IN_AND_CHECK -- Enter and check the data */
+/*
+ * in_and_check - Get numeric input with range validation
+ *
+ * Prompts user for numeric input and validates it falls within
+ * specified minimum and maximum bounds. Returns validated value
+ * or error indicator if input is invalid or cancelled.
+ *
+ * Validation:
+ * - Checks if value is within [min_val, max_val] range
+ * - Handles negative numbers if min_val < 0
+ * - Shows error message for out-of-range values
+ * - Handles user cancellation (no_input flag)
+ *
+ * Parameters:
+ *   min_val - Minimum acceptable value (inclusive)
+ *   max_val - Maximum acceptable value (inclusive)
+ *   hstr - Error message string for out-of-range values
+ *
+ * Returns:
+ *   Validated numeric value within range, or (min_val - 1) on error/cancel
+ *
+ * Side Effects:
+ *   - Calls get_number() for user input
+ *   - Displays error message via errormsg() if invalid
+ *   - Sets global no_input flag on cancellation
+ *
+ * Notes:
+ *   - Return value of (min_val - 1) indicates error/cancellation
+ *   - Used by bld_change() for all numeric parameter entry
+ *   - Handles both positive and negative number ranges
+ *   - Part of input validation system
+ */
 static long
 in_and_check PARM_3(long, min_val, long, max_val, char *, hstr)
 {
@@ -549,7 +699,44 @@ in_and_check PARM_3(long, min_val, long, max_val, char *, hstr)
 /* casting macro for safety */
 #define In_and_Check(x, y, z)	in_and_check((long) (x), (long) (y), z)
 
-/* BLD_CHANGE -- Routine to adjust values for creation customization */
+/*
+ * bld_change - Handle user input to modify a configuration parameter
+ *
+ * Master input handler for configuration interface. Prompts user for
+ * new value of specified parameter, validates input, and updates the
+ * world configuration. Handles all parameter types including strings,
+ * numbers, percentages, booleans, and special values.
+ *
+ * Input Handling:
+ * - String parameters: passwords, usernames with validation
+ * - Numeric parameters: range checking and type conversion
+ * - Boolean parameters: toggle between True/False
+ * - Percentage parameters: 0-100% range validation
+ * - Special parameters: custom validation rules
+ *
+ * Security Features:
+ * - Password verification for sensitive changes
+ * - Permission checking for restricted parameters
+ * - Creation-only vs runtime-changeable distinctions
+ *
+ * Parameters:
+ *   itemnum - Index of configuration parameter to modify
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates global world configuration variables
+ *   - Displays prompts and error messages to user
+ *   - May require password verification
+ *   - Validates user existence for demigod setting
+ *
+ * Notes:
+ *   - Massive switch statement handling all BLD_OPTIONS
+ *   - Some parameters only changeable during world creation
+ *   - Password changes require confirmation
+ *   - Error messages guide user toward valid inputs
+ */
 static void
 bld_change PARM_1 (int, itemnum)
 {
@@ -1145,7 +1332,36 @@ bld_change PARM_1 (int, itemnum)
   }
 }
 
-/* BLD_TITLE -- Place the title of the interface on the screen */
+/*
+ * bld_title - Display centered title and data directory information
+ *
+ * Renders the configuration interface header with a centered title
+ * and shows the current data directory in the error bar. Provides
+ * visual context for the configuration session.
+ *
+ * Display Elements:
+ * - Centered title text in standout mode
+ * - Data directory path in error bar
+ * - Consistent formatting across interface modes
+ *
+ * Parameters:
+ *   desc_str - Description text for error bar
+ *   title_str - Main title text to center on screen
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes title text centered on top line with highlighting
+ *   - Updates error bar with data directory information
+ *   - Uses standout mode for title emphasis
+ *
+ * Notes:
+ *   - Centers title based on screen width (COLS)
+ *   - Shows current datadirname for user context
+ *   - Used in both creation and configuration modes
+ *   - Part of consistent interface theming
+ */
 static void
 bld_title PARM_2(char *, desc_str, char *, title_str)
 {
@@ -1156,8 +1372,48 @@ bld_title PARM_2(char *, desc_str, char *, title_str)
   standend();
 }
 
-/* MAKEWORLD -- This routine is the backbone for creation of the world
-                The rflag indicates that a scenario should be read in. */
+/*
+ * makeworld - Master world creation function with complete setup process
+ *
+ * Orchestrates the entire world creation workflow from initial interface
+ * setup through final data file generation. Handles password setup,
+ * configuration, terrain generation, and system initialization.
+ *
+ * Creation Workflow:
+ * 1. Initialize interface and display welcome information
+ * 2. Prompt for and validate super-user password
+ * 3. Set default configuration values
+ * 4. Run interactive configuration interface
+ * 5. Create world terrain (or read from scenario)
+ * 6. Distribute resources and trade goods
+ * 7. Write all data files and clean up
+ *
+ * File Management:
+ * - Creates temporary news file during generation
+ * - Removes old data files before writing new ones
+ * - Renames and sorts news file when complete
+ * - Handles both VMS and Unix file operations
+ *
+ * Parameters:
+ *   rflag - If TRUE, read world from scenario file (UNIMPLEMENTED)
+ *          If FALSE, generate procedural world
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Initializes curses interface via cq_init()
+ *   - Creates all world data structures
+ *   - Writes complete game database to files
+ *   - Cleans up temporary and old files
+ *   - Displays progress messages during creation
+ *
+ * Notes:
+ *   - Scenario reading (rflag=TRUE) is unimplemented
+ *   - Password must be 4+ characters for security
+ *   - Exits early if user cancels configuration
+ *   - Critical function for new world setup
+ */
 void
 makeworld PARM_1 (int, rflag)
 {
@@ -1299,7 +1555,48 @@ makeworld PARM_1 (int, rflag)
   }
 }
 
-/* BLD_CONFIG -- Set the configurations of the world */
+/*
+ * bld_config - Interactive configuration interface for world parameters
+ *
+ * Provides a full-screen menu-driven interface for setting all world
+ * configuration parameters. Supports navigation, value editing, and
+ * help information with different modes for creation vs modification.
+ *
+ * Interface Features:
+ * - Multi-column layout adapting to screen size
+ * - Keyboard navigation (hjkl, arrow keys, tab)
+ * - In-place value editing with validation
+ * - Context-sensitive help messages
+ * - Save/quit/cancel operations
+ *
+ * Navigation Controls:
+ * - hjkl: move between columns and rows
+ * - space/enter: cycle through options
+ * - c/ESC: change current value
+ * - ?: show help for current item
+ * - q: save and quit, Q: quit without saving
+ * - R: reset to defaults (creation mode only)
+ *
+ * Parameters:
+ *   buildit - TRUE for world creation mode, FALSE for configuration mode
+ *
+ * Returns:
+ *   TRUE if user chose to save/build
+ *   FALSE if user chose to save without building
+ *   -1 if user cancelled without saving
+ *
+ * Side Effects:
+ *   - Displays full-screen configuration interface
+ *   - Calls bld_change() for parameter modifications
+ *   - Sets global cfg_world flag based on mode
+ *   - Updates world configuration based on user input
+ *
+ * Notes:
+ *   - Layout calculation handles 2-4 columns based on screen size
+ *   - Different help strings for creation vs configuration
+ *   - Some parameters restricted in configuration mode
+ *   - Essential for both world creation and runtime adjustment
+ */
 int
 bld_config PARM_1(int, buildit)
 {
