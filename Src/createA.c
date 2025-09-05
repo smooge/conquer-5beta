@@ -52,7 +52,31 @@ static char **area_map;
 static char **type;
 static char **tplace;
 
-/* FILL_EDGE -- Subroutine to fill in a square edges with land or sea */
+/*
+ * fill_edge - Fill sector edges with land or water based on neighboring areas
+ *
+ * This function generates terrain along the borders between area map sectors
+ * by examining adjacent area values and determining appropriate land/water ratios.
+ * Uses a 5-level area system where 0=water, 1=mostly water, 2=50/50, 3=mostly land, 4=land.
+ *
+ * Parameters:
+ *   AX - X coordinate of the area map sector to process
+ *   AY - Y coordinate of the area map sector to process
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies the type[][] array for edge sectors in all four directions
+ *   - Handles world wrapping for X coordinates but not Y coordinates
+ *   - Fills 7 sectors along each edge based on combined area values
+ *
+ * Notes:
+ *   - Each area map sector corresponds to an 8x8 grid of world sectors
+ *   - Edge determination uses sum of current and adjacent area values
+ *   - Sum >= 6: all land, sum >= 3: 50/50 random, sum < 3: all water
+ *   - Critical for creating coherent landmass boundaries
+ */
 static void
 fill_edge PARM_2 (int, AX, int, AY)
 {
@@ -170,7 +194,30 @@ fill_edge PARM_2 (int, AX, int, AY)
 
 }
 
-/* CR_ALTCOUNT -- Count the altitude value of the sector */
+/*
+ * cr_altcount - Accumulate altitude values for terrain smoothing calculations
+ *
+ * Helper function used with map_loop to gather altitude statistics from
+ * neighboring sectors. Excludes water sectors and accumulates both total
+ * altitude values and sector count for average calculations.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Adds sector altitude to global_int if not water
+ *   - Increments global_long counter for non-water sectors
+ *   - Used by terrain smoothing algorithms
+ *
+ * Notes:
+ *   - Only processes non-water sectors (altitude != ELE_WATER)
+ *   - Results used to calculate average elevation of surrounding area
+ *   - Part of contour smoothing system
+ */
 static void
 cr_altcount PARM_2(int, x, int, y)
 {
@@ -181,7 +228,29 @@ cr_altcount PARM_2(int, x, int, y)
   }
 }
 
-/* CR_TYPEWATER -- Eliminate initial peaks or valleys near water */
+/*
+ * cr_typewater - Count water sectors for terrain smoothing decisions
+ *
+ * Helper function used with map_loop to count the number of water sectors
+ * in a given area. Used during the water/land smoothing phase to determine
+ * whether a sector should be converted between land and water.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Increments global_int counter if sector is water
+ *   - Used by smoothing algorithm to balance water percentages
+ *
+ * Notes:
+ *   - Examines type[][] array, not sector altitude
+ *   - Part of the iterative smoothing process
+ *   - Helps maintain target water percentage (PWATER)
+ */
 static void
 cr_typewater PARM_2(int, x, int, y)
 {
@@ -190,7 +259,29 @@ cr_typewater PARM_2(int, x, int, y)
   }
 }
 
-/* CR_WATERCOUNT -- Eliminate initial peaks or valleys near water */
+/*
+ * cr_watercount - Count water sectors in final world map
+ *
+ * Helper function used with map_loop to count water sectors in the final
+ * sector array. Used to identify sectors that are adjacent to water for
+ * elevation validation and terrain consistency checks.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Increments global_int counter if sector altitude is ELE_WATER
+ *   - Used for proximity-to-water calculations
+ *
+ * Notes:
+ *   - Examines final sector altitude values, not type array
+ *   - Used to prevent peaks/valleys directly adjacent to water
+ *   - Part of elevation validation system
+ */
 static void
 cr_watercount PARM_2(int, x, int, y)
 {
@@ -199,7 +290,31 @@ cr_watercount PARM_2(int, x, int, y)
   }
 }
 
-/* CR_SWAMPGROW -- Change a sector into a swamp */
+/*
+ * cr_swampgrow - Expand swamp and jungle vegetation to neighboring sectors
+ *
+ * Helper function used with map_loop to spread swamp and jungle vegetation
+ * from existing swamp/jungle sectors to nearby land. Creates natural-looking
+ * vegetation clusters with random probability.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to potentially convert
+ *   y - Y coordinate of sector to potentially convert
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May change sector vegetation to VEG_SWAMP or VEG_JUNGLE
+ *   - Only affects land sectors below mountain level
+ *   - Excludes existing desert vegetation
+ *
+ * Notes:
+ *   - 25% chance to trigger conversion (rand_val(4) == 0)
+ *   - 50/50 split between swamp and jungle when converting
+ *   - Part of vegetation expansion system
+ *   - Creates realistic vegetation clustering
+ */
 static void
 cr_swampgrow PARM_2(int, x, int, y)
 {
@@ -216,7 +331,31 @@ cr_swampgrow PARM_2(int, x, int, y)
   }
 }
 
-/* CR_DESERTGROW -- Change a sector into a swamp */
+/*
+ * cr_desertgrow - Expand desert and barren vegetation to neighboring sectors
+ *
+ * Helper function used with map_loop to spread desert and barren vegetation
+ * from existing desert sectors to nearby land. Creates natural-looking
+ * arid region clusters with random probability.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to potentially convert
+ *   y - Y coordinate of sector to potentially convert
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May change sector vegetation to VEG_DESERT or VEG_BARREN
+ *   - Only affects land sectors below mountain level
+ *   - Random expansion pattern creates natural boundaries
+ *
+ * Notes:
+ *   - 20% chance to trigger conversion (rand_val(5) == 0)
+ *   - 66% chance for barren, 33% chance for desert when converting
+ *   - Part of vegetation expansion system
+ *   - Creates realistic arid region clustering
+ */
 static void
 cr_desertgrow PARM_2(int, x, int, y)
 {
@@ -232,7 +371,44 @@ cr_desertgrow PARM_2(int, x, int, y)
   }
 }
 
-/* CREATEWORLD -- This routine generates a new world */
+/*
+ * createworld - Generate complete procedural world terrain and geography
+ *
+ * Master world generation function that creates the entire game world from scratch.
+ * Implements a multi-phase terrain generation system including area mapping,
+ * land/water distribution, elevation generation, vegetation placement, and smoothing.
+ * Uses sophisticated algorithms to create realistic, balanced worlds.
+ *
+ * Generation Process:
+ * 1. Area Map Creation - Divide world into 5 area types (water to land)
+ * 2. Sector Type Assignment - Convert areas to individual sector types
+ * 3. Water/Land Smoothing - Balance coastlines and water percentage
+ * 4. Elevation Generation - Add mountains, hills, valleys, and peaks
+ * 5. Elevation Smoothing - Create realistic terrain transitions
+ * 6. Vegetation Assignment - Place climate-appropriate vegetation
+ * 7. Polar/Equatorial Adjustment - Apply climate zones
+ * 8. Vegetation Expansion - Spread swamps, deserts naturally
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Allocates and initializes global sct[][] sector array
+ *   - Creates temporary area_map[][], type[][], tplace[][] arrays
+ *   - Updates news file with world creation progress
+ *   - Displays progress messages to user
+ *   - Frees temporary memory allocations
+ *
+ * Notes:
+ *   - Uses configurable parameters (PWATER, PMOUNT, world.smoothings)
+ *   - Implements wrap-around world geography
+ *   - Creates balanced worlds suitable for strategic gameplay
+ *   - Critical foundation for all subsequent game systems
+ *   - Memory allocation failures cause program termination
+ */
 void
 createworld PARM_0(void)
 {
@@ -942,7 +1118,31 @@ createworld PARM_0(void)
   free(area_map);
 }
 
-/* LIZ_TAKEIT -- Claim land in the name of the lizards! */
+/*
+ * liz_takeit - Claim territory for lizard nation and convert to swampland
+ *
+ * Helper function used with map_loop to establish lizard territorial control
+ * around fortress locations. Claims suitable land sectors and converts them
+ * to swamp vegetation to match lizard racial preferences.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to potentially claim
+ *   y - Y coordinate of sector to potentially claim
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets sector owner to current lizard nation (global country variable)
+ *   - Changes vegetation to VEG_SWAMP for non-hill sectors
+ *   - Only affects land sectors below mountain elevation
+ *
+ * Notes:
+ *   - Excludes water sectors and high mountains
+ *   - Preserves hill vegetation while claiming ownership
+ *   - Part of lizard fortress establishment system
+ *   - Creates thematic swampland territories
+ */
 static void
 liz_takeit PARM_2(int, x, int, y)
 {
@@ -957,7 +1157,45 @@ liz_takeit PARM_2(int, x, int, y)
   }
 }
 
-/* BLD_LIZARDS -- Add any lizards cities to the world */
+/*
+ * bld_lizards - Create lizard nation with fortified swampland cities
+ *
+ * Generates the lizard NPC nation with defensive fortresses scattered across
+ * the world. Each fortress includes stockades, armies, and valuable resource
+ * mines. Lizards prefer equatorial regions and areas with some water access.
+ *
+ * Nation Characteristics:
+ * - Leader: S'lilth, Race: LIZARD, Mark: 'L'
+ * - Enhanced defense (+20), mercenary attack values
+ * - Wizardry powers: illusion, vision, hidden, void knowledge
+ * - Civilian power: amphibian (swamp/jungle bonus)
+ * - Military power: archery capabilities
+ *
+ * Fortress Features:
+ * - Fortified stockades with high-value jewel mines
+ * - Defensive infantry patrols and archer garrisons
+ * - Surrounding territory claimed and converted to swamps
+ * - Resource storage proportional to mine quality
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates lizard nation in global nation table
+ *   - Places world.lizards number of fortress cities
+ *   - Claims territory around each fortress
+ *   - Creates army and city structures
+ *   - Updates news file with creation count
+ *
+ * Notes:
+ *   - 25% chance for equatorial placement preference
+ *   - Requires suitable land with limited water access
+ *   - Each fortress is self-sufficient with resources and defenses
+ *   - Part of NPC nation initialization system
+ */
 static void
 bld_lizards PARM_0(void)
 {
@@ -1096,7 +1334,43 @@ bld_lizards PARM_0(void)
 	  nlizards);
 }
 
-/* BLD_SAVAGES -- Add any savage armies to the world */
+/*
+ * bld_savages - Create savage nation with scattered tribal armies
+ *
+ * Generates the savage NPC nation with mobile infantry and monster units
+ * distributed across the world. Savages prefer edge regions and remote areas,
+ * representing primitive tribal societies and wild creatures.
+ *
+ * Nation Characteristics:
+ * - Leader: Erkel, Race: SAVAGE, Mark: '*'
+ * - Standard mercenary combat values
+ * - High mobility (maxmove: 12)
+ * - Wizardry powers: knowledge and vision spells
+ *
+ * Unit Composition:
+ * - 50% savage infantry units (200-900 warriors)
+ * - 50% random monster units (size based on creature type)
+ * - All units set to attack status with random speeds
+ * - Scattered placement creates unpredictable threats
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates savage nation in global nation table
+ *   - Places world.savages number of army units
+ *   - Claims territory for each unit placement
+ *   - Updates news file with creation count
+ *
+ * Notes:
+ *   - 33% chance for edge region placement preference
+ *   - Avoids water and peak sectors for placement
+ *   - Monster units use strength-based size calculations
+ *   - Provides dynamic wilderness threats for players
+ */
 static void
 bld_savages PARM_0(void)
 {
@@ -1205,7 +1479,45 @@ bld_savages PARM_0(void)
 	  nsavages);
 }
 
-/* BLD_NOMADS -- Add any nomad armies to the world */
+/*
+ * bld_nomads - Create nomad nation with mobile cavalry armies
+ *
+ * Generates the nomadic NPC nation with fast-moving cavalry units
+ * distributed across the world. Represents horse-based warrior cultures
+ * with enhanced mobility and equestrian combat abilities.
+ *
+ * Nation Characteristics:
+ * - Leader: Ghenghis, Race: NOMAD, Mark: '*'
+ * - Enhanced attack (+10), standard defense
+ * - Very high mobility (maxmove: 16)
+ * - Wizardry powers: knowledge and vision spells
+ * - Military power: equine combat bonuses
+ * - Civilian power: dervish abilities
+ *
+ * Unit Composition:
+ * - 50% dragoon units (200-1100 riders)
+ * - 10% heavy cavalry units (300-1100 riders)
+ * - 40% light cavalry units (225-975 riders)
+ * - All units mobile with attack orders
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates nomad nation in global nation table
+ *   - Places world.nomads number of cavalry units
+ *   - Claims territory for each unit placement
+ *   - Updates news file with creation count
+ *
+ * Notes:
+ *   - 33% chance for edge region placement preference
+ *   - Avoids water and peak sectors for placement
+ *   - Emphasizes mobility with varied cavalry types
+ *   - Provides fast-moving military threats
+ */
 static void
 bld_nomads PARM_0(void)
 {
@@ -1329,7 +1641,30 @@ bld_nomads PARM_0(void)
 	  nnomads);
 }
 
-/* PIR_OKSECT -- Check if the sector is liked by pirates */
+/*
+ * pir_oksect - Validate sector suitability for pirate island creation
+ *
+ * Helper function used with map_loop to check if surrounding sectors
+ * are suitable for converting to a pirate island base. Ensures the area
+ * can be safely converted to water without conflicts.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets global_int to FALSE if sector is unsuitable
+ *   - Rejects owned sectors or problematic land sectors
+ *
+ * Notes:
+ *   - Immediately fails if any surrounding sector is owned
+ *   - 50% chance to reject land sectors for variety
+ *   - Used to ensure pirate islands can be created safely
+ *   - Part of pirate base location validation
+ */
 static void
 pir_oksect PARM_2(int, x, int, y)
 {
@@ -1340,7 +1675,30 @@ pir_oksect PARM_2(int, x, int, y)
   }
 }
 
-/* PIR_TAKEIT -- Clean up surrounding land */
+/*
+ * pir_takeit - Convert surrounding sectors to open ocean
+ *
+ * Helper function used with map_loop to clear the area around a pirate
+ * base location, converting all surrounding sectors to open water.
+ * Creates isolated island fortresses surrounded by ocean.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to convert
+ *   y - Y coordinate of sector to convert
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets sector to water with no vegetation or resources
+ *   - Clears any existing trade goods and minerals
+ *   - Creates ocean barrier around pirate islands
+ *
+ * Notes:
+ *   - Part of pirate island creation process
+ *   - Ensures islands are properly isolated
+ *   - Removes any conflicting terrain features
+ */
 static void
 pir_takeit PARM_2(int, x, int, y)
 {
@@ -1350,7 +1708,45 @@ pir_takeit PARM_2(int, x, int, y)
   sct[x][y].minerals = 0;
 }
 
-/* BLD_PIRATES -- Add any pirate bases to the world */
+/*
+ * bld_pirates - Create pirate nation with fortified island bases
+ *
+ * Generates the pirate NPC nation with naval bases on artificial islands.
+ * Each base includes mountain fortresses, naval fleets, and valuable metal
+ * mines. Pirates prefer equatorial waters and create their own islands.
+ *
+ * Nation Characteristics:
+ * - Leader: Redbeard, Race: PIRATE, Mark: 'P'
+ * - Enhanced attack (+20), reduced defense (-10)
+ * - High mobility (maxmove: 15)
+ * - Wizardry powers: illusion, vision, knowledge, hidden
+ * - Civilian powers: sailor and marine abilities
+ *
+ * Base Features:
+ * - Artificial mountain islands with harbors
+ * - Fortified stockades with metal mines
+ * - Infantry garrisons and naval fleets
+ * - Multiple ship types (light to heavy warships)
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates pirate nation in global nation table
+ *   - Places world.pirates number of island bases
+ *   - Converts surrounding areas to ocean
+ *   - Creates naval and army units
+ *   - Updates news file with creation count
+ *
+ * Notes:
+ *   - 33% chance for equatorial placement preference
+ *   - Creates artificial islands by terrain conversion
+ *   - Each base is self-sufficient with defenses and fleet
+ *   - Provides naval-focused NPC opposition
+ */
 static void
 bld_pirates PARM_0(void)
 {
@@ -1498,7 +1894,39 @@ bld_pirates PARM_0(void)
 	  npirates);
 }
 
-/* POPULATE -- allocate populations of the world */
+/*
+ * populate - Initialize all NPC nations and validate help files
+ *
+ * Master population function that creates all non-player nations and
+ * validates game documentation. Calls specialized builders for each
+ * NPC race type and performs system integrity checks.
+ *
+ * Population Process:
+ * 1. Create lizard fortress cities
+ * 2. Create savage tribal armies
+ * 3. Create nomadic cavalry forces
+ * 4. Create pirate island bases
+ * 5. Load additional NPC nations from configuration
+ * 6. Validate all help documentation files
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates all NPC nations and their units/cities
+ *   - Validates help file accessibility
+ *   - Reports missing documentation files
+ *   - Establishes initial world population
+ *
+ * Notes:
+ *   - Called during world creation after terrain generation
+ *   - NPC counts controlled by world configuration parameters
+ *   - Help file validation ensures game documentation is complete
+ *   - Critical for establishing strategic balance
+ */
 static void
 populate PARM_0(void)
 {
@@ -1552,7 +1980,44 @@ populate PARM_0(void)
 #endif /* UNIMP */
 }
 
-/* RAWMATERIALS -- Place the jewels, metals and tradegoods */
+/*
+ * rawmaterials - Distribute trade goods and resources across the world
+ *
+ * Places trade goods, metals, jewels, and magical items throughout the world
+ * based on terrain suitability and probability distributions. Creates the
+ * economic foundation for trade and resource competition.
+ *
+ * Resource Distribution:
+ * - PTRADE% chance per sector to receive trade goods
+ * - PTGMETAL% for metals (preferring mountains)
+ * - PTGJEWEL% for jewels (high-value rare goods)
+ * - PTGSPELL% for magical components
+ * - Remaining percentage for specialized goods
+ *
+ * Placement Rules:
+ * - Fishing goods require water access
+ * - Agricultural goods need fertile land
+ * - Lumber requires forest vegetation
+ * - Terrain-appropriate resource matching
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets tradegood field for qualifying sectors
+ *   - Calls getmetal(), getjewel(), getspell() for special resources
+ *   - Displays progress messages during placement
+ *   - Creates economic diversity across the world
+ *
+ * Notes:
+ *   - Called after world terrain and population creation
+ *   - Resource distribution affects strategic value of territories
+ *   - Specialized functions handle metal/jewel placement details
+ *   - Critical for establishing economic gameplay
+ */
 void
 rawmaterials PARM_0(void)
 {

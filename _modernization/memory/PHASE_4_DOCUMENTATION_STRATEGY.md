@@ -17,7 +17,7 @@ Critical game mechanics and data structures - document these first:
 4. **moveA.c** ✅ (Complete - 1 function documented: npc_movearmy for NPC army movement)
 5. **economyA.c** ✅ (Complete - 3 functions documented: upd_sectors, upd_produce, upd_consume)
 6. **updateA.c** ✅ (Complete - 14 functions documented: complete turn processing system)
-7. **createA.c** - World/character creation
+7. **createA.c** ✅ (Complete - 16 functions documented: complete world generation system)
 8. **configA.c** - Configuration management
 
 ### Priority 2: I/O and Data Management (Session 9-16)
@@ -110,9 +110,10 @@ Lower priority interface and utility modules:
 5. **moveA.c** - Session completed 2025-09-05 (1 function documented: npc_movearmy)
 6. **economyA.c** - Session completed 2025-09-05 (3 functions documented: complete economic system)
 7. **updateA.c** - Session completed 2025-09-05 (14 functions documented: complete turn processing system)
+8. **createA.c** - Session completed 2025-09-05 (16 functions documented: complete world generation system)
 
 ### Current Target
-**Next file to document**: `createA.c` (Priority 1, Session 8)
+**Next file to document**: `configA.c` (Priority 1, Session 9 - Final Priority 1 file)
 
 ### Session Metrics Goal
 - Target: 1 file per session
