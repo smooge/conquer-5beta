@@ -1,0 +1,41 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.dylib
+
+# Test executables
+tests/build/
+tests/regression/regression_input_validation
+tests/security/security_simple_security
+tests/unit/unit_*
+tests/integration/integration_*
+tests/security/security_*
+tests/regression/regression_*
+
+# CMake build files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Coverage files
+*.gcov
+*.gcda
+*.gcno
+
+# Temporary files
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Debug symbols
+*.dSYM/
