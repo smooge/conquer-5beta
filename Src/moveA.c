@@ -19,7 +19,42 @@
 #include "moveX.h"
 #include "statusX.h"
 
-/* NPC_MOVEARMY -- Relocate an army unit one sector */
+/*
+ * npc_movearmy - Relocate an NPC army unit to an adjacent sector
+ *
+ * Handles the movement of a single NPC army unit from its current location
+ * to a specified target sector. The function validates movement legality,
+ * calculates movement costs, and updates the army's position and movement
+ * points. Supports both ground and flying movement modes.
+ *
+ * The function performs comprehensive validation including:
+ * - Verifying army_ptr is valid and points to an existing army
+ * - Ensuring target coordinates differ from current location
+ * - Confirming target is within one sector distance (adjacent movement only)
+ * - Checking terrain movement costs and army's remaining movement points
+ *
+ * Parameters:
+ *   x - Target X coordinate (sector column)
+ *   y - Target Y coordinate (sector row)
+ *
+ * Returns:
+ *   TRUE (1) on successful movement
+ *   FALSE (0) if movement is invalid or impossible
+ *
+ * Side Effects:
+ *   - Decreases ARMY_MOVE by movement cost
+ *   - Updates ARMY_LASTX and ARMY_LASTY to previous location
+ *   - Sets ARMY_XLOC and ARMY_YLOC to new position (for non-leading units)
+ *   - Updates group location/movement for leading units via set_grploc/set_grpmove
+ *   - Modifies global movemode variable (MOVE_ARMY or MOVE_FLYARMY)
+ *
+ * Notes:
+ *   - Operates on global army_ptr which must be set before calling
+ *   - Movement cost threshold of 100 represents some special movement state
+ *   - Flying units use different movement mode affecting terrain costs
+ *   - Leading units update entire group location, others move individually
+ *   - Function assumes army_ptr points to valid army data structure
+ */
 int
 npc_movearmy PARM_2(int, x, int, y)
 {
