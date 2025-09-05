@@ -47,6 +47,29 @@
 static int fake_char = FALSE;
 
 /* SEND_DUMMY_CHAR -- sends dummy char so system pretends it had been typed */
+/*
+ * send_dummy_char - Send dummy character to terminal for window size handling
+ *
+ * Sends a dummy character (ASCII 255) to the terminal using TIOCSTI ioctl
+ * to simulate keyboard input. This triggers terminal processing and allows
+ * the window size change handler to properly refresh the display.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets fake_char flag to TRUE to mark this as a dummy input
+ *   - May call errormsg() if ioctl fails
+ *   - Injects character into terminal input stream
+ *
+ * Notes:
+ *   - Only compiled when WINCH_HANDLER is defined
+ *   - Uses file descriptor 2 (stderr) for ioctl operations
+ *   - Critical for proper window resize handling in curses applications
+ */
 #ifdef WINCH_HANDLER
 static void
 send_dummy_char()
@@ -61,7 +84,33 @@ send_dummy_char()
 }
 #endif /* WINCH_HANDLER */
 
-/* WIN_SIZE_CHANGE -- signal handler for window size change */
+/*
+ * win_size_change - Signal handler for terminal window size changes
+ *
+ * Handles SIGWINCH signal when terminal window is resized. Queries current
+ * window size, enforces minimum dimensions (80x24), updates global LINES/COLS
+ * variables, and reinitializes the curses display to match new size.
+ *
+ * Parameters:
+ *   void - Signal handler signature with PARM_0 macro
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Updates global LINES and COLS variables
+ *   - May force window resize if too small (minimum 80x24)
+ *   - Reinitializes curses screen with initscr()
+ *   - Triggers complete screen redraw via do_redraw()
+ *   - Sends dummy character to refresh input processing
+ *   - May display error messages if window too small or ioctl fails
+ *
+ * Notes:
+ *   - Only compiled when WINCH_HANDLER is defined
+ *   - Registered as SIGWINCH signal handler during initialization
+ *   - Uses ioctl with TIOCGWINSZ/TIOCSWINSZ for window size operations
+ *   - Critical for maintaining proper display in resizable terminals
+ */
 void
 win_size_change PARM_0(void)
 {
@@ -99,8 +148,33 @@ win_size_change PARM_0(void)
 #endif /* WINCH_HANDLER */
 }
 
+/*
+ * copy_file - Copy contents from source file to destination file
+ *
+ * Copies all content from the source file to the destination file
+ * character by character. Used by the editor fork functionality to
+ * copy files to/from temporary editing locations.
+ *
+ * Parameters:
+ *   from_file - Source file path to copy from (must not be NULL)
+ *   to_file - Destination file path to copy to (must not be NULL)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Creates or overwrites destination file
+ *   - Displays error messages if file operations fail
+ *   - Uses global 'string' buffer for error message formatting
+ *
+ * Notes:
+ *   - Only compiled when ALLOW_EDIT_FORK is defined
+ *   - Opens source in read mode, destination in write mode
+ *   - Copies character by character until EOF
+ *   - Properly closes both files even on error conditions
+ *   - No error checking for partial writes or disk space issues
+ */
 #ifdef ALLOW_EDIT_FORK
-/* COPY_FILE -- function to copy from the first into the second */
 static void
 copy_file PARM_2(char *, from_file, char *, to_file)
 {
@@ -135,7 +209,41 @@ copy_file PARM_2(char *, from_file, char *, to_file)
 }
 #endif /* ALLOW_EDIT_FORK */
 
-/* FORK_EDIT_ON_FILE -- execute an edit on a file copy, then copy in */
+/*
+ * fork_edit_on_file - Launch external editor on file copy with security handling
+ *
+ * Forks a child process to launch an external editor on a temporary copy of
+ * the specified file. Handles user ID switching for security, environment
+ * setup, and file management. After editing, copies modified file back to
+ * original location and cleans up temporary files.
+ *
+ * Parameters:
+ *   fname - Original file path to edit (may not exist for new files)
+ *   pstr - Optional message to display before editor launch (may be NULL)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Forks child process and waits for completion
+ *   - Creates temporary file in TMP_DIR with unique name
+ *   - Switches user IDs for security if SWITCHID enabled
+ *   - Changes working directory to TMP_DIR
+ *   - Closes open file handles for security
+ *   - Launches editor specified by ENV_EDITOR or DEFAULT_EDITOR
+ *   - Copies modified file back to original location
+ *   - Restores curses raw mode and noecho after editor exit
+ *   - Displays error messages for various failure conditions
+ *
+ * Notes:
+ *   - Only compiled when ALLOW_EDIT_FORK is defined
+ *   - Uses fork/exec pattern for secure editor launching
+ *   - Temporary file named using process ID for uniqueness
+ *   - Supports both SEARCH_PATHENV and direct exec methods
+ *   - Handles UID/EUID switching for setuid game security
+ *   - Parent process sleeps and waits for child completion
+ *   - Critical for secure in-game text editing functionality
+ */
 void
 fork_edit_on_file PARM_2(char *, fname, char *, pstr)
 {
@@ -262,7 +370,28 @@ fork_edit_on_file PARM_2(char *, fname, char *, pstr)
 #endif /* ALLOW_EDIT_FORK */  
 }
 
-/* DO_REDRAW -- Alternative method of refreshing the screen */
+/*
+ * do_redraw - Alternative method of refreshing the curses screen
+ *
+ * Clears the entire screen and forces a refresh. Used as an alternative
+ * screen refresh method, particularly after window size changes or when
+ * display corruption is detected.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   Always returns 0 (success)
+ *
+ * Side Effects:
+ *   - Clears entire screen contents via clear()
+ *   - Forces immediate screen refresh on VAXC systems
+ *
+ * Notes:
+ *   - Called by win_size_change() after window resize
+ *   - VAXC-specific refresh() call for compatibility
+ *   - Simple but effective screen cleanup mechanism
+ */
 int
 do_redraw PARM_0(void)
 {
@@ -280,7 +409,31 @@ do_redraw PARM_0(void)
 static int inch_count = 0;
 static int inch_list[LINELTH];
 
-/* NEXT_CHAR -- Obtain the next character of input */
+/*
+ * next_char - Obtain the next character from input queue or direct input
+ *
+ * Returns the next input character, either from the input stack (if characters
+ * have been pushed back) or directly from getch(). Handles fake characters
+ * generated by window resize events by converting them to ignore signals.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   Next input character as integer
+ *   EXT_IGN if character was a fake character from window resize
+ *
+ * Side Effects:
+ *   - Decrements inch_count when popping from input stack
+ *   - Resets fake_char flag when processing fake input
+ *   - May block waiting for input if no characters queued
+ *
+ * Notes:
+ *   - Part of input queue management system
+ *   - Handles pushed-back characters from push_char()
+ *   - Fake characters come from send_dummy_char() during window resize
+ *   - Input stack operates as LIFO (last in, first out)
+ */
 int
 next_char PARM_0(void)
 {
@@ -301,7 +454,30 @@ next_char PARM_0(void)
   }
 }
 
-/* PUSH_CHAR -- Store input on the stack */
+/*
+ * push_char - Store input character on the input stack for later processing
+ *
+ * Pushes a character onto the input stack to be retrieved by the next
+ * call to next_char(). Used to "unget" characters that were read but
+ * need to be processed later, typically during parsing or completion.
+ *
+ * Parameters:
+ *   ch_in - Character to push onto the input stack
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Increments inch_count and stores character in inch_list
+ *   - Displays serious error message if stack overflows
+ *   - Character will be returned by next call to next_char()
+ *
+ * Notes:
+ *   - Input stack has capacity LINELTH (maximum line length)
+ *   - Stack operates as LIFO (last in, first out)
+ *   - Used by completion routines and input parsing
+ *   - Critical for proper input character handling
+ */
 void
 push_char PARM_1(int, ch_in)
 {
@@ -312,7 +488,34 @@ push_char PARM_1(int, ch_in)
   }
 }
 
-/* ERRORBAR -- function to display a highlighted region at screen bottom */
+/*
+ * errorbar - Display highlighted message bar at bottom of screen
+ *
+ * Creates a highlighted status/error bar at the bottom of the screen with
+ * version information and user messages. Used for displaying important
+ * system messages, status information, and error notifications.
+ *
+ * Parameters:
+ *   str1 - Primary message text to display after version info
+ *   str2 - Secondary message text displayed right-aligned
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Draws highlighted bar at line LINES-4
+ *   - Displays version and patch level information
+ *   - Shows primary message after version info
+ *   - Right-aligns secondary message
+ *   - Draws separator line of dashes at LINES-2
+ *   - Uses standout/standend for highlighting
+ *
+ * Notes:
+ *   - Bar spans full screen width (COLS-1)
+ *   - Format: " Conquer VERSION.PATCHLEVEL: str1" with str2 right-aligned
+ *   - Creates visual separation with dash line
+ *   - Critical for user feedback and status display
+ */
 void
 errorbar PARM_2( char *, str1, char *, str2)
 {
@@ -330,7 +533,31 @@ errorbar PARM_2( char *, str1, char *, str2)
     addch('-');
 }
 
-/* PRESSKEY -- Display message, refresh, get key, clear last line */
+/*
+ * presskey - Display "Press Any Key" prompt and wait for user input
+ *
+ * Shows a "Press Any Key" message at the bottom right of the screen,
+ * waits for user to press any key, clears the message line, and returns
+ * the character that was pressed.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   Integer value of the key pressed by the user
+ *
+ * Side Effects:
+ *   - Displays " Press Any Key" at bottom right of screen
+ *   - Forces screen refresh to show the message
+ *   - Waits for user input (blocking)
+ *   - Clears bottom line after key press
+ *
+ * Notes:
+ *   - Standard pause/continue mechanism in the game interface
+ *   - Message positioned at LINES-1, COLS-16 for right alignment
+ *   - Used throughout the game for "pause and continue" prompts
+ *   - Returns actual key pressed for potential special handling
+ */
 int
 presskey PARM_0(void)
 {
@@ -343,7 +570,32 @@ presskey PARM_0(void)
   return(hold);
 }
 
-/* ERRORMSG -- Display a message and wait for a keystroke */
+/*
+ * errormsg - Display error message and wait for user acknowledgment
+ *
+ * Displays an error or informational message to the user, either on the
+ * screen bottom line (in curses mode) or to the update file (non-curses).
+ * In curses mode, beeps and waits for user to press a key.
+ *
+ * Parameters:
+ *   str - Error or message text to display (must not be NULL)
+ *
+ * Returns:
+ *   In curses mode: returns the key pressed by user (from presskey())
+ *   In non-curses mode: returns 0
+ *
+ * Side Effects:
+ *   - In curses: displays message at bottom line, clears to end of line
+ *   - In curses: generates beep sound for attention
+ *   - In curses: waits for user keypress via presskey()
+ *   - In non-curses: writes message to fupdate file with newline
+ *
+ * Notes:
+ *   - Primary error/message display function throughout the game
+ *   - Behavior depends on in_curses global flag
+ *   - Used for errors, warnings, confirmations, and status messages
+ *   - In curses mode provides interactive feedback with beep and pause
+ */
 int
 errormsg PARM_1 (char *, str)
 {
@@ -359,7 +611,31 @@ errormsg PARM_1 (char *, str)
   return(0);
 }
 
-/* BOTTOMMSG -- Display a message, without waiting for any keystroke */
+/*
+ * bottommsg - Display message at bottom of screen without waiting for input
+ *
+ * Displays a message at the bottom of the screen (in curses mode) or writes
+ * to the update file (non-curses mode), but does not wait for user input.
+ * Used for status updates and information that doesn't require acknowledgment.
+ *
+ * Parameters:
+ *   str - Message text to display (must not be NULL)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - In curses: displays message at bottom line and clears to end of line
+ *   - In curses: forces immediate screen refresh
+ *   - In non-curses: writes message to fupdate file with newline
+ *   - Does not beep or wait for user input
+ *
+ * Notes:
+ *   - Similar to errormsg() but without beep or user interaction
+ *   - Used for status messages, progress updates, and information display
+ *   - Behavior depends on in_curses global flag
+ *   - Non-blocking message display for continuous operations
+ */
 void
 bottommsg PARM_1 (char *, str)
 {
@@ -372,7 +648,30 @@ bottommsg PARM_1 (char *, str)
   }
 }
 
-/* Y_OR_N -- Return TRUE for 'y' or 'Y' character press */
+/*
+ * y_or_n - Get user input and return TRUE for 'y' or 'Y' responses
+ *
+ * Waits for user to press a key and returns TRUE if the key was 'y' or 'Y',
+ * FALSE for any other key. Used for simple yes/no prompts throughout the game.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   TRUE if user pressed 'y' or 'Y'
+ *   FALSE for any other key press
+ *
+ * Side Effects:
+ *   - Forces screen refresh before waiting for input
+ *   - Consumes one character from input stream
+ *   - Does not provide feedback about invalid responses
+ *
+ * Notes:
+ *   - Simple binary choice input function
+ *   - Case-insensitive for 'y'/'Y' but no special handling for 'n'
+ *   - Used for yes/no confirmations and boolean choices
+ *   - Does not loop or validate input - any non-y key means FALSE
+ */
 int
 y_or_n PARM_0(void)
 {
@@ -387,7 +686,30 @@ y_or_n PARM_0(void)
   return(FALSE);
 }
 
-/* CR_OR_Y -- Return TRUE for 'y' or 'Y' character press */
+/*
+ * cr_or_y - Return TRUE for 'y', 'Y', space, or return key presses
+ *
+ * Waits for user input and returns TRUE for several "affirmative" keys:
+ * 'y', 'Y', space, newline, or carriage return. Used for prompts where
+ * both explicit yes and default acceptance (return/space) are acceptable.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   TRUE if user pressed 'y', 'Y', space, newline, or carriage return
+ *   FALSE for any other key press
+ *
+ * Side Effects:
+ *   - Forces screen refresh before waiting for input
+ *   - Consumes one character from input stream
+ *
+ * Notes:
+ *   - More permissive than y_or_n() - accepts default confirmation
+ *   - Space and return keys treated as affirmative responses
+ *   - Used for prompts where "press enter to continue" behavior desired
+ *   - Common pattern for "continue or abort" type prompts
+ */
 int
 cr_or_y PARM_0(void)
 {
@@ -404,7 +726,36 @@ cr_or_y PARM_0(void)
   return(FALSE);
 }
 
-/* CQ_INIT -- Initialize the curses display */
+/*
+ * cq_init - Initialize the curses display system for the game
+ *
+ * Sets up the curses terminal interface, configures signal handlers,
+ * validates terminal size requirements, and establishes proper input modes.
+ * Critical initialization function for all curses-based game interfaces.
+ *
+ * Parameters:
+ *   progname - Program name for error messages (must not be NULL)
+ *
+ * Returns:
+ *   void (may exit program if terminal requirements not met)
+ *
+ * Side Effects:
+ *   - Calls initscr() to initialize curses
+ *   - Sets up SIGWINCH handler for window resize events
+ *   - Sets in_curses global flag to TRUE
+ *   - Validates minimum terminal size (80x24)
+ *   - Exits program if terminal too small
+ *   - Enables raw input mode (crmode)
+ *   - Disables character echoing (noecho)
+ *   - Platform-specific terminal setup (TSERVER, VMS)
+ *
+ * Notes:
+ *   - Must be called before any other curses operations
+ *   - Enforces minimum 80x24 terminal size requirement
+ *   - Sets up signal handling for proper window resize support
+ *   - Platform-specific code for TSERVER and VMS systems
+ *   - Exits with SUCCESS if terminal size insufficient
+ */
 void
 cq_init PARM_1 (char *, progname)
 {
@@ -434,7 +785,36 @@ cq_init PARM_1 (char *, progname)
   noecho();
 }
 
-/* CQ_RESET -- Terminate the curses display gracefully */
+/*
+ * cq_reset - Terminate the curses display gracefully and restore terminal
+ *
+ * Cleanly shuts down the curses interface, restores normal terminal modes,
+ * clears the screen, and resets signal handlers. Should be called before
+ * program exit to leave terminal in proper state.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Disables SIGWINCH signal handler
+ *   - Clears entire screen contents twice for thoroughness
+ *   - Forces screen refresh to ensure changes are visible
+ *   - Restores normal terminal input mode (nocrmode)
+ *   - Re-enables character echoing (echo)
+ *   - Calls endwin() to properly terminate curses
+ *   - Sets in_curses global flag to FALSE
+ *   - Platform-specific terminal reset (VMS)
+ *
+ * Notes:
+ *   - Should be called before any program exit
+ *   - Double clear/refresh ensures clean terminal state
+ *   - Restores terminal to state before cq_init() was called
+ *   - Platform-specific reset code for VMS systems
+ *   - Critical for proper terminal cleanup
+ */
 void
 cq_reset PARM_0(void)
 {
@@ -463,7 +843,30 @@ cq_reset PARM_0(void)
   in_curses = FALSE;
 }
 
-/* CQ_BYE -- Call cq_reset() and exit program with supplied status */
+/*
+ * cq_bye - Clean up curses display and exit program with specified status
+ *
+ * Performs complete curses cleanup by calling cq_reset() and then
+ * terminates the program with the specified exit status. Used throughout
+ * the game for clean program termination.
+ *
+ * Parameters:
+ *   status - Exit status code to pass to exit() (typically SUCCESS or FAIL)
+ *
+ * Returns:
+ *   Does not return (calls exit())
+ *
+ * Side Effects:
+ *   - Calls cq_reset() to clean up curses display
+ *   - Terminates program with specified exit status
+ *   - All cq_reset() side effects apply (terminal cleanup, etc.)
+ *
+ * Notes:
+ *   - Standard way to exit the game with proper cleanup
+ *   - Ensures terminal is always left in proper state
+ *   - Used for both normal and error exits
+ *   - Combines cleanup and exit into single function call
+ */
 void
 cq_bye PARM_1 (int, status)
 {
@@ -471,7 +874,30 @@ cq_bye PARM_1 (int, status)
   exit(status);
 }
 
-/* CLEAR_BOTTOM -- Empty out the message area on bottom of screen */
+/*
+ * clear_bottom - Clear message area at bottom of screen
+ *
+ * Clears the specified number of lines at the bottom of the screen,
+ * typically used to clear message areas, status lines, and prompt regions.
+ * Only operates in curses mode.
+ *
+ * Parameters:
+ *   l - Number of lines to clear from bottom (0 defaults to 5 lines)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Clears l lines from bottom of screen (LINES-l to LINES-1)
+ *   - Uses clrtoeol() to clear each line from cursor to end
+ *   - No effect if not in curses mode
+ *
+ * Notes:
+ *   - Commonly used to clear message areas before new output
+ *   - Default of 5 lines covers typical message area size
+ *   - Preserves screen content above the cleared area
+ *   - Used by presskey() and other message functions
+ */
 void
 clear_bottom PARM_1 (int, l)
 {
@@ -483,7 +909,33 @@ clear_bottom PARM_1 (int, l)
   }
 }
 
-/* SHOW_CHAR -- Show a character to the current position */
+/*
+ * show_char - Display a character at current cursor position with formatting
+ *
+ * Displays a character with optional full formatting (quotes and separator).
+ * Non-printable characters are shown in caret notation (^X format).
+ * Used for displaying key bindings and character representations.
+ *
+ * Parameters:
+ *   ch - Character to display
+ *   full - If TRUE, add quotes around character and trailing dash
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Displays character at current cursor position
+ *   - Non-printable chars shown as ^X (caret notation)
+ *   - If full=TRUE: printable chars shown as 'X'-, non-printable as ^X-
+ *   - If full=FALSE: characters shown without decoration
+ *   - Advances cursor position
+ *
+ * Notes:
+ *   - Used primarily for key binding displays and character references
+ *   - Caret notation converts control chars to visible form
+ *   - Full format useful for lists, compact format for inline display
+ *   - Part of character display utility functions
+ */
 void
 show_char PARM_2(char, ch, int, full)
 {
@@ -501,7 +953,32 @@ show_char PARM_2(char, ch, int, full)
   if (full) addch('-');
 }
 
-/* UNSHOW_CHAR -- Remove a character from the current position */
+/*
+ * unshow_char - Remove a previously displayed character by overwriting with spaces
+ *
+ * Erases a character that was displayed by show_char() by overwriting each
+ * position with spaces and restoring the cursor to its original position.
+ * Handles both full and compact display formats.
+ *
+ * Parameters:
+ *   ch - Character that was previously displayed (for format calculation)
+ *   full - Must match the full parameter used in original show_char() call
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Overwrites displayed character positions with spaces
+ *   - Moves cursor backward to erase each displayed character
+ *   - Restores cursor to position after the erased character
+ *   - Handles different widths for printable vs non-printable characters
+ *
+ * Notes:
+ *   - Must be called with same parameters as matching show_char() call
+ *   - Non-printable chars take 2 positions (^X), printable take 1
+ *   - Full format adds quotes and dash, requiring additional positions
+ *   - Used for dynamic character display updates and corrections
+ */
 void
 unshow_char PARM_2(char, ch, int, full)
 {
@@ -539,7 +1016,31 @@ unshow_char PARM_2(char, ch, int, full)
   move(ypos, xpos);
 }
 
-/* SHOW_STR -- Display the entire string at the current location */
+/*
+ * show_str - Display an entire string with character formatting
+ *
+ * Formats and displays a complete string using the same character formatting
+ * rules as show_char(). Calls form_str() to prepare the formatted version
+ * then displays it at the current cursor position.
+ *
+ * Parameters:
+ *   str - String to display (must not be NULL)
+ *   full - If TRUE, use full formatting for each character
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Creates formatted version of string in local buffer
+ *   - Displays formatted string at current cursor position
+ *   - Advances cursor to end of displayed string
+ *
+ * Notes:
+ *   - Uses form_str() to handle character formatting consistently
+ *   - Each character in string formatted according to show_char() rules
+ *   - Useful for displaying key sequences and formatted text
+ *   - Buffer size limited to LINELTH characters
+ */
 void
 show_str PARM_2(char *, str, int, full)
 {
@@ -550,7 +1051,35 @@ show_str PARM_2(char *, str, int, full)
   addstr(str_data);
 }
 
-/* GET_NUMBER -- Read an integer; Set no_input for just carriage return */
+/*
+ * get_number - Read integer input from user with editing and validation
+ *
+ * Interactive integer input function with full editing support including
+ * backspace, line clear, and overflow protection. Handles negative numbers
+ * if requested and provides visual feedback during input.
+ *
+ * Parameters:
+ *   allowneg - If TRUE, allows negative numbers (leading minus sign)
+ *
+ * Returns:
+ *   Entered number as long integer
+ *   0 if no input entered (sets no_input = TRUE)
+ *   -1 if user pressed escape (sets no_input = TRUE)
+ *
+ * Side Effects:
+ *   - Sets global no_input flag based on user input
+ *   - Displays characters as user types them
+ *   - Handles special keys: ^L/^R (redraw), ESC (abort), ^U (clear line)
+ *   - Supports backspace/delete for character deletion
+ *   - Limits input to 12 characters with overflow protection
+ *
+ * Notes:
+ *   - Prevents integer overflow by checking against BIGINT/10
+ *   - Negative sign only accepted as first character
+ *   - Visual editing with immediate character feedback
+ *   - Returns to beginning of line on ^U (line clear)
+ *   - Critical input function used throughout game interface
+ */
 long
 get_number PARM_1(int, allowneg)
 {
