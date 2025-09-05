@@ -148,8 +148,36 @@ Before making any changes to the legacy code, we must establish a robust testing
 
 **CRITICAL: Document Functions Before Modernization**
 
-Before making any code changes, every function must be analyzed and
-documented to preserve knowledge and ensure safe modernization.
+**REVISED STRATEGY: One File Per Session Approach**
+
+Due to the extensive nature of documenting 50+ source files, Phase 4 is now organized as a series of focused sessions, with each session documenting one complete file and committing immediately to preserve context.
+
+**Documentation Session Workflow:**
+
+1. **Session Preparation**:
+   - Load `_modernization/memory/PHASE_4_DOCUMENTATION_STRATEGY.md` to check progress
+   - Identify next priority file to document
+   - Read target file to understand its function structure
+
+2. **Documentation Process per File**:
+   - Use `document_functions.py` automation script for initial function analysis
+   - Manually review and enhance all function documentation in the file
+   - Focus on quality and completeness for one file at a time
+
+3. **Session Completion**:
+   - Git commit the fully documented file immediately
+   - Update progress tracking in strategy file
+   - Save session memory for next file continuation
+   - End session cleanly to preserve context
+
+**File Priority Order:**
+- **Priority 1**: Core Game Engine (mainA.c, dataA.c, combatA.c, moveA.c, etc.)
+- **Priority 2**: I/O and Data Management (ioX.c, iodataX.c, dataX.c, etc.)
+- **Priority 3**: User Interface (mainG.c, displayG.c, infoG.c, etc.)
+- **Priority 4**: Game Content (magicA.c, monsterA.c, npcA.c, etc.)
+- **Priority 5**: Remaining Interface and Utilities
+
+**Progress Tracking**: See `_modernization/memory/PHASE_4_DOCUMENTATION_STRATEGY.md` for detailed file prioritization and current progress.
 
 **Function Documentation Requirements:**
 
