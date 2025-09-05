@@ -24,7 +24,29 @@
 #include "hlightX.h"
 #include "caravanX.h"
 
-/* SORT_NEWS -- Resort the newspaper file */
+/*
+ * sort_news - Resort the newspaper file for specified turn
+ *
+ * Calls external sorting program to sort the news file for the given turn.
+ * The news file is named with the pattern newsfile.NNN where NNN is the
+ * turn number minus START_TURN. Uses system() call to execute external
+ * sorting program.
+ *
+ * Parameters:
+ *   newsturn - Turn number for which to sort news file
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Modifies external news file on disk
+ *   - Executes external system command
+ *   - May write to update log file in DEBUG mode
+ *
+ * Notes:
+ *   - Depends on external CONQ_SORT program
+ *   - File path construction is platform-specific (VMS vs others)
+ */
 void
 sort_news PARM_1(int, newsturn)
 {
@@ -45,7 +67,29 @@ sort_news PARM_1(int, newsturn)
   system(string);
 }
 
-/* RANDOM_NAME -- Generate a random name given the type */
+/*
+ * random_name - Generate a random name for the specified race
+ *
+ * Generates a random name string of variable length (3 to NAMELTH-2 characters).
+ * The name starts with a capital letter followed by lowercase letters.
+ * Uses rand_val() to generate random characters and lengths.
+ *
+ * Parameters:
+ *   str - Output string buffer to store generated name (must be at least NAMELTH bytes)
+ *   race - Race type for name generation (currently unused but reserved)
+ *
+ * Returns:
+ *   None (result stored in str parameter)
+ *
+ * Side Effects:
+ *   - Modifies the str buffer with null-terminated random name
+ *   - Uses global random number generator
+ *
+ * Notes:
+ *   - Race parameter is marked ARGSUSED (not currently used)
+ *   - Generated name length is random between 3 and NAMELTH-5+3 characters
+ *   - Characters range from 'a' to 'z' after first capital letter
+ */
 void
 random_name PARM_2( char *, str, int, race )
 {
@@ -62,6 +106,29 @@ random_name PARM_2( char *, str, int, race )
   }
   str[i] = '\0';
 }
+/*
+ * ntn_stats - Provide comprehensive information summary for each nation
+ *
+ * Displays detailed statistics for a specified nation including army counts
+ * (leaders, monsters, normal units), naval information (ships, armies carried,
+ * civilians), caravan data, cities, and items. Output is formatted for the
+ * update log file with fixed-width columns.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation structure to analyze (may be NULL)
+ *
+ * Returns:
+ *   None (output written to fupdate file)
+ *
+ * Side Effects:
+ *   - Writes formatted statistics to fupdate file
+ *   - Iterates through all nation's army, navy, caravan, city, and item lists
+ *
+ * Notes:
+ *   - Returns early if nation pointer is NULL
+ *   - Calculates averages for army sizes and naval statistics
+ *   - Counts civilians in both naval and caravan units
+ */
 
 /* NTN_STATS -- Provide information summary for each nation */
 void
@@ -173,6 +240,29 @@ ntn_stats PARM_1(NTN_PTR, n1_ptr)
   /* spread_sheet? UNIMPLEMENTED */
 }
 
+/*
+ * world_stats - Display comprehensive statistics on the world data
+ *
+ * Outputs formatted world statistics including map dimensions, demigod status,
+ * and total number of nations. Creates a detailed table showing statistics for
+ * all nations by calling ntn_stats() for each nation in the world.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (output written to fupdate file)
+ *
+ * Side Effects:
+ *   - Writes world summary and formatted table headers to fupdate file
+ *   - Calls ntn_stats() for each nation, generating detailed nation statistics
+ *
+ * Notes:
+ *   - Uses global world structure to access map size and nation data
+ *   - Displays demigod as "[none]" if LOGIN matches world.demigod
+ *   - Table format includes columns for armies, navies, caravans, cities, items
+ */
+
 /* WORLD_STATS -- Display statistics on the world data */
 void
 world_stats PARM_0(void)
@@ -202,12 +292,62 @@ world_stats PARM_0(void)
   putc('\n', fupdate);
 }
 
+/*
+ * mk_sect - Set the influence within the specified sector
+ *
+ * Marks a map sector as visible by setting the visibility data for the
+ * given coordinates. This is used as a callback function in map_loop()
+ * to mark areas of leader influence.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector to mark
+ *   y - Y coordinate of the sector to mark
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Modifies global visibility_data structure
+ *   - Sets the specified map location as visible (TRUE)
+ *
+ * Notes:
+ *   - Static function, only used within this file
+ *   - Used as callback in mark_leaders() function
+ *   - Coordinates should be validated by caller
+ */
+
 /* MK_SECT -- Set the influence within the sector */
 static void
 mk_sect PARM_2(int, x, int, y)
 {
   VIS_STORE(x, y, TRUE);
 }
+
+/*
+ * mark_leaders - Set has_seen list to indicate leader influence
+ *
+ * Marks map sectors as visible based on leader units' influence ranges.
+ * Initializes visibility data and iterates through the current nation's
+ * army list, marking areas around leader units as visible within their
+ * command influence range.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Allocates/initializes global visibility_data structure
+ *   - Modifies global army_tptr pointer
+ *   - Marks map sectors as visible within leader influence ranges
+ *
+ * Notes:
+ *   - Uses global ntn_ptr to access current nation's army list
+ *   - Skips duplicate processing for armies at same location
+ *   - Only processes leader-type armies that are on valid map coordinates
+ *   - Uses COMM_I_RANGE to determine influence radius
+ */
 
 /* MARK_LEADERS -- Set has_seen list to indicate leader influence */
 void
@@ -239,6 +379,34 @@ mark_leaders PARM_0(void)
   }
 
 }
+
+/*
+ * dice_tester - Provide interactive test routine for combat dice system
+ *
+ * Interactive testing utility that rolls combat dice multiple times and
+ * displays statistical analysis including frequency distribution, average,
+ * standard deviation, and visual histogram. Allows user to adjust number
+ * of dice and number of test rolls. Uses curses for display formatting.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Initializes combat roll system
+ *   - Uses curses library for screen display and user input
+ *   - Modifies global NUMDICE setting based on user input
+ *   - Clears screen and redraws display during operation
+ *
+ * Notes:
+ *   - Interactive function - runs until user presses 'Q'
+ *   - Default test count is 1000 rolls
+ *   - Supports 1-100 dice per roll
+ *   - Displays histogram with visual '*' characters
+ *   - Shows statistics including outliers and range violations
+ */
 
 /* DICE_TESTER -- Simply provide a nice test routine for the dice */
 void
