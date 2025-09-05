@@ -37,6 +37,29 @@ char *sct_status = NULL;
 /* production information */
 itemtype j_produced, m_produced;
 
+/*
+ * upd_init - Initialize data structures and files for world turn update
+ *
+ * Allocates memory for sector status tracking and opens the news file
+ * for writing turn results. This function sets up the global infrastructure
+ * needed for processing a complete world turn update.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Allocates global sct_status array for sector status tracking
+ *   - Opens news file for writing (fnews global file pointer)
+ *   - Calls abrt() if news file cannot be opened
+ *
+ * Notes:
+ *   - Uses global TURN and START_TURN to calculate news file number
+ *   - News filename format: "<newsfile>.XXX" where XXX is turn number
+ *   - Critical function - failure to open news file aborts entire update
+ */
 /* UPD_INIT -- Initialize update data storages */
 static void
 upd_init PARM_0(void)
@@ -52,6 +75,31 @@ upd_init PARM_0(void)
   }
 }
 
+/*
+ * upd_finish - Complete turn update by finalizing news and cleanup
+ *
+ * Finishes the world turn update by writing standard news headers,
+ * closing the news file, sorting news entries, and releasing allocated
+ * memory. Also increments the global turn counter.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Writes 5 standard news section headers to news file
+ *   - Closes news file (fnews)
+ *   - Increments global TURN counter
+ *   - Calls sort_news() to organize news entries
+ *   - Frees sct_status memory allocation
+ *
+ * Notes:
+ *   - News sections: Global Headlines, Common Market, Real Estate, War, Personal
+ *   - Uses roman_number() for year formatting in headers
+ *   - Must be called at end of every turn update to prevent memory leaks
+ */
 /* UPD_FINISH -- Release memory and close up shop */
 static void
 upd_finish PARM_0(void)
@@ -78,6 +126,30 @@ upd_finish PARM_0(void)
   free(sct_status);
 }
 
+/*
+ * upd_rovers - Relocate all roving units for all active nations
+ *
+ * Processes all active nations to identify and relocate units with rover
+ * status. Roving units automatically move to adjacent sectors based on
+ * AI logic and sector weights. This handles automated NPC movement.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Modifies army positions for units with rover status
+ *   - Updates global weights calculation for each nation
+ *   - Generates update log messages about relocation
+ *
+ * Notes:
+ *   - Only processes active nations (skips inactive/dead nations)
+ *   - Uses set_weights(FALSE) to calculate movement preferences
+ *   - Calls rove_army() for each army with rover_stat() true
+ *   - Part of automated NPC behavior system
+ */
 /* UPD_ROVERS -- Relocate all roving units */
 static void
 upd_rovers PARM_0(void)
@@ -106,6 +178,35 @@ upd_rovers PARM_0(void)
   }
 }
 
+/*
+ * upd_army - Update all army units for current nation including status, movement, and special events
+ *
+ * Comprehensive function that processes all army units for the current nation
+ * (ntn_ptr), handling status adjustments, movement calculations, leader management,
+ * unit births, healing, experience, and status transitions. This is the core
+ * army processing function called during each turn update.
+ *
+ * Parameters:
+ *   (none) - operates on global ntn_ptr (current nation)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Modifies army status, movement, health, and experience
+ *   - Creates new leader and monster units based on chance
+ *   - Adjusts spell points for caster units
+ *   - Handles siege status transitions
+ *   - Updates grouping and leadership relationships
+ *   - Writes news messages for births and promotions
+ *
+ * Notes:
+ *   - Two-pass algorithm: first checks groups/leaders, second sets movement
+ *   - Leader birth probability based on nation class and current leaders
+ *   - Monster recruitment only in spring for nations with orc magic
+ *   - Experience gain and healing rates vary by unit type and status
+ *   - Handles unit decay (undead units degrading over time)
+ */
 /* UPD_ARMY -- Adjust all of the army statuses and movements */
 static void
 upd_army PARM_0(void)
@@ -510,6 +611,30 @@ upd_army PARM_0(void)
   }
 }
 
+/*
+ * upd_navy - Update all naval units for current nation including status and movement
+ *
+ * Processes all navy units for the current nation, adjusting their status
+ * and movement capabilities. Handles spell effect removal, position validation,
+ * and status-based movement calculations for ships.
+ *
+ * Parameters:
+ *   (none) - operates on global ntn_ptr (current nation)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Removes spell effects from all naval units
+ *   - Relocates misplaced ships to nation capital
+ *   - Adjusts movement points based on unit status
+ *   - Transitions repair status back to carry status
+ *
+ * Notes:
+ *   - Ships in repair status (ST_REPAIR) automatically return to carry status
+ *   - Movement reduced to 75% for non-moving statuses, 100% otherwise
+ *   - Much simpler than army updates - no births, experience, or complex logic
+ */
 /* UPD_NAVY -- Adjust all of the navy statuses and movements */
 static void
 upd_navy PARM_0(void)
@@ -545,6 +670,32 @@ upd_navy PARM_0(void)
   }
 }
 
+/*
+ * upd_cvn - Update all caravan units for current nation including status and movement
+ *
+ * Processes all caravan units for the current nation, handling status
+ * adjustments, siege effects, and movement calculations. Similar to navy
+ * updates but with siege-specific logic for trade caravans.
+ *
+ * Parameters:
+ *   (none) - operates on global ntn_ptr (current nation)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Removes spell effects from all caravan units
+ *   - Relocates misplaced caravans to nation capital
+ *   - Applies siege restrictions (no movement, forced siege status)
+ *   - Adjusts movement points based on unit status
+ *   - Transitions repair status back to carry status
+ *
+ * Notes:
+ *   - Caravans affected by sector siege status unlike armies/navies
+ *   - Siege status (ST_SIEGED) automatically cleared if no siege active
+ *   - Movement set to 0 when sieged, normal calculation otherwise
+ *   - Uses CVN_* macros for caravan-specific field access
+ */
 /* UPD_CVN -- Adjust all of the caravan statuses and movements */
 static void
 upd_cvn PARM_0(void)
@@ -592,6 +743,32 @@ upd_cvn PARM_0(void)
   }
 }
 
+/*
+ * upd_military - Coordinate military updates for specified nations or all nations
+ *
+ * Main coordinator function that calls upd_army(), upd_navy(), and upd_cvn()
+ * for either a single specified nation or all active nations. Handles the
+ * military update phase of turn processing.
+ *
+ * Parameters:
+ *   cntry - Nation number to update, or UNOWNED for all nations
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Initializes message system for each nation
+ *   - Allocates sector status memory for each nation
+ *   - Calls all three military update functions (army, navy, caravan)
+ *   - Finalizes multi-line messages for each nation
+ *   - Generates debug output if DEBUG defined
+ *
+ * Notes:
+ *   - Part of main update sequence, called after combat resolution
+ *   - Skips inactive nations automatically
+ *   - Uses msg_cinit/msg_cfinish for military summary messages
+ *   - Memory allocation/deallocation handled per nation for efficiency
+ */
 /* UPD_MILITARY -- Call all of the appropriate army, navy, caravan routines */
 void
 upd_military PARM_1(int, cntry)
@@ -646,6 +823,34 @@ upd_military PARM_1(int, cntry)
     
 }
 
+/*
+ * upd_input - Execute player commands and automate NPC nation moves
+ *
+ * Reads and executes player command files for all nations, then performs
+ * automated moves for nations with automation enabled or NPC nations.
+ * Processes nations in specific order: monsters first, then random order
+ * for player nations.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Executes player command files via execute() function
+ *   - Performs automated moves via move_for_ntn() for qualifying nations
+ *   - Updates nation processing status to prevent double-processing
+ *   - Calls verify_data() for data integrity checking
+ *   - Generates update log messages for each nation processed
+ *
+ * Notes:
+ *   - God (UNOWNED) commands processed first
+ *   - Monster nations processed before player nations for game balance
+ *   - Random processing order prevents turn order advantages
+ *   - Automation triggers if execute() returns 0 and nation has automove flag
+ *   - NPC nations always get automated moves regardless of execute() result
+ */
 /* UPD_INPUT -- Read in the exec files and automate nation moves */
 static void
 upd_input PARM_0(void)
@@ -720,6 +925,30 @@ upd_input PARM_0(void)
   verify_data(__FILE__, __LINE__);
 }
 
+/*
+ * upd_spells - Process and apply effects of all pending spells
+ *
+ * Iterates through the global spell list (upd_spl_list) and applies
+ * the effects of all spells that were cast during the turn. Currently
+ * appears to be a framework with no implemented spell effects.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Processes spells from global upd_spl_list
+ *   - Generates update log messages for unknown spell types
+ *   - Would modify game state based on spell effects (unimplemented)
+ *
+ * Notes:
+ *   - Framework function - switch statement has no implemented cases
+ *   - Handles spell caster identification (god, nation, or unknown)
+ *   - Logs errors for unrecognized spell types
+ *   - Part of main update sequence between input processing and rovers
+ */
 /* UPD_SPELLS -- Perform the spells in various sectors */
 static void
 upd_spells PARM_0(void)
@@ -760,6 +989,32 @@ upd_spells PARM_0(void)
 
 }
 
+/*
+ * score_ntn - Calculate comprehensive score for a single nation
+ *
+ * Computes a nation's power score based on multiple factors including
+ * magic powers, military strength, population, resources, and territory.
+ * Used for ranking nations and determining relative power levels.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation structure to score
+ *
+ * Returns:
+ *   (void) - updates n1_ptr->score directly
+ *
+ * Side Effects:
+ *   - Modifies the score field of the passed nation structure
+ *
+ * Notes:
+ *   - Previous score contributes 50% to new score (momentum factor)
+ *   - Magic powers: 2 points each (military, civilian, wizardry)
+ *   - Leaders: 1 point each
+ *   - Military: 2 points per percent of world military
+ *   - Population: 1 point per percent of world population
+ *   - Resources: 1 point per percent of world materials (each type)
+ *   - Territory: 1 point per percent of world sectors
+ *   - Score calculation prevents integer overflow with BIGINT limits
+ */
 /* SCORE_NTN -- Compute the score for a single nation */
 static void
 score_ntn PARM_1(NTN_PTR, n1_ptr)
@@ -805,6 +1060,31 @@ score_ntn PARM_1(NTN_PTR, n1_ptr)
 /* this looks familiar */
 #define OLD_POP(x, y)	(old_pop[(x) + (y) * MAPX])
 
+/*
+ * upd_seenem - Check for and establish first contact between nations
+ *
+ * Callback function used with map_loop() to detect when two nations
+ * encounter each other for the first time. Updates diplomatic status
+ * from UNMET to NEUTRAL when nations meet.
+ *
+ * Parameters:
+ *   x - Map x-coordinate to check
+ *   y - Map y-coordinate to check
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Changes diplomatic status from DIP_UNMET to DIP_NEUTRAL for both nations
+ *   - Writes news messages about nations meeting
+ *   - Generates update log messages
+ *
+ * Notes:
+ *   - Used as callback function with map_loop() from leader locations
+ *   - Only affects nations that haven't met before (DIP_UNMET status)
+ *   - Bidirectional relationship - updates both nations' diplomatic arrays
+ *   - Critical for diplomacy system initialization
+ */
 /* UPD_SEENEM -- Check if two nations have met yet */
 static void
 upd_seenem PARM_2(int, x, int, y)
@@ -827,6 +1107,29 @@ upd_seenem PARM_2(int, x, int, y)
   }
 }
 
+/*
+ * upd_cntreach - Count relocation attractiveness of neighboring sectors
+ *
+ * Callback function used with map_loop() to calculate total attractiveness
+ * of sectors surrounding a population center. Used in population migration
+ * calculations to determine where civilians will relocate.
+ *
+ * Parameters:
+ *   x - Map x-coordinate to evaluate
+ *   y - Map y-coordinate to evaluate
+ *
+ * Returns:
+ *   (void) - accumulates results in global_int
+ *
+ * Side Effects:
+ *   - Adds sector reach value to global_int accumulator
+ *
+ * Notes:
+ *   - Used as callback with map_loop() during population redistribution
+ *   - get_reach() returns attractiveness value for sector (0 if none)
+ *   - global_int serves as accumulator for total neighboring attractiveness
+ *   - Part of civilian population migration system
+ */
 /* UPD_CNTREACH -- Count the relocation value of neighboring sectors */
 static void
 upd_cntreach PARM_2(int, x, int, y)
@@ -843,6 +1146,32 @@ upd_cntreach PARM_2(int, x, int, y)
 long *old_pop = NULL;
 int x_focus, y_focus;
 
+/*
+ * upd_movepop - Move population from source sector to destination based on attractiveness
+ *
+ * Callback function used with map_loop() to redistribute population from
+ * a focal sector to surrounding attractive sectors. Calculates migration
+ * amounts based on relative attractiveness and available population.
+ *
+ * Parameters:
+ *   x - Destination sector x-coordinate
+ *   y - Destination sector y-coordinate
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Reduces population in source sector (x_focus, y_focus)
+ *   - Increases population in destination sector (x, y)
+ *   - Uses OLD_POP() macro to access pre-migration population levels
+ *
+ * Notes:
+ *   - Used as callback with map_loop() for population redistribution
+ *   - Migration amount = (sector_attractiveness * source_population) / total_attractiveness
+ *   - Uses global variables x_focus, y_focus for source sector coordinates
+ *   - global_int contains total attractiveness from previous upd_cntreach() calls
+ *   - Part of civilian population migration system
+ */
 /* UPD_MOVEPOP -- Relocate civilians based on sector values */
 static void
 upd_movepop PARM_2(int, x, int, y)
@@ -860,6 +1189,31 @@ upd_movepop PARM_2(int, x, int, y)
   }
 }
 
+/*
+ * wrld_totals - Calculate global world statistics from all active nations
+ *
+ * Computes world-wide totals for materials, population, military, territory,
+ * and scores by summing values from all active non-monster nations. These
+ * totals are used for relative scoring and percentage calculations.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void) - updates global WORLD* variables
+ *
+ * Side Effects:
+ *   - Updates WORLDMTRLS[] array with total materials
+ *   - Updates WORLDCIV, WORLDMIL, WORLDSCT, WORLDSCORE, WORLDNTN globals
+ *   - Calls ntn_totals() for each nation to recalculate nation statistics
+ *
+ * Notes:
+ *   - Initializes all world totals to 1 to prevent division by zero
+ *   - Skips monster nations (they don't contribute to world economy)
+ *   - Uses BIGINT/BIGITEM limits to prevent integer overflow
+ *   - Called before and after nation updates to maintain current statistics
+ *   - Essential for percentage-based calculations throughout the game
+ */
 /* WRLD_TOTALS -- Routine to compute all of the world totals */
 static void
 wrld_totals PARM_0(void)
@@ -934,6 +1288,30 @@ wrld_totals PARM_0(void)
   }
 }
 
+/*
+ * ucheck_tgsetting - Validate if sector designation supports tradegood production
+ *
+ * Checks whether a sector's designation is appropriate for producing
+ * a specific tradegood. Different tradegoods require different types
+ * of sectors (farms, cities, specific designations, etc.).
+ *
+ * Parameters:
+ *   value - Required designation value from tradegood definition
+ *   setting - Actual sector designation to check
+ *
+ * Returns:
+ *   TRUE if designation supports tradegood production, FALSE otherwise
+ *
+ * Side Effects:
+ *   (none)
+ *
+ * Notes:
+ *   - MAJ_NONE value means tradegood must be actively used (not none)
+ *   - MAJ_FARM value accepts any farming sector type
+ *   - Other values require exact match or better supply center
+ *   - Cities can substitute for lesser designations they contain
+ *   - Used during tradegood processing to validate production eligibility
+ */
 /* UCHECK_TGSETTING -- Is the designation right for the tradegood */
 static int
 ucheck_tgsetting PARM_2(int, value, int, setting)
@@ -958,6 +1336,37 @@ ucheck_tgsetting PARM_2(int, value, int, setting)
   return(FALSE);
 }
 
+/*
+ * upd_nations - Comprehensive nation update including population, statistics, and attributes
+ *
+ * Main function for updating all nation-level statistics including population
+ * growth, migration, resource production, attribute calculations, and national
+ * scoring. Handles the complex nation simulation including economic, social,
+ * and political factors.
+ *
+ * Parameters:
+ *   which - Nation number to update, or UNOWNED for all nations
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Updates population levels in all sectors
+ *   - Handles population growth and migration
+ *   - Recalculates nation attributes (mining, knowledge, currency, etc.)
+ *   - Updates diplomatic relationships when nations meet
+ *   - Processes tradegood effects on nation attributes
+ *   - Updates nation scores and world statistics
+ *   - Eliminates nations that fall below survival thresholds
+ *
+ * Notes:
+ *   - Extremely complex function handling many game systems
+ *   - Population growth based on reproduction rate and seasonal factors
+ *   - Migration system redistributes population to attractive sectors
+ *   - Attribute calculations include magic, infrastructure, and economic factors
+ *   - Seasonal farm upgrades (farm -> fertile -> fruitful -> farm cycle)
+ *   - Nation elimination if no cities or insufficient population+military
+ */
 /* UPD_NATIONS -- Now update population and nation statistics */
 void
 upd_nations PARM_1(int, which)
@@ -1415,6 +1824,41 @@ upd_nations PARM_1(int, which)
   country = hold_cntry;
 }
 
+/*
+ * update - Execute complete world turn update sequence
+ *
+ * Master function that coordinates the entire turn update process for
+ * the game world. Calls all major update subsystems in the correct
+ * sequence to process a complete game turn.
+ *
+ * Parameters:
+ *   (none)
+ *
+ * Returns:
+ *   (void)
+ *
+ * Side Effects:
+ *   - Processes complete world turn affecting all game state
+ *   - Updates all nations, armies, navies, caravans
+ *   - Handles combat, economics, population, and diplomacy
+ *   - Generates news and update reports
+ *   - Increments turn counter
+ *
+ * Notes:
+ *   Update sequence:
+ *   1. Initialize (upd_init)
+ *   2. Process player input and NPC automation (upd_input)
+ *   3. Handle spell effects (upd_spells)
+ *   4. Relocate rover units (upd_rovers)
+ *   5. Resolve combat (combat)
+ *   6. Update territories and sieges (upd_capture)
+ *   7. Update sector statuses (upd_sectors)
+ *   8. Process resource production (upd_produce)
+ *   9. Handle resource consumption (upd_consume)
+ *   10. Update military units (upd_military)
+ *   11. Update nations and populations (upd_nations)
+ *   12. Finalize and cleanup (upd_finish)
+ */
 /* UPDATE -- Go through the entire updating routine list */
 void
 update PARM_0(void)
