@@ -58,6 +58,26 @@ static CDIST_PTR distance_list = NULL;
 /* strength increment */
 static int strength_inc;
 
+/*
+ * add_cbmail - Add a nation to the combat mail recipient list
+ *
+ * Adds a nation's ID to the global combat mail list for receiving
+ * battle reports. Checks for duplicates and handles overflow.
+ *
+ * Parameters:
+ *   cntry - Nation ID to add to the mail list
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Modifies global cb_mail array
+ *   - Prints warning to fupdate if MAX_COMBAT limit reached
+ *
+ * Notes:
+ *   - Prevents duplicate entries for the same nation
+ *   - Uses -1 as empty slot marker in cb_mail array
+ */
 /* ADD_CBMAIL -- Add to the list of nations getting mail */
 static void
 add_cbmail PARM_1(int, cntry)
@@ -76,6 +96,29 @@ add_cbmail PARM_1(int, cntry)
   fprintf(fupdate, "    WARNING: out of slots for mail, increase MAX_COMBAT\n");
 }
 
+/*
+ * init_combat_roll - Initialize the combat dice roll system
+ *
+ * Sets up the combat dice rolling mechanism by calculating appropriate
+ * dice boundaries and limits based on the NUMDICE configuration. Ensures
+ * dice rolls will produce results scaled to a 0-100 range.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Modifies global cb_boundary and cb_dicelimit variables
+ *   - May reset NUMDICE to 10 if invalid (outside 1-100 range)
+ *   - Prints warning to stderr if NUMDICE is invalid
+ *
+ * Notes:
+ *   - Calculates cb_boundary as multiple of 100 divisible by NUMDICE
+ *   - Sets cb_dicelimit for individual die range
+ *   - Called once during combat system initialization
+ */
 /* INIT_COMBAT_ROLL -- intialize the combat roll settings */
 void
 init_combat_roll PARM_0(void)
@@ -97,6 +140,28 @@ init_combat_roll PARM_0(void)
   cb_dicelimit = (cb_boundary / NUMDICE) + 1;
 }
 
+/*
+ * combat_roll - Generate a random combat roll value
+ *
+ * Generates a pseudo-random combat result by rolling NUMDICE dice
+ * and scaling the result to a 0-100 range. Used for determining
+ * battle outcomes, luck factors, and damage calculations.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Integer between 0 and 100 representing combat roll result
+ *
+ * Side Effects:
+ *   - None (pure function)
+ *
+ * Notes:
+ *   - Uses rand_val() for individual die rolls
+ *   - Requires init_combat_roll() to be called first
+ *   - Higher values generally indicate better performance
+ *   - Used throughout combat resolution system
+ */
 /* COMBAT_ROLL -- generate a combat roll, between 0 and 100 */
 int
 combat_roll PARM_0(void)
@@ -110,6 +175,30 @@ combat_roll PARM_0(void)
   return((100 * hold) / cb_boundary);
 }
 
+/*
+ * new_cunit - Allocate and initialize a new combat unit structure
+ *
+ * Creates a new combat unit (CUNIT_STRUCT) for tracking units during
+ * battle resolution. Initializes all fields to default values and
+ * sets the unit type and owner.
+ *
+ * Parameters:
+ *   type - Combat unit type (UNIT_ARMY, UNIT_NAVY, or UNIT_CVN)
+ *
+ * Returns:
+ *   Pointer to newly allocated CUNIT_STRUCT, or calls abrt() on failure
+ *
+ * Side Effects:
+ *   - Allocates memory that must be freed by caller
+ *   - Sets global country as unit owner
+ *   - Calls abrt() and prints error on allocation failure
+ *
+ * Notes:
+ *   - Initializes all numeric fields to 0
+ *   - Sets ui.army_p to NULL (caller must set appropriate union member)
+ *   - Used during battle grouping phase
+ *   - Memory is freed during wipe_map() cleanup
+ */
 /* NEW_CUNIT -- Allocate storage for a combat unit */
 static CUNIT_PTR
 new_cunit PARM_1(Ucombattype, type)
@@ -135,6 +224,33 @@ new_cunit PARM_1(Ucombattype, type)
   return(cu_ptr);
 }
 
+/*
+ * distance_add - Add a unit to the distance combat list
+ *
+ * Adds a combat unit to the global distance_list for units that
+ * can perform ranged attacks. Maintains a linked list of distance
+ * attackers with their coordinates.
+ *
+ * Parameters:
+ *   cu_ptr - Combat unit pointer to add to distance list
+ *   x - X coordinate of the unit's location
+ *   y - Y coordinate of the unit's location
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Allocates memory for CDIST_STRUCT
+ *   - Modifies global distance_list linked list
+ *   - Updates static last_dist pointer for efficient list building
+ *   - Calls abrt() on memory allocation failure
+ *
+ * Notes:
+ *   - Returns early if cu_ptr is NULL
+ *   - Maintains list order for processing efficiency
+ *   - Used for units with distant_stat() capability
+ *   - Memory freed during wipe_map() cleanup
+ */
 /* DISTANCE_ADD -- Add to the distance list */
 static void
 distance_add PARM_3(CUNIT_PTR, cu_ptr, int, x, int, y)
@@ -167,6 +283,34 @@ distance_add PARM_3(CUNIT_PTR, cu_ptr, int, x, int, y)
   }
 }
 
+/*
+ * combat_init - Initialize the combat system for a game turn
+ *
+ * Performs one-time setup for combat resolution including finding
+ * undead unit types, validating combat parameters, initializing dice
+ * rolling, and allocating sector combat tracking memory.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Sets global zombie_type, lich_type, wraith_type, nazgul_type
+ *   - Calls init_combat_roll() once per game
+ *   - Validates and resets combat constants if out of range
+ *   - Allocates global sct_combval map memory
+ *   - Prints initialization messages to fupdate
+ *
+ * Notes:
+ *   - Called once per combat() invocation
+ *   - Resets invalid DAMAGE_LIMIT (must be 25-95%)
+ *   - Resets invalid AVG_DAMAGE (must be 25-75%)
+ *   - Resets invalid OVERMATCH_ADJ (must be 5-50%)
+ *   - Resets invalid PMINDAMAGE (must be 0-10%)
+ *   - Uses unitbyname() to find special undead unit types
+ */
 /* COMBAT_INIT -- Initialize combat settings */
 static void
 combat_init PARM_0(void)
@@ -221,6 +365,37 @@ combat_init PARM_0(void)
   }
 }
 
+/*
+ * damage_unit - Apply battle damage to a combat unit
+ *
+ * Calculates and applies damage to a specific combat unit based on
+ * damage percentage and unit type. Handles armies, navies, and caravans
+ * differently, including special cases for leaders, monsters, and ships.
+ *
+ * Parameters:
+ *   cu_ptr - Combat unit to damage
+ *   dval - Damage percentage (0-100)
+ *   sval - Combat group type (affects reporting)
+ *
+ * Returns:
+ *   Number of deaths caused (positive for normal units, negative for undead)
+ *
+ * Side Effects:
+ *   - Modifies unit sizes, efficiency, and status
+ *   - May destroy ships, kill crew, or damage cargo
+ *   - Updates mercenary reputation for mercenary units
+ *   - Sends combat reports via msg_conquer()
+ *   - May create zombie/lich/wraith/nazgul units from deaths
+ *   - Updates global strength_inc for monster kills
+ *
+ * Notes:
+ *   - Leaders die on percentage chance rather than size reduction
+ *   - Monsters are checked individually for death
+ *   - Naval damage affects ships, crew, cargo, and transported units
+ *   - Caravan damage destroys wagons and kills passengers/crew
+ *   - Undead units return negative death counts
+ *   - Updates cu_ptr->damage field with damage percentage
+ */
 /* DAMAGE_UNIT -- Inflict a given damage amount to a given unit */
 static int
 damage_unit PARM_3(CUNIT_PTR, cu_ptr, int, dval, Cgrptype, sval)
@@ -660,6 +835,36 @@ damage_unit PARM_3(CUNIT_PTR, cu_ptr, int, dval, Cgrptype, sval)
   return(deaths);
 }
 
+/*
+ * cbval_army - Calculate combat bonus for an army unit
+ *
+ * Computes the total combat effectiveness modifier for an army unit
+ * based on nation bonuses, unit type, status, terrain, fortifications,
+ * magical enhancements, and efficiency. Used in combat value calculations.
+ *
+ * Parameters:
+ *   owner_id - Nation ID that owns the unit
+ *   a1_ptr - Army unit to calculate bonus for
+ *   sideval - Combat group of this unit (CGRP_ATTACKER, CGRP_DEFENDER, etc.)
+ *   othside - Combat group of the enemy
+ *
+ * Returns:
+ *   Combat bonus percentage modifier (can be negative)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base value starts at 0, bonuses/penalties are added
+ *   - Mercenaries use MERCATT/MERCDEF instead of nation bonuses
+ *   - Attackers get attack bonuses, defenders get defense bonuses
+ *   - Terrain bonuses apply based on unit status and location
+ *   - Flying units get +20% bonus
+ *   - Magically enhanced units get +30% bonus
+ *   - Speed affects combat: SLOW +40%, MARCH -40%
+ *   - Efficiency reduces bonus: penalty = bonus * (100-eff) / 200
+ *   - Grouped units get +10% morale bonus (non-leaders)
+ */
 /* CBVAL_ARMY -- Combat bonus of a given unit */
 static int
 cbval_army PARM_4(int, owner_id, ARMY_PTR, a1_ptr, Cgrptype, sideval,
@@ -790,6 +995,34 @@ cbval_army PARM_4(int, owner_id, ARMY_PTR, a1_ptr, Cgrptype, sideval,
   return(hold);
 }
 
+/*
+ * cbval_navy - Calculate combat bonus for a naval unit
+ *
+ * Computes combat effectiveness modifier for naval units, with different
+ * bonuses depending on whether the ship is on water or land. Includes
+ * speed, magical, and terrain modifiers.
+ *
+ * Parameters:
+ *   owner_id - Nation ID that owns the naval unit
+ *   y1_ptr - Navy unit to calculate bonus for
+ *   sideval - Combat group of this unit
+ *
+ * Returns:
+ *   Combat bonus percentage modifier (based on FLEET_CBVAL)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base value is FLEET_CBVAL (typically naval combat strength)
+ *   - On water: MARCH speed +40%, SLOW speed -40%
+ *   - On land: gets terrain and fortification bonuses
+ *   - MC_MARINE and MC_SAILOR magic give +20% each
+ *   - PROTECTED status gives +30% bonus
+ *   - Magical enhancement gives +30% bonus
+ *   - Efficiency reduces bonus: penalty = bonus * (100-eff[0]) / 200
+ *   - Naval units can fight effectively on both land and sea
+ */
 /* CBVAL_NAVY -- Combat bonus of a given unit */
 static int
 cbval_navy PARM_3(int, owner_id, NAVY_PTR, y1_ptr, Cgrptype, sideval)
@@ -865,6 +1098,34 @@ cbval_navy PARM_3(int, owner_id, NAVY_PTR, y1_ptr, Cgrptype, sideval)
   return(hold);
 }
 
+/*
+ * cbval_cvn - Calculate combat bonus for a caravan unit
+ *
+ * Computes combat effectiveness for caravan units, which are primarily
+ * defensive. Speed penalties apply as caravans are slow-moving trade units
+ * not designed for combat.
+ *
+ * Parameters:
+ *   owner_id - Nation ID that owns the caravan
+ *   v1_ptr - Caravan unit to calculate bonus for
+ *   sideval - Combat group of this unit (usually CGRP_PROTECTED)
+ *
+ * Returns:
+ *   Combat bonus percentage modifier (based on WAGON_CBVAL)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base value is WAGON_CBVAL (typically low combat effectiveness)
+ *   - MARCH speed gives -20% penalty (caught unprepared)
+ *   - SLOW speed gives +20% bonus (well-prepared defensive position)
+ *   - Gets terrain defense bonuses
+ *   - PROTECTED/FORTIFIED status adds fortification bonuses if allied
+ *   - Magical enhancement gives +30% bonus
+ *   - Efficiency reduces bonus: penalty = bonus * (100-eff) / 200
+ *   - Caravans are primarily non-combat economic units
+ */
 /* CBVAL_CVN -- Combat bonus of a given unit */
 static int
 cbval_cvn PARM_3(int, owner_id, CVN_PTR, v1_ptr, Cgrptype, sideval)
@@ -916,6 +1177,32 @@ cbval_cvn PARM_3(int, owner_id, CVN_PTR, v1_ptr, Cgrptype, sideval)
   return(hold);
 }
 
+/*
+ * cb_destval - Calculate unit's fortification destruction potential
+ *
+ * Determines how much damage a unit can inflict against fortifications.
+ * Only attacking army units with fortification-damaging capability can
+ * destroy defensive structures.
+ *
+ * Parameters:
+ *   cu_ptr - Combat unit to evaluate
+ *   sd_val - Unit's combat group type
+ *   oth_val - Target's combat group type
+ *
+ * Returns:
+ *   Destruction value (0 if unit cannot damage fortifications)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Only works for army units attacking fortified positions
+ *   - Requires unit to have a_damfort() capability
+ *   - Leaders contribute 1 point of destruction
+ *   - Regular units contribute (strength * capt_val) / 10
+ *   - Used to damage city fortifications during siege combat
+ *   - Does not apply to naval or caravan units
+ */
 /* CB_DESTVAL -- Destructive potential of the unit */
 static int
 cb_destval PARM_3(CUNIT_PTR, cu_ptr, Cgrptype, sd_val, Cgrptype, oth_val)
@@ -944,6 +1231,34 @@ cb_destval PARM_3(CUNIT_PTR, cu_ptr, Cgrptype, sd_val, Cgrptype, oth_val)
   return(hold);
 }
 
+/*
+ * cb_value - Calculate total combat value of a unit
+ *
+ * Computes the complete combat effectiveness of a unit by combining
+ * base value (100) with unit-specific bonuses, cover bonuses, and
+ * magical sector bonuses. This is the primary combat calculation.
+ *
+ * Parameters:
+ *   cs_ptr - Combat side containing the unit
+ *   cu_ptr - Combat unit to evaluate
+ *   sd_val - Unit's combat group type
+ *   oth_val - Enemy's combat group type
+ *
+ * Returns:
+ *   Total combat value (base 100 + all modifiers)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base combat value is always 100
+ *   - Calls cbval_army(), cbval_navy(), or cbval_cvn() for unit bonuses
+ *   - Adds attack_cover bonus for attackers vs fortified enemies
+ *   - Adds fort_cover bonus for fortified defenders
+ *   - Includes magical sector bonuses via mgk_sctval()
+ *   - Invalid nation IDs return base value only
+ *   - Core function used in all combat calculations
+ */
 /* CB_VALUE -- Return the combat value of a given unit */
 static int
 cb_value PARM_4(CSIDE_PTR, cs_ptr, CUNIT_PTR, cu_ptr,
@@ -1003,6 +1318,35 @@ cb_value PARM_4(CSIDE_PTR, cs_ptr, CUNIT_PTR, cu_ptr,
   return(hold);
 }
 
+/*
+ * get_cside - Retrieve or create a combat side structure
+ *
+ * Finds an existing combat side for a nation or creates a new one.
+ * The sector owner always gets position 0, other nations are assigned
+ * available slots. Handles allocation and initialization.
+ *
+ * Parameters:
+ *   cb_ptr - Combat structure containing the sides
+ *   ntnnum - Nation ID to find or create side for
+ *   x - X coordinate of combat location
+ *   y - Y coordinate of combat location
+ *
+ * Returns:
+ *   Pointer to CSIDE_STRUCT, or NULL if MAX_COMBAT limit reached
+ *
+ * Side Effects:
+ *   - May allocate memory for new CSIDE_STRUCT
+ *   - Initializes all side statistics and unit lists
+ *   - Prints error if MAX_COMBAT limit exceeded
+ *   - Calls abrt() on memory allocation failure
+ *
+ * Notes:
+ *   - Sector owner always placed in position 0
+ *   - Other nations assigned to first available slot
+ *   - Initializes all combat group arrays and statistics
+ *   - Sets owner, clears spy flags, zeros all counters
+ *   - Memory freed during wipe_map() cleanup
+ */
 /* GET_CSIDE -- retrieve the side structure from within a combat */
 static CSIDE_PTR
 get_cside PARM_4(COMBAT_PTR, cb_ptr, int, ntnnum, int, x, int, y)
@@ -1069,6 +1413,33 @@ get_cside PARM_4(COMBAT_PTR, cb_ptr, int, ntnnum, int, x, int, y)
   return(cs_ptr);
 }
 
+/*
+ * get_combat - Retrieve or create a combat structure for a location
+ *
+ * Searches the global combat_list for an existing combat at the given
+ * coordinates, or creates a new combat structure if none exists.
+ * Maintains a linked list of all active combats.
+ *
+ * Parameters:
+ *   x - X coordinate of combat location
+ *   y - Y coordinate of combat location
+ *
+ * Returns:
+ *   Pointer to COMBAT_STRUCT for the location
+ *
+ * Side Effects:
+ *   - May allocate memory for new COMBAT_STRUCT
+ *   - Adds new combat to global combat_list
+ *   - Calls abrt() on memory allocation failure
+ *
+ * Notes:
+ *   - Searches existing combats by coordinates first
+ *   - Creates new combat if none found at location
+ *   - Initializes all cside pointers to NULL
+ *   - New combats added to front of combat_list
+ *   - Memory freed during wipe_map() cleanup
+ *   - Each sector can have at most one combat structure
+ */
 /* GET_COMBAT -- retrieve/build a combat location */
 static COMBAT_PTR
 get_combat PARM_2(int, x, int, y)
@@ -1110,6 +1481,30 @@ get_combat PARM_2(int, x, int, y)
   return(cb_ptr);
 }
 
+/*
+ * calc_relsize - Calculate relative combat size of a unit
+ *
+ * Determines the effective "size" of a unit for combat calculations.
+ * Different unit types use different size metrics: army strength,
+ * naval crew capacity, or caravan crew count.
+ *
+ * Parameters:
+ *   cu_ptr - Combat unit to calculate size for
+ *
+ * Returns:
+ *   Relative size value (0 if invalid unit)
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Army units: uses strength (monsters use strength * minsth)
+ *   - Naval units: sums crew * holds for all ship types
+ *   - Caravan units: uses crew * size (total personnel)
+ *   - Used for proportional damage calculations
+ *   - Affects combat weight in battle resolution
+ *   - Zero size units are excluded from combat
+ */
 /* CALC_RELSIZE -- Determine the relative size of the unit */
 static long
 calc_relsize PARM_1(CUNIT_PTR, cu_ptr)
@@ -1159,6 +1554,36 @@ calc_relsize PARM_1(CUNIT_PTR, cu_ptr)
   return(hold);
 }
 
+/*
+ * battle_grouping - Organize all military units into combat groups
+ *
+ * Scans all active nations and their military units (armies, navies,
+ * caravans) to organize them into combat structures by location.
+ * Determines combat roles and builds the complete battle setup.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Creates combat structures for each location with military units
+ *   - Assigns units to combat groups based on their status
+ *   - Builds linked lists of combat units per group
+ *   - Calculates cover bonuses for units providing cover
+ *   - Tracks undead units for zombie generation
+ *   - Adds distance attackers to distance_list
+ *
+ * Notes:
+ *   - Excludes agents and scouts (with probability PSCOUT)
+ *   - Army units assigned to: SWEEPER, ATTACKER, DEFENDER, PROTECTED, FORTIFIED
+ *   - Naval units: ATTACKER (on water) or PROTECTED (on land)
+ *   - Caravans always assigned to PROTECTED group
+ *   - Units with cover bonus contribute to attack_cover or fort_cover
+ *   - Invalid map coordinates are skipped
+ *   - Core function for combat setup phase
+ */
 /* BATTLE_GROUPING -- Gather all of the units into their respective sectors */
 static void
 battle_grouping PARM_0(void)
@@ -1312,6 +1737,32 @@ battle_grouping PARM_0(void)
   }
 }
 
+/*
+ * join_sides - Merge two allied combat sides into one
+ *
+ * Combines all units and statistics from cs2_ptr into cs1_ptr,
+ * effectively merging two allied factions into a single combat
+ * side. Used when processing diplomatic alliances.
+ *
+ * Parameters:
+ *   cs1_ptr - Destination combat side (receives merged units)
+ *   cs2_ptr - Source combat side (units moved from here)
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Moves all unit lists from cs2_ptr to cs1_ptr
+ *   - Adds size totals from cs2_ptr to cs1_ptr
+ *   - cs2_ptr left in undefined state (caller must free)
+ *
+ * Notes:
+ *   - Processes all combat groups (SWEEPER through PROTECTED)
+ *   - Maintains linked list integrity when merging
+ *   - Preserves unit order within each group
+ *   - cs2_ptr should be freed by caller after join
+ *   - Used during merge_allies() processing
+ */
 /* JOIN_SIDES -- join two sides into one */
 static void
 join_sides PARM_2(CSIDE_PTR, cs1_ptr, CSIDE_PTR, cs2_ptr)
@@ -1346,6 +1797,33 @@ join_sides PARM_2(CSIDE_PTR, cs1_ptr, CSIDE_PTR, cs2_ptr)
   }
 }
 
+/*
+ * merge_allies - Combine allied nations into unified combat sides
+ *
+ * Processes all combat sides to identify and merge mutual allies
+ * into single combat factions. Handles complex alliance webs and
+ * ensures consistent diplomatic relationships.
+ *
+ * Parameters:
+ *   cb_ptr - Combat structure containing multiple sides
+ *
+ * Returns:
+ *   Number of remaining combat sides after merging
+ *
+ * Side Effects:
+ *   - Merges allied combat sides using join_sides()
+ *   - Frees memory of absorbed sides
+ *   - Compacts side array to remove empty slots
+ *   - May change side ownership if smaller ally absorbs larger
+ *
+ * Notes:
+ *   - Requires mutual alliance (both nations allied to each other)
+ *   - Verifies alliance compatibility with all existing allies
+ *   - Prevents merging if conflicting diplomatic relationships exist
+ *   - Updates num_total count as sides are merged
+ *   - Side ownership may transfer based on relative sizes
+ *   - Complex algorithm handles multi-way alliance scenarios
+ */
 /* MERGE_ALLIES -- join allies together into the same groups */
 static int
 merge_allies PARM_1(COMBAT_PTR, cb_ptr)
@@ -1465,6 +1943,33 @@ merge_allies PARM_1(COMBAT_PTR, cb_ptr)
   return(num_total);
 }
 
+/*
+ * set_hostilities - Calculate combat hostility levels between sides
+ *
+ * Determines which combat sides will actually fight each other based
+ * on diplomatic relationships and sector ownership. Sets up the
+ * combat interest matrix for battle resolution.
+ *
+ * Parameters:
+ *   cb_ptr - Combat structure containing all sides
+ *   num_there - Number of active combat sides
+ *
+ * Returns:
+ *   Number of potential battles detected (pairs with hostility > DIP_BELLICOSE)
+ *
+ * Side Effects:
+ *   - Sets rstat arrays in all combat sides
+ *   - Calculates combat interest levels
+ *   - Identifies potential battle matchups
+ *
+ * Notes:
+ *   - Base hostility uses nation diplomatic status
+ *   - Sector ownership adds +1 to hostility for defenders
+ *   - Hostility > DIP_BELLICOSE indicates potential combat
+ *   - Sets both ATTACKER and SWEEPER hostility ratings
+ *   - Return value indicates if any battles will occur
+ *   - Essential for determining which units fight which
+ */
 /* SET_HOSTILITIES -- Set all of the hostility ratings */
 static int
 set_hostilities PARM_2(COMBAT_PTR, cb_ptr, int, num_there)
@@ -1518,6 +2023,33 @@ set_hostilities PARM_2(COMBAT_PTR, cb_ptr, int, num_there)
   return(meets);
 }
 
+/*
+ * order_attacks - Sort target priorities for combat attacks
+ *
+ * Arranges potential targets in order of attack preference based on
+ * hostility ratings. Uses a simple bubble sort to organize targets
+ * from highest to lowest hostility.
+ *
+ * Parameters:
+ *   cs_ptr - Combat side doing the attacking
+ *   whichatk - Attack type (CGRP_SWEEPER or CGRP_ATTACKER)
+ *   att_wgt - Array to store sorted target indices
+ *   num - Number of potential targets
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Modifies att_wgt array to contain sorted target indices
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (marked for improvement)
+ *   - Sorts by hostility level in cs_ptr->rstat[whichatk][]
+ *   - Higher hostility = higher attack priority
+ *   - att_wgt[0] will contain index of highest priority target
+ *   - Returns early if invalid input parameters
+ *   - TODO: Replace with more efficient sorting algorithm
+ */
 /* ORDER_ATTACKS -- Quickie sort to determine attack preference */
 static void
 order_attacks PARM_4(CSIDE_PTR, cs_ptr, int, whichatk,
@@ -1551,6 +2083,30 @@ order_attacks PARM_4(CSIDE_PTR, cs_ptr, int, whichatk,
   } while (swapped == TRUE);
 }
 
+/*
+ * add_fightlist - Add a nation to the battle participants list
+ *
+ * Adds a nation ID to the list of combat participants for news
+ * reporting purposes. Prevents duplicate entries and handles
+ * list overflow.
+ *
+ * Parameters:
+ *   list - Array of nation IDs involved in combat
+ *   who - Nation ID to add to the list
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Modifies list array to include new participant
+ *
+ * Notes:
+ *   - Uses UNOWNED as empty slot marker
+ *   - Prevents duplicate entries for same nation
+ *   - Silently ignores addition if list is full
+ *   - Used for generating battle news reports
+ *   - List size limited by MAX_COMBAT constant
+ */
 /* ADD_FIGHTLIGHT -- List the fighters in the battle */
 static void
 add_fightlist PARM_2(int *, list, int, who)
@@ -1567,6 +2123,35 @@ add_fightlist PARM_2(int *, list, int, who)
   }
 }
 
+/*
+ * calc_strengths - Calculate total combat strength for a unit group
+ *
+ * Computes the aggregate combat power of all units in a specific
+ * combat group, including total size and average combat bonus.
+ * Updates unit adjustments and destruction values.
+ *
+ * Parameters:
+ *   type - Combat group type to calculate (CGRP_ATTACKER, etc.)
+ *   othtype - Enemy group type (affects combat calculations)
+ *   targ_ptr - Combat side containing the units
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Updates targ_ptr->sum_size[type] with total unit size
+ *   - Updates targ_ptr->avg_bonus[type] with weighted average bonus
+ *   - Sets cu_ptr->adjustment for each unit
+ *   - Sets cu_ptr->destruct_value for each unit
+ *   - Recalculates cu_ptr->rel_size for each unit
+ *
+ * Notes:
+ *   - Skips units with zero or negative size
+ *   - Average bonus weighted by unit relative size
+ *   - Called before battle resolution to update combat values
+ *   - Essential for accurate damage calculations
+ *   - Uses cb_value() and cb_destval() for individual units
+ */
 /* CALC_STRENGTHS -- Compute the strength and bonuses of the side */
 static void
 calc_strengths PARM_3(int, type, int, othtype, CSIDE_PTR, targ_ptr)
@@ -1604,6 +2189,37 @@ calc_strengths PARM_3(int, type, int, othtype, CSIDE_PTR, targ_ptr)
   }
 }
 
+/*
+ * give_zombies - Create undead units from battle casualties
+ *
+ * Generates zombie, lich, wraith, and nazgul units from the deaths
+ * caused in battle. Uses existing undead units to determine the
+ * nation and location for new undead forces.
+ *
+ * Parameters:
+ *   cu_list - List of combat units (must contain undead makers)
+ *   dead_pool - Number of deaths available for conversion
+ *   dam_swing - Damage differential affecting conversion rate
+ *
+ * Returns:
+ *   Total number of new undead units created
+ *
+ * Side Effects:
+ *   - Creates new army units (zombies, liches, wraiths, nazguls)
+ *   - Adds new units to nation army lists
+ *   - Sends combat reports about undead generation
+ *   - Modifies global zombie_casters, zombie_leaders, zombie_rulers
+ *   - Uses msg_cmark/cunmark/creturn for message handling
+ *
+ * Notes:
+ *   - Requires existing undead units to determine target nation
+ *   - Zombie count = dead_pool * (dam_swing + 100) / 400
+ *   - Liches created from zombie_casters with probability
+ *   - Wraiths created from zombie_leaders with probability
+ *   - Nazguls created from zombie_rulers (max 1 per battle)
+ *   - New units inherit status and location from existing undead
+ *   - Handles memory allocation failures gracefully
+ */
 /* GIVE_ZOMBIES -- Slap some undead onto a side */
 static long
 give_zombies PARM_3(CUNIT_PTR, cu_list, int, dead_pool, int, dam_swing)
@@ -1902,6 +2518,28 @@ give_zombies PARM_3(CUNIT_PTR, cu_list, int, dead_pool, int, dam_swing)
   return(num_scum);
 }
 
+/*
+ * luck_string - Convert combat roll to descriptive luck text
+ *
+ * Translates a numeric combat roll (0-100) into a descriptive string
+ * indicating the quality of the roll. Used for battle reports.
+ *
+ * Parameters:
+ *   roll - Combat roll value (0-100)
+ *
+ * Returns:
+ *   Static string describing luck quality
+ *
+ * Side Effects:
+ *   - None (uses static buffer, not thread-safe)
+ *
+ * Notes:
+ *   - Returns static buffer that may be overwritten on next call
+ *   - Lower rolls = better luck: 0-19="superb", 20-29="great"
+ *   - Higher rolls = worse luck: 80+="horrid"
+ *   - Used in combat reporting for player feedback
+ *   - Scale: superb, great, good, fair, average, poor, bad, worse, horrid
+ */
 /* LUCK_STRING -- Return a string based on the luck roll of combat */
 static char *
 luck_string PARM_1(int, roll)
@@ -1930,6 +2568,39 @@ luck_string PARM_1(int, roll)
   return(lstr);
 }
 
+/*
+ * fight_it_out - Execute combat between two unit groups
+ *
+ * Performs the core battle calculation between two combat groups,
+ * determining damage, casualties, and battle outcomes. Handles
+ * combat rolls, damage distribution, zombie generation, and reporting.
+ *
+ * Parameters:
+ *   atype - Attacking group type
+ *   type - Defending group type
+ *   atk_ptr - Attacking combat side
+ *   other_ptr - Defending combat side
+ *
+ * Returns:
+ *   Bit flags: 1=attacker stopped, 2=defender stopped, 0=continue fighting
+ *
+ * Side Effects:
+ *   - Applies damage to all units in both groups
+ *   - Generates combat reports via msg_conquer()
+ *   - Creates zombie units from casualties
+ *   - Updates nation attack/defense bonuses from monster kills
+ *   - May damage or destroy fortifications
+ *   - Adds participants to combat mail list
+ *
+ * Notes:
+ *   - Calculates battle odds from relative combat strengths
+ *   - Uses combat_roll() for random elements
+ *   - Damage based on AVG_DAMAGE, OVERMATCH_ADJ, PMINDAMAGE constants
+ *   - Fortified defenders harder to defeat (need 80%+ damage)
+ *   - DAMAGE_LIMIT determines when units stop fighting
+ *   - Zombie generation depends on undead presence and casualties
+ *   - Core function implementing the actual battle mechanics
+ */
 /* FIGHT_IT_OUT -- implement the battle between the two sides */
 static int
 fight_it_out PARM_4(int, atype, int, type,
@@ -2161,6 +2832,36 @@ fight_it_out PARM_4(int, atype, int, type,
   return(cnt);
 }
 
+/*
+ * begin_battles - Execute all combat encounters in the game world
+ *
+ * Main combat resolution loop that processes all combat locations,
+ * merges allies, resolves battles between hostile groups, and
+ * generates news reports. Coordinates the entire battle system.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Executes all battles via fight_it_out()
+ *   - Merges allied combat sides
+ *   - Sends battle reports to all participants
+ *   - Generates news entries for battles
+ *   - Updates global cb_xloc, cb_yloc for current battle
+ *
+ * Notes:
+ *   - Processes SWEEPER attacks before ATTACKER attacks
+ *   - SWEEPER attacks limited to DEFENDER targets and below
+ *   - Uses order_attacks() to prioritize targets
+ *   - Stops units from fighting when damaged beyond DAMAGE_LIMIT
+ *   - Generates news for all battles with format "Battle occurs between..."
+ *   - Sends detailed reports to all combat participants
+ *   - Uses msg_cinit/cadjust/csend for message management
+ *   - Primary function orchestrating all combat resolution
+ */
 /* BEGIN_BATTLES -- Traverse all of the combat structures */
 static void
 begin_battles PARM_0(void)
@@ -2323,6 +3024,30 @@ begin_battles PARM_0(void)
   }
 }
 
+/*
+ * grab_battles - Process ranged/distance combat attacks
+ *
+ * Placeholder function for implementing long-range combat between
+ * units that can attack across multiple sectors. Currently
+ * unimplemented but framework exists via distance_list.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Currently none (unimplemented)
+ *   - Prints tracking message to fupdate
+ *
+ * Notes:
+ *   - TODO: Implement distance attack resolution
+ *   - Would use units in distance_list for ranged combat
+ *   - Could include artillery, magic, naval bombardment
+ *   - Framework exists but mechanics not yet implemented
+ *   - Called after normal sector-based combat resolution
+ */
 /* GRAB_BATTLES -- Perform distance battles */
 static void
 grab_battles PARM_0(void)
@@ -2331,6 +3056,34 @@ grab_battles PARM_0(void)
   fprintf(fupdate, "  searching among distance attacks for battles (unimp)\n");
 }
 
+/*
+ * wipe_map - Clean up all combat-related memory allocations
+ *
+ * Releases all dynamically allocated memory used during combat
+ * resolution, including combat structures, unit lists, distance
+ * lists, and sector tracking arrays.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Frees all COMBAT_STRUCT, CSIDE_STRUCT, CUNIT_STRUCT memory
+ *   - Frees all CDIST_STRUCT memory from distance_list
+ *   - Frees sct_combval sector tracking memory
+ *   - Resets global combat_list and distance_list to NULL
+ *   - Sends queued news reports via send_sortednews()
+ *
+ * Notes:
+ *   - Traverses and frees entire combat_list linked list
+ *   - Frees all combat sides and their unit lists
+ *   - Frees distance attack list
+ *   - Essential cleanup to prevent memory leaks
+ *   - Called at end of combat() to restore clean state
+ *   - Must free all memory allocated during combat setup
+ */
 /* WIPE_MAP -- free up utilized memory */
 static void
 wipe_map PARM_0(void)
@@ -2398,6 +3151,38 @@ wipe_map PARM_0(void)
   send_sortednews();
 }
 
+/*
+ * combat - Main entry point for combat resolution system
+ *
+ * Primary function that orchestrates the complete combat system.
+ * Initializes combat settings, groups units, resolves battles,
+ * and cleans up. Called once per game turn to handle all combat.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void)
+ *
+ * Side Effects:
+ *   - Modifies unit sizes, positions, and status throughout game world
+ *   - Creates/destroys military units (zombies, etc.)
+ *   - Sends combat reports to all nations
+ *   - Updates nation combat bonuses
+ *   - May damage or destroy fortifications
+ *   - Generates news reports about battles
+ *
+ * Notes:
+ *   - Called once per update turn from main game loop
+ *   - Saves and restores global ntn_ptr and country variables
+ *   - Prints progress messages to fupdate log
+ *   - Phase 1: combat_init() - initialize system
+ *   - Phase 2: battle_grouping() - organize units
+ *   - Phase 3: begin_battles() - resolve combat
+ *   - Phase 4: grab_battles() - distance attacks (unimplemented)
+ *   - Phase 5: wipe_map() - cleanup memory
+ *   - Core game system managing all military conflict
+ */
 /* COMBAT -- Controlling routine to handle the entire combat scheme */
 void
 combat PARM_0(void)
