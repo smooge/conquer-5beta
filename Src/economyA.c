@@ -41,7 +41,36 @@ extern char *sct_status;
 /* quick macro for status references */
 #define SCT_STATUS(x, y)	sct_status[(x) + (y) * MAPX]
 
-/* UPD_SECTORS -- Set sieges and other world sector statuses */
+/*
+ * upd_sectors - Update sector statuses including sieges and devastation
+ *
+ * Processes all map sectors to update their status flags and designations.
+ * Manages siege markers and devastation effects based on sector status.
+ * Also recalculates national boundaries for all active nations.
+ *
+ * The function performs two main operations:
+ * 1. Updates sector designations based on status flags (SET_SIEGE, SET_DEVASTATE)
+ * 2. Recalculates territorial boundaries for all nations using find_area()
+ *
+ * Parameters:
+ *   None (operates on global map data)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies sector designations (MIN_SIEGED, MIN_DEVASTATED) across entire map
+ *   - Updates national territory boundaries via find_area() for each nation
+ *   - Writes progress information to fupdate file
+ *   - Uses global sct_ptr for sector access
+ *
+ * Notes:
+ *   - Processes entire MAPX by MAPY grid systematically
+ *   - Siege status can be cleared or set based on SET_SIEGE flag
+ *   - Devastation status is only set, never cleared automatically
+ *   - Nation boundary calculation is performed for all nations 1 to MAXNTN-1
+ *   - Status array accessed via SCT_STATUS macro for efficiency
+ */
 void
 upd_sectors PARM_0(void)
 {
@@ -79,7 +108,43 @@ upd_sectors PARM_0(void)
 
 }
 
-/* UPD_PRODUCE -- Transfer produced goods to each central point */
+/*
+ * upd_produce - Collect and distribute produced resources from regions to cities
+ *
+ * Manages the production phase of the economic system by gathering raw materials
+ * from all productive sectors and transferring them to their controlling cities.
+ * Handles production reports, mine dilution effects, and resource accumulation
+ * with overflow protection.
+ *
+ * The function processes each nation's regions systematically:
+ * 1. Calculates regional production using region_produce()
+ * 2. Applies production adjustments via adjust_production()
+ * 3. Accumulates materials with BIGITEM overflow protection
+ * 4. Tracks special materials (jewels, metals) for global economics
+ * 5. Generates detailed production reports for each region and nation
+ *
+ * Parameters:
+ *   None (operates on global world data)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates city material stores (CITY_MTRLS) for all cities
+ *   - Modifies global j_produced and m_produced tracking variables
+ *   - Sends production reports via msg_grouped() system
+ *   - Writes progress to fupdate file
+ *   - Uses and modifies global production adjustment tracking variables
+ *   - Frees allocated production sheets via free(prod_ptr)
+ *
+ * Notes:
+ *   - Skips inactive and monster nations for production processing
+ *   - BIGITEM constant prevents integer overflow on large accumulations
+ *   - Production adjustments handle mine depletion and overwork effects
+ *   - Special tracking for MTRLS_JEWELS and MTRLS_METALS affects global economy
+ *   - Memory management critical - frees prod_ptr after each region
+ *   - Reports include both regional detail and national summaries
+ */
 void
 upd_produce PARM_0(void)
 {
@@ -193,7 +258,53 @@ upd_produce PARM_0(void)
   msg_gfinish();
 }
 
-/* UPD_CONSUME -- Distribute goods as needed */
+/*
+ * upd_consume - Handle resource consumption for all units and populations
+ *
+ * Manages the consumption phase of the economic system by distributing resources
+ * to civilian populations, military units, naval fleets, and caravans. Handles
+ * supply shortages, starvation effects, unit desertions, and equipment degradation.
+ * This is the most complex economic function handling survival mechanics.
+ *
+ * The function processes multiple unit types in sequence:
+ * 1. Civilian populations in sectors (food, basic materials)
+ * 2. Army units (supplies, exposure effects, desertion)
+ * 3. Naval fleets (maintenance, crew starvation, ship deterioration)
+ * 4. Caravan units (supply costs, wagon maintenance)
+ * 5. City economic updates (inflation, debt management)
+ *
+ * Critical mechanics implemented:
+ * - Starvation leads to population/unit losses and efficiency reductions
+ * - Unsupplied units suffer desertion, especially mercenaries
+ * - Environmental exposure causes unit attrition in harsh sectors
+ * - Equipment degradation without maintenance (ships, caravans)
+ * - Economic inflation affects city treasuries
+ * - Complex supply chain from resources to unit consumption
+ *
+ * Parameters:
+ *   None (operates on global world data)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies population counts, unit sizes, and efficiency ratings
+ *   - Updates supply levels for all unit types
+ *   - Removes destroyed/empty units from nation lists
+ *   - Adjusts nation attributes (popularity, reputation)
+ *   - Generates extensive consumption and casualty reports
+ *   - Writes major events to news file (famines, desertions)
+ *   - Updates city material stores and handles debt conversion
+ *
+ * Notes:
+ *   - Monster nations have different consumption rules and may skip some processing
+ *   - Supply mechanics vary by unit type and status (fort, grouped, etc.)
+ *   - Complex goto labels for unit cleanup (army_goodbye, navy_goodbye, cvn_goodbye)
+ *   - Memory management includes freeing units and resource structures
+ *   - Percentage-based calculations for casualties and desertions
+ *   - Special handling for mercenary reputation and loyalty
+ *   - Environmental exposure varies by season and unit type
+ */
 void
 upd_consume PARM_0(void)
 {
