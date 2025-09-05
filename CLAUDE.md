@@ -69,6 +69,7 @@ Before changing a single line of code, establishing a modern, strict, and contro
    - `-Wextra`: Enables additional useful warnings not covered by `-Wall`
    - `-Wpedantic`: Issues warnings required by the specified C standard
    - `-std=c2x`: Enforces the 202x C standard
+3. **Establish a Testing Baseline**: Create basic regression tests before refactoring
 
 ### Phase 2: Initial Assessment and Planning (Complete Before Starting Code Changes)
 

@@ -73,7 +73,28 @@ static DIO_STRUCT dio_structs[DIOS_NUMBER] = {
   { "unused", 0 }
 };
 
-/* SYSERR_MSG -- Try to make use of perror if the system has it */
+/*
+ * syserr_msg - Print system error message with optional perror support
+ *
+ * Outputs a formatted error message to the update file, optionally using
+ * perror() to include system error details if available. The error message
+ * is prefixed with the program name for context.
+ *
+ * Parameters:
+ *   estr - Error message string to display (must not be NULL)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Writes error message to fupdate file stream
+ *   - Calls perror() if NO_PERROR is not defined
+ *
+ * Notes:
+ *   - Function depends on global fupdate file pointer
+ *   - Uses global prog_name for error message prefix
+ *   - NO_PERROR compile flag controls perror() usage
+ */
 void
 syserr_msg PARM_1(char *, estr)
 {
@@ -85,7 +106,28 @@ syserr_msg PARM_1(char *, estr)
 #endif /* NO_PERROR */
 }
 
-/* FPUT_STRING -- routine to check routine value of fputs */
+/*
+ * fput_string - Safe string output with error checking
+ *
+ * Writes a string to the specified file stream and checks for write errors.
+ * If fputs() fails (returns EOF), prints an error message and terminates
+ * the program via abrt().
+ *
+ * Parameters:
+ *   outstr - String to write to file (must not be NULL)
+ *   filep - File pointer to write to (must be valid open file)
+ *
+ * Returns:
+ *   None (terminates program on error)
+ *
+ * Side Effects:
+ *   - Writes string to specified file
+ *   - Calls abrt() to terminate program on write failure
+ *
+ * Notes:
+ *   - Provides error-checked file output for critical data operations
+ *   - Used extensively during data file writing
+ */
 void
 fput_string PARM_2(char *, outstr, FILE *, filep)
 {
@@ -96,7 +138,31 @@ fput_string PARM_2(char *, outstr, FILE *, filep)
   }
 }
 
-/* WR_HEADER -- Write the header information to the data file */
+/*
+ * wr_header - Write data file header with version and type information
+ *
+ * Writes the data file header containing version information, patch level,
+ * and size information for all data types and structures. This header is
+ * used during file reading to ensure compatibility and enable data
+ * conversion between different game versions.
+ *
+ * Parameters:
+ *   filep - Output file stream (must be valid and writable)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Writes VERSION string to file
+ *   - Writes PATCHLEVEL number to file
+ *   - Writes all type sizes from dio_types array
+ *   - Writes all structure sizes from dio_structs array
+ *
+ * Notes:
+ *   - Header format is critical for data file compatibility
+ *   - Type and structure sizes enable cross-platform compatibility
+ *   - Uses fput_string() for error-checked output
+ */
 static void
 wr_header PARM_1(FILE *, filep)
 {
@@ -121,7 +187,30 @@ wr_header PARM_1(FILE *, filep)
   }
 }
 
-/* WR_UNUMLIST -- Write out the unit numbering list */
+/*
+ * wr_unumlist - Write unit numbering list to data file
+ *
+ * Serializes a linked list of unit numbering structures to the data file.
+ * Each UNITNUM structure is written as a binary block, and the function
+ * verifies that the actual count matches the expected count.
+ *
+ * Parameters:
+ *   out_stream - Output file stream (must be valid and writable)
+ *   unum_list - Linked list of UNITNUM structures to write
+ *   num_unum - Expected number of unit numbering entries
+ *
+ * Returns:
+ *   None (terminates program on error)
+ *
+ * Side Effects:
+ *   - Writes binary UNITNUM data to file
+ *   - Calls abrt() if write fails or count mismatch occurs
+ *
+ * Notes:
+ *   - Validates data integrity by checking written count vs expected
+ *   - Part of the larger data persistence system
+ *   - Uses fwrite() for binary data output
+ */
 static void
 wr_unumlist PARM_3(FILE *, out_stream, UNUM_PTR, unum_list, int, num_unum)
 {
@@ -146,7 +235,30 @@ wr_unumlist PARM_3(FILE *, out_stream, UNUM_PTR, unum_list, int, num_unum)
   }
 }
 
-/* WR_MAPLIST -- Write out the sector mapping list */
+/*
+ * wr_maplist - Write sector mapping list to data file
+ *
+ * Serializes a linked list of map structures to the data file. Each
+ * MAP_STRUCT contains sector mapping information and is written as a
+ * binary block. Validates the written count against expected count.
+ *
+ * Parameters:
+ *   out_stream - Output file stream (must be valid and writable)
+ *   map_list - Linked list of MAP_STRUCT structures to write
+ *   num_maps - Expected number of map entries
+ *
+ * Returns:
+ *   None (terminates program on error)
+ *
+ * Side Effects:
+ *   - Writes binary MAP_STRUCT data to file
+ *   - Calls abrt() if write fails or count mismatch occurs
+ *
+ * Notes:
+ *   - Part of the sector mapping persistence system
+ *   - Ensures data integrity through count validation
+ *   - Used for storing player-specific map information
+ */
 static void
 wr_maplist PARM_3(FILE *, out_stream, MAP_PTR, map_list, int, num_maps)
 {
@@ -171,7 +283,33 @@ wr_maplist PARM_3(FILE *, out_stream, MAP_PTR, map_list, int, num_maps)
   }
 }
 
-/* WRITE_DATA -- Routine to store the user information in a data file */
+/*
+ * write_data - Save complete game state to data file
+ *
+ * Writes the entire game world state to a data file, including all nations,
+ * armies, navies, cities, caravans, and items. The function handles data
+ * conversion for older patch levels, compresses output if enabled, and
+ * performs extensive error checking throughout the process.
+ *
+ * Parameters:
+ *   None (uses global world data structures)
+ *
+ * Returns:
+ *   None (terminates program on any error)
+ *
+ * Side Effects:
+ *   - Creates temporary data file (.tmp extension)
+ *   - Writes complete game state in binary format
+ *   - Removes old data file and renames temporary file
+ *   - May add spell caster units for data conversion
+ *   - Uses compression if COMPRESS is defined
+ *
+ * Notes:
+ *   - Critical function for game persistence
+ *   - Handles backward compatibility through convert_level
+ *   - Extensive DEBUG output shows data writing progress
+ *   - File operations are atomic (temp file renamed at end)
+ */
 void
 write_data PARM_0(void)
 {
@@ -457,7 +595,28 @@ static int actual_types[DIO_NUMBER];
 static int actual_structs[DIOS_NUMBER];
 static long sum_bytes = 0L, bytes;
 
-/* SET_CONVERT -- Set variables for the given conversions */
+/*
+ * set_convert - Configure data conversion settings for patch level compatibility
+ *
+ * Sets up conversion parameters when reading data files from older patch
+ * levels. Determines whether the data file can be successfully converted
+ * to the current format based on the patch level difference.
+ *
+ * Parameters:
+ *   level - Patch level of the data file being read
+ *
+ * Returns:
+ *   TRUE if conversion failed/not supported, FALSE if conversion possible
+ *
+ * Side Effects:
+ *   - Sets global convert_level variable
+ *   - Affects subsequent data reading operations
+ *
+ * Notes:
+ *   - Only supports conversion from patch levels 23 and higher
+ *   - Older patch levels require special handling during data reads
+ *   - Used to maintain backward compatibility with older save files
+ */
 static int
 set_convert PARM_1(int, level)
 {
@@ -475,7 +634,31 @@ set_convert PARM_1(int, level)
   return(hold);
 }
 
-/* RD_HEADER -- Read the header information from the data file */
+/*
+ * rd_header - Read and validate data file header information
+ *
+ * Reads the data file header containing version, patch level, and type/structure
+ * size information. Validates compatibility with the current game version and
+ * sets up conversion parameters if needed for older data files.
+ *
+ * Parameters:
+ *   filep - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   FALSE on successful header read, TRUE on error or incompatibility
+ *
+ * Side Effects:
+ *   - Reads version string and validates against VERSION
+ *   - Reads patch level and sets up conversion if needed
+ *   - Reads and validates all type and structure sizes
+ *   - May set convert_level for older data files
+ *
+ * Notes:
+ *   - Critical for ensuring data file compatibility
+ *   - Type size validation prevents platform-specific issues
+ *   - Enables automatic conversion of older save files
+ *   - Returns TRUE to indicate failure (unusual convention)
+ */
 static int
 rd_header PARM_1(FILE *, filep)
 {
@@ -563,7 +746,31 @@ rd_header PARM_1(FILE *, filep)
   return(FALSE);
 }
 
-/* RD_WORLDDATA -- Read in the world data from the data file */
+/*
+ * rd_worlddata - Read world data structure with version conversion support
+ *
+ * Reads the main world data structure from the data file, handling conversion
+ * from older patch level formats (24-27) to the current format. Each patch
+ * level has specific conversion logic to preserve game state while updating
+ * to newer data structures.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   FALSE on successful read, TRUE on error
+ *
+ * Side Effects:
+ *   - Reads world structure based on convert_level
+ *   - Initializes new fields for converted data
+ *   - Sets global world structure with read data
+ *
+ * Notes:
+ *   - Handles conversion from patch levels 24, 25, 26, 27 to current
+ *   - Each conversion preserves existing data and initializes new fields
+ *   - Critical for maintaining save game compatibility across versions
+ *   - Returns TRUE to indicate failure (unusual convention)
+ */
 static int
 rd_worlddata PARM_1(FILE *, in_stream)
 {
@@ -949,7 +1156,30 @@ rd_worlddata PARM_1(FILE *, in_stream)
   return(FALSE);
 }
 
-/* RD_MAPLIST -- Read in the given number of MAP_STRUCTs */
+/*
+ * rd_maplist - Read sector mapping list from data file
+ *
+ * Reads a specified number of MAP_STRUCT entries from the data file and
+ * constructs a linked list. Each map structure contains sector mapping
+ * information for a nation's explored areas.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *   num_maps - Number of map structures to read
+ *
+ * Returns:
+ *   Pointer to head of MAP_STRUCT linked list, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for each map structure using new_map()
+ *   - Constructs linked list of map structures
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Part of the sector mapping persistence system
+ *   - Creates proper linked list structure with next pointers
+ *   - Returns NULL on any read error for error handling
+ */
 static MAP_PTR
 rd_maplist PARM_2(FILE *, in_stream, int, num_maps)
 {
@@ -981,7 +1211,30 @@ rd_maplist PARM_2(FILE *, in_stream, int, num_maps)
   return(mlist_ptr);
 }
 
-/* RD_UNUMLIST -- Read in the given number of UNUM_PTRs */
+/*
+ * rd_unumlist - Read unit numbering list from data file
+ *
+ * Reads a specified number of UNITNUM structures from the data file and
+ * constructs a linked list. These structures track unit numbering for
+ * armies, navies, and other game entities.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *   num_unum - Number of unit numbering structures to read
+ *
+ * Returns:
+ *   Pointer to head of UNITNUM linked list, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for each UNITNUM structure using new_unum()
+ *   - Constructs linked list of unit numbering structures
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Part of the unit identification and tracking system
+ *   - Creates proper linked list structure with next pointers
+ *   - Critical for maintaining unit numbering consistency
+ */
 static UNUM_PTR
 rd_unumlist PARM_2(FILE *, in_stream, int, num_unum)
 {
@@ -1013,7 +1266,31 @@ rd_unumlist PARM_2(FILE *, in_stream, int, num_unum)
   return(ulist_ptr);
 }
 
-/* SWITCH_24ATTR -- Switchover to the new attribute list */
+/*
+ * switch_24attr - Convert patch 24 attribute list to current format
+ *
+ * Converts nation attributes from the old patch 24 format to the current
+ * attribute system. Initializes new attributes with default values and
+ * copies over existing attributes that are still valid.
+ *
+ * Parameters:
+ *   attr_list - Target attribute array (current format)
+ *   oattr_list - Source attribute array (patch 24 format)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Initializes all new attributes with default starting values
+ *   - Copies compatible attributes from old to new format
+ *   - Modifies the target attribute array in place
+ *
+ * Notes:
+ *   - Part of patch 24 data conversion system
+ *   - Maps old attribute indices to new attribute indices
+ *   - Ensures backward compatibility with older save files
+ *   - Uses bute_info array for default attribute values
+ */
 static void
 switch_24attr PARM_2(short *, attr_list, short *, oattr_list)
 {
@@ -1041,7 +1318,32 @@ switch_24attr PARM_2(short *, attr_list, short *, oattr_list)
   attr_list[BUTE_TERROR] = oattr_list[OBUTE_TERROR];
 }
 
-/* RD_NTNDATA -- Read in the nation data from the data file */
+/*
+ * rd_ntndata - Read nation data with version conversion support
+ *
+ * Reads a nation structure from the data file, handling conversion from
+ * older patch levels (24, 25) to the current format. Allocates a new
+ * nation structure and populates it with either direct read or converted
+ * data depending on the file version.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   Pointer to newly allocated NTN_STRUCT, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for nation structure using new_ntn()
+ *   - Initializes linked list pointers to NULL
+ *   - Converts attributes for patch 24 compatibility
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Handles conversion from patch levels 24 and 25
+ *   - Initializes new fields added in later versions
+ *   - Critical for nation persistence and compatibility
+ *   - Returns NULL on any error for proper error handling
+ */
 static NTN_PTR
 rd_ntndata PARM_1(FILE *, in_stream)
 {
@@ -1218,7 +1520,28 @@ rd_ntndata PARM_1(FILE *, in_stream)
   return(n1_ptr);
 }
 
-/* P26_SHIFT -- Shift of army types for patchlevel 26 */
+/*
+ * p26_shift - Convert army unit types from patch 26 format
+ *
+ * Adjusts army unit types to account for new spell casting leaders and
+ * engineers added in patch 26. Non-leader and magician units are shifted
+ * by 2 positions, and units at or above Engineers are shifted by 1.
+ *
+ * Parameters:
+ *   utype - Original unit type from patch 26 data
+ *
+ * Returns:
+ *   Converted unit type for current patch level
+ *
+ * Side Effects:
+ *   - None (pure conversion function)
+ *
+ * Notes:
+ *   - Part of patch 26 army data conversion system
+ *   - Accounts for insertion of new spell casting leader types
+ *   - Ensures army unit types remain valid after conversion
+ *   - Uses unitbyname() and army type checking functions
+ */
 static int
 p26_shift PARM_1(int, utype)
 {
@@ -1237,7 +1560,30 @@ p26_shift PARM_1(int, utype)
   return(hold);
 }
 
-/* RD_ARMYDATA -- Read in the army data from the data file */
+/*
+ * rd_armydata - Read army data with unit type conversion
+ *
+ * Reads an army structure from the data file and applies unit type
+ * conversion if reading from older patch levels. Handles the unit type
+ * shifts needed for compatibility with patch 26 changes.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   Pointer to newly allocated ARMY_STRUCT, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for army structure using new_army()
+ *   - Applies unit type conversion for older patch levels
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Performs direct read for patch levels > 20
+ *   - Applies p26_shift() conversion for older patch levels
+ *   - Critical for army persistence and unit type compatibility
+ *   - Returns NULL on any error for proper error handling
+ */
 static ARMY_PTR
 rd_armydata PARM_1(FILE *, in_stream)
 {
@@ -1271,7 +1617,28 @@ rd_armydata PARM_1(FILE *, in_stream)
   return(a1_ptr);
 }
 
-/* NV26_STATCONVERT -- Convert the navy and caravan status value */
+/*
+ * nv26_statconvert - Convert navy and caravan status values from patch 26
+ *
+ * Maps old status values from patch 26 to the current status enumeration.
+ * Handles the status value changes that occurred when the status system
+ * was reorganized in later patch levels.
+ *
+ * Parameters:
+ *   value - Original status value from patch 26 data
+ *
+ * Returns:
+ *   Converted status value for current patch level
+ *
+ * Side Effects:
+ *   - None (pure conversion function)
+ *
+ * Notes:
+ *   - Maps OST_* constants to ST_* constants
+ *   - Defaults to ST_CARRY for unknown status values
+ *   - Part of patch 26 navy and caravan conversion system
+ *   - Critical for maintaining unit status consistency
+ */
 static int
 nv26_statconvert PARM_1(int, value)
 {
@@ -1314,7 +1681,30 @@ nv26_statconvert PARM_1(int, value)
   return(value);
 }
 
-/* RD_NAVYDATA -- Read in the naval data from the data file */
+/*
+ * rd_navydata - Read navy data with status conversion
+ *
+ * Reads a navy structure from the data file and applies status value
+ * conversion if reading from older patch levels. Handles the status
+ * changes needed for compatibility with patch 26 modifications.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   Pointer to newly allocated NAVY_STRUCT, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for navy structure using new_navy()
+ *   - Applies status conversion for older patch levels
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Performs direct read for patch levels > 20
+ *   - Applies nv26_statconvert() for older patch levels
+ *   - Critical for navy persistence and status compatibility
+ *   - Returns NULL on any error for proper error handling
+ */
 static NAVY_PTR
 rd_navydata PARM_1(FILE *, in_stream)
 {
@@ -1349,7 +1739,30 @@ rd_navydata PARM_1(FILE *, in_stream)
   return(n1_ptr);
 }
 
-/* RD_CVNDATA -- Read in the caravan data from the data file */
+/*
+ * rd_cvndata - Read caravan data with status conversion
+ *
+ * Reads a caravan structure from the data file and applies status value
+ * conversion if reading from older patch levels. Uses the same status
+ * conversion logic as navies for consistency.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   Pointer to newly allocated CVN_STRUCT, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for caravan structure using new_cvn()
+ *   - Applies status conversion for older patch levels
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Performs direct read for patch levels > 20
+ *   - Applies nv26_statconvert() for older patch levels
+ *   - Critical for caravan persistence and status compatibility
+ *   - Returns NULL on any error for proper error handling
+ */
 static CVN_PTR
 rd_cvndata PARM_1(FILE *, in_stream)
 {
@@ -1384,7 +1797,31 @@ rd_cvndata PARM_1(FILE *, in_stream)
   return(v1_ptr);
 }
 
-/* RD_CITYDATA -- Read in the city data from the data file */
+/*
+ * rd_citydata - Read city data with patch 27 conversion support
+ *
+ * Reads a city structure from the data file, handling conversion from
+ * patch 27 format to the current format. Manages city ID assignment
+ * and initializes new fields added in later versions.
+ *
+ * Parameters:
+ *   in_stream - Input file stream (must be valid and readable)
+ *
+ * Returns:
+ *   Pointer to newly allocated CITY_STRUCT, NULL on error
+ *
+ * Side Effects:
+ *   - Allocates memory for city structure using new_city()
+ *   - Assigns sequential city IDs during conversion
+ *   - Initializes new fields for converted data
+ *   - Frees allocated memory on read errors
+ *
+ * Notes:
+ *   - Handles conversion from patch 27 using C27_STRUCT
+ *   - Maintains static city_id_num for ID assignment
+ *   - Resets city ID counter for each new nation
+ *   - Critical for city persistence and compatibility
+ */
 static CITY_PTR
 rd_citydata PARM_1(FILE *, in_stream)
 {
@@ -1450,7 +1887,32 @@ rd_citydata PARM_1(FILE *, in_stream)
   return(c1_ptr);
 }
 
-/* READ_DATA -- Routine to read world information from a data file */
+/*
+ * read_data - Load complete game state from data file
+ *
+ * Reads the entire game world state from a data file, including all nations,
+ * armies, navies, cities, caravans, and items. Handles file compression,
+ * version compatibility, and constructs all the linked list structures
+ * needed for the game state.
+ *
+ * Parameters:
+ *   None (uses global datafile path)
+ *
+ * Returns:
+ *   TRUE on successful read, FALSE on error or file not found
+ *
+ * Side Effects:
+ *   - Allocates memory for all game structures
+ *   - Constructs linked lists for all nation-owned entities
+ *   - Sets up global world structure and sector array
+ *   - Handles decompression if COMPRESS is defined
+ *
+ * Notes:
+ *   - Critical function for game state loading
+ *   - Handles all patch level conversions automatically
+ *   - Extensive DEBUG output shows data reading progress
+ *   - Validates data integrity during the read process
+ */
 int
 read_data PARM_0(void)
 {
@@ -1743,7 +2205,28 @@ read_data PARM_0(void)
   return(TRUE);
 }
 
-/* EXISTS -- test for the existance of a file */
+/*
+ * exists - Test for file existence using stat system call
+ *
+ * Checks whether a file exists and is accessible by attempting to get
+ * file status information. Uses the standard stat() system call to
+ * determine file existence.
+ *
+ * Parameters:
+ *   file - Path to file to check (must not be NULL)
+ *
+ * Returns:
+ *   0 if file exists and is accessible, non-zero if file doesn't exist or error
+ *
+ * Side Effects:
+ *   - None (read-only operation)
+ *
+ * Notes:
+ *   - Simple wrapper around stat() system call
+ *   - Returns stat() return value directly
+ *   - Used for checking data file existence before operations
+ *   - POSIX-compliant file existence check
+ */
 int
 exists PARM_1(char *, file)
 {
@@ -1752,8 +2235,31 @@ exists PARM_1(char *, file)
   return(stat(file, &buf));
 }
 
-/* MOVE_FILE -- Rename a file; non-zero on failure.
-                implementation suggested by Jerry Pierce */
+/*
+ * move_file - Rename a file with platform-specific implementation
+ *
+ * Renames a file from one path to another using either rename() (on VAXC)
+ * or link()/unlink() combination (on other systems). The link/unlink
+ * approach provides atomic file replacement on systems that support it.
+ *
+ * Parameters:
+ *   from - Source file path (must exist)
+ *   to - Destination file path
+ *
+ * Returns:
+ *   0 on success, non-zero on failure
+ *
+ * Side Effects:
+ *   - Creates hard link from source to destination
+ *   - Removes source file after successful link
+ *   - May leave partial state if link succeeds but unlink fails
+ *
+ * Notes:
+ *   - Implementation suggested by Jerry Pierce
+ *   - VAXC systems use simple rename() function
+ *   - Other systems use link/unlink for atomic operations
+ *   - Critical for safe data file replacement operations
+ */
 int
 move_file PARM_2(char *, from, char *, to)
 {
