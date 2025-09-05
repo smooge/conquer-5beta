@@ -11,7 +11,7 @@
 ### Priority 1: Core Game Engine (Session 1-8)
 Critical game mechanics and data structures - document these first:
 
-1. **mainA.c** ✅ (Complete - has main() function)
+1. **mainA.c** ✅ (Complete - 2 functions documented: fname_char, main)
 2. **dataA.c** - Core data structures and management
 3. **combatA.c** - Combat resolution system
 4. **moveA.c** - Movement and action processing
@@ -104,6 +104,7 @@ Lower priority interface and utility modules:
 
 ### Completed Files ✅
 1. **miscA.c** - Session completed 2025-09-05 (7 functions documented)
+2. **mainA.c** - Session completed 2025-09-05 (2 functions documented: fname_char, main)
 
 ### Current Target
 **Next file to document**: `dataA.c` (Priority 1, Session 2)

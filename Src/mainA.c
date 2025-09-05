@@ -26,7 +26,29 @@
 #endif /* VAXC */
 #include "worldX.h"
 
-/* FNAME_CHAR -- FALSE if character is not a normal part of a filename */
+/*
+ * fname_char - Check if character is valid for use in filenames
+ *
+ * Determines whether the given character is acceptable as part of a filename
+ * by checking against platform-specific path separator characters. This function
+ * is used to extract the program name from the full path in argv[0].
+ *
+ * Parameters:
+ *   ch - Character code to test for filename validity
+ *
+ * Returns:
+ *   TRUE (non-zero) if character is valid for filenames
+ *   FALSE (0) if character is a path separator (/, \, ], :)
+ *
+ * Side Effects:
+ *   None - pure function with no side effects
+ *
+ * Notes:
+ *   Platform-specific path separators are handled via conditional compilation:
+ *   - MS_DOS: backslash (\) is a path separator
+ *   - VMS: bracket (]) and colon (:) are path separators
+ *   - All platforms: forward slash (/) is a path separator
+ */
 static int
 fname_char PARM_1(int, ch)
 {
@@ -49,7 +71,43 @@ fname_char PARM_1(int, ch)
 int addlocknum = -1, uplocknum = -1;
 char lock_string[FILELTH];
 
-/* MAIN -- parse command line options and control program flow */
+/*
+ * main - Entry point for the Conquer game server program
+ *
+ * Parses command line arguments and controls the main program flow for the
+ * Conquer strategy game server. This function handles multiple operational modes:
+ * world creation (-m), player addition (-a), game updates (-x), world editing (-E),
+ * statistics display (-I), login management (-T), NPC management (-A, -Z),
+ * and combat testing (-Q).
+ *
+ * The program requires proper permissions for most operations and uses file locking
+ * to prevent concurrent operations that could corrupt game data. It supports
+ * reading custom configuration files and environment variables for game settings.
+ *
+ * Parameters:
+ *   argc - Number of command line arguments
+ *   argv - Array of command line argument strings
+ *
+ * Returns:
+ *   SUCCESS (0) on successful completion
+ *   FAIL (1) on error or invalid usage
+ *   Does not return for most operations (calls exit() directly)
+ *
+ * Side Effects:
+ *   - Changes working directory to game data directory
+ *   - Creates, reads, and modifies game data files
+ *   - May create or remove lock files for synchronization
+ *   - Sets up signal handlers for graceful shutdown
+ *   - May fork processes or execute system commands
+ *   - Modifies global variables and game state
+ *
+ * Notes:
+ *   - Requires setuid permissions for multi-user operation
+ *   - Uses file locking to prevent data corruption
+ *   - Supports multiple platforms (Unix, VMS, MS-DOS)
+ *   - Most operations require administrator (LOGIN) privileges
+ *   - Command line format: program [-nc] [-ACEQITZamx -dDIR -oOUTFILE -rSCENARIO]
+ */
 int
 main PARM_2 (int, argc, char **, argv)
 {

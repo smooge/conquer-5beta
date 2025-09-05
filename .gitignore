@@ -31,6 +31,9 @@ Makefile
 .DS_Store
 Thumbs.db
 
+# Script backup files
+*.orig
+
 # IDE files
 .vscode/
 .idea/
