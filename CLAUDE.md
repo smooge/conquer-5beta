@@ -51,8 +51,17 @@ python script.py   # May fail - don't use
 
 Before changing a single line of code, establishing a modern, strict, and controlled environment is critical.
 
-1. **Version Control**: Place the entire codebase under Git version control
-2. **Modern Compiler and Strict Warnings**: Use GCC or Clang with highest warning levels:
+1. **Working Directory Documentation**: Determine and document the exact project working directory path
+   - Use `pwd` command to get the current working directory
+   - Document the full path in this CLAUDE.md file for future session reference
+   - **Project Working Directory**: `/home/ssmoogen/conquer-project/conquer`
+2. **Version Control**: Place the entire codebase under Git version control
+3. **Git Ignore Configuration**: Check if `.gitignore` exists; if not, create one to prevent build artifacts from being committed
+   - Include common C build artifacts: `*.o`, compiled executables, temporary files
+   - Include test executables: `tests/test_*` (without `.c` extension)
+   - Include platform-specific files: `.DS_Store`, `Thumbs.db`
+   - Include coverage files: `*.gcov`, `*.gcda`, `*.gcno`
+4. **Modern Compiler and Strict Warnings**: Use GCC or Clang with highest warning levels:
    ```bash
    gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 *.c -o program
    ```
