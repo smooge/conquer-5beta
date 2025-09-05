@@ -160,8 +160,8 @@ Due to the extensive nature of documenting 50+ source files, Phase 4 is now orga
    - Read target file to understand its function structure
 
 2. **Documentation Process per File**:
-   - Use `document_functions.py` automation script for initial function analysis
-   - Manually review and enhance all function documentation in the file
+   - Read and analyze the complete file to understand its purpose and functions
+   - Manually document all functions with comprehensive analysis
    - Focus on quality and completeness for one file at a time
 
 3. **Session Completion**:
@@ -223,20 +223,20 @@ Due to the extensive nature of documenting 50+ source files, Phase 4 is now orga
    - **Assumptions**: Note assumptions about input data, system state, etc.
    - **Historical Context**: Preserve information about why code was written this way
 
-4. **Create Documentation Automation Script**:
-   - **`document_functions.py`** - Generate documentation templates
-   - Scan functions and create skeleton documentation
-   - Identify parameters and return types automatically
-   - Flag functions that need manual analysis
-   - Example usage: `python3 _modernization/claude/scripts/document_functions.py src/*.c`
+4. **Direct Analysis Approach**:
+   - Analyze each function by reading and understanding the code directly
+   - Understand function purpose, parameters, return values, and side effects
+   - Document complex algorithms, data flow, and business logic
+   - Identify and explain magic numbers, assumptions, and edge cases
 
 **Documentation Workflow:**
 
-1. **Automated Analysis**: Run script to generate documentation templates
-2. **Manual Review**: Fill in purpose, behavior, and edge cases
-3. **Cross-Reference**: Verify documentation matches actual implementation
-4. **Knowledge Capture**: Document any tribal knowledge or non-obvious behavior
-5. **Version Control**: Commit documented code before any modernization
+1. **File Analysis**: Read and understand the complete file structure and purpose
+2. **Function Analysis**: Analyze each function's implementation, algorithm, and behavior
+3. **Documentation Writing**: Create comprehensive documentation using standard format
+4. **Cross-Reference**: Verify documentation matches actual implementation
+5. **Knowledge Capture**: Document any tribal knowledge or non-obvious behavior
+6. **Version Control**: Commit documented code before any modernization
 
 **Why Document Before Modernization:**
 
@@ -315,38 +315,31 @@ Before beginning manual modernization, Claude must create automation scripts for
 
 **Required Automation Scripts:**
 
-1. **`document_functions.py`** - Generate comprehensive function documentation
-   - Creates standardized documentation templates for all functions
-   - Analyzes parameters and return types automatically
-   - Flags functions requiring manual analysis
-   - Preserves existing comments and adds missing documentation
-   - Example usage: `python3 _modernization/scripts/document_functions.py src/*.c`
-
-2. **`convert_kr_functions.py`** - Convert K&R style functions to C2023 prototypes
+1. **`convert_kr_functions.py`** - Convert K&R style functions to C2023 prototypes
    - Handles PARM_X macro conversions
    - Preserves comprehensive function documentation
    - Modernizes syntax while maintaining functionality
    - Example usage: `python3 _modernization/scripts/convert_kr_functions.py src/*.c`
 
-3. **`modernize_headers.py`** - Update include statements and header usage
+2. **`modernize_headers.py`** - Update include statements and header usage
    - Replace legacy headers with standard equivalents
    - Add missing includes for used functions
    - Remove redundant includes
    - Example usage: `python3 _modernization/scripts/modernize_headers.py src/`
 
-4. **`add_safety_checks.py`** - Insert memory safety and bounds checking
+3. **`add_safety_checks.py`** - Insert memory safety and bounds checking
    - Add NULL pointer checks
    - Insert buffer overflow protection
    - Add error handling for malloc/calloc
    - Example usage: `python3 _modernization/scripts/add_safety_checks.py src/module.c`
 
-5. **`fix_integer_types.py`** - Update integer types for 64-bit portability
+4. **`fix_integer_types.py`** - Update integer types for 64-bit portability
    - Convert int to size_t for array indices
    - Update printf format specifiers
    - Handle pointer-to-integer conversions
    - Example usage: `python3 _modernization/scripts/fix_integer_types.py src/`
 
-6. **`generate_tests.py`** - Create basic test templates
+5. **`generate_tests.py`** - Create basic test templates
    - Generate unit test skeletons for functions
    - Create test harness boilerplate
    - Set up test directory structure
@@ -373,7 +366,7 @@ Before beginning manual modernization, Claude must create automation scripts for
 
 **Implementation Priority Order:**
 1. **Create Automation Scripts**: Build reusable tools for common tasks
-2. **Function Documentation**: Generate comprehensive documentation (using document_functions.py)
+2. **Function Documentation**: Complete comprehensive documentation (Phase 4)
 3. **Function Prototypes**: Convert K&R style to ANSI prototypes (using convert_kr_functions.py)
 4. **Type Safety**: Add proper type declarations and const qualifiers (using script)
 5. **Standard Headers**: Replace legacy headers with standard ones (using modernize_headers.py)
@@ -658,6 +651,7 @@ When the user indicates it's time to end a session, Claude must:
 2. Include completed tasks, current status, and next steps
 3. Document any important decisions or discoveries made during the session
 4. Ensure the memory file provides sufficient context for future sessions
+5. **Git commit session memory files and session logs**: Always remember to `git add` and `git commit` the session memory files in `_modernization/memory/` and session logs in `_modernization/claude/reports/` at the end of each session to preserve context and progress tracking
 
 ### Formal Session Termination
 **When the user formally quits a session**, Claude must automatically execute this sequence:
