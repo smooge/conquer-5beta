@@ -1,4 +1,25 @@
-/* Routines for calculating national production, budget and stats */
+/*
+ * computeX.c - National Economic and Statistical Computation Engine
+ *
+ * This module provides comprehensive computational utilities for calculating
+ * national production, budget allocations, resource distribution, and various
+ * statistical metrics within the Conquer game system. It handles complex
+ * economic calculations including sector weighting, resource production/consumption,
+ * supply chain management, and national attribute adjustments.
+ *
+ * Key Functionality:
+ * - City weighting and distribution systems for resource allocation
+ * - Regional production and consumption calculations with magic modifiers
+ * - Military unit supply chain management (armies, navies, caravans)
+ * - National statistics aggregation and totals computation
+ * - Economic adjustments based on civilization and wizard magic effects
+ * - Territory boundary detection and area calculations
+ * - Unit reorganization and numbering systems
+ * - Inflation calculations and mercenary cost rate adjustments
+ *
+ * The module operates on global game state through various data structures
+ * and provides essential economic modeling for game balance and progression.
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -32,7 +53,34 @@
 #include "weightX.h"
 #include "caravanX.h"
 
-/* DFLT_CITYWEIGHT -- Determine the default weighting value */
+/*
+ * dflt_cityweight - Calculate default resource distribution weight for a city
+ *
+ * Determines the base weighting value used for resource distribution calculations
+ * based on the city's designation type and population. The weight affects how
+ * much influence the city has in regional resource allocation and supply chains.
+ * Larger settlements (capitals, cities) have higher weights than smaller ones
+ * (towns, stockades), with population-based modifiers for dynamic scaling.
+ *
+ * Parameters:
+ *   ntnnum - Nation number that owns the city (must be valid nation)
+ *   c1_ptr - Pointer to city structure (must not be NULL)
+ *
+ * Returns:
+ *   Calculated weight value based on designation type and population,
+ *   0 if city is invalid, not owned by nation, or off-map
+ *
+ * Side Effects:
+ *   - Temporarily modifies global sct_ptr for sector access
+ *   - Reads from global sector array for ownership verification
+ *
+ * Notes:
+ *   - Capital cities get highest fixed weight (WEIGHT_CAPITAL)
+ *   - Cities and towns get base weight plus population bonus
+ *   - Population bonus: cities +1 per 1000 people, towns +1 per 500 people
+ *   - Stockades get minimal fixed weight
+ *   - Invalid designations return 0 weight
+ */
 int
 dflt_cityweight PARM_2(int, ntnnum, CITY_PTR, c1_ptr)
 {
@@ -72,7 +120,31 @@ dflt_cityweight PARM_2(int, ntnnum, CITY_PTR, c1_ptr)
   return(hold);
 }
 
-/* DIST_WEIGHTS -- Distribute the actual weight into other sectors */
+/*
+ * dist_weights - Distribute city influence weight to surrounding sectors
+ *
+ * Internal helper function used by map_loop to distribute a city's influence
+ * weight to sectors within its communication range. This creates the weighted
+ * distribution network used for resource allocation calculations. Only sectors
+ * owned by the current nation (global_int) receive weight distribution.
+ *
+ * Parameters:
+ *   x - X coordinate of target sector
+ *   y - Y coordinate of target sector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies sum_weights array for owned sectors within range
+ *   - Adds CITY_WEIGHT to the sector's total influence sum
+ *
+ * Notes:
+ *   - Called via map_loop for each sector in city's communication range
+ *   - Uses global_int to identify the nation being processed
+ *   - Weight accumulates if multiple cities influence the same sector
+ *   - Essential for resource production and consumption calculations
+ */
 static void
 dist_weights PARM_2(int, x, int, y)
 {
@@ -81,7 +153,35 @@ dist_weights PARM_2(int, x, int, y)
   }
 }
 
-/* SET_WEIGHTS -- Set distribution weights for nation */
+/*
+ * set_weights - Calculate and set resource distribution weights for nations
+ *
+ * Computes the influence network for resource distribution by calculating
+ * weighting values for all cities and distributing their influence to
+ * surrounding sectors. This creates the economic foundation for regional
+ * production and consumption calculations. Can operate on a single nation
+ * or all nations, with optional weight recalculation from defaults.
+ *
+ * Parameters:
+ *   recalc - If TRUE, recalculate city weights from defaults; if FALSE, use existing
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Allocates/reallocates global sum_weights array if needed
+ *   - Updates CITY_WEIGHT values for all cities when recalc=TRUE
+ *   - Distributes weights to sectors within communication range
+ *   - Modifies global nation and city pointers during processing
+ *   - Handles both single nation (country != UNOWNED) and all nations
+ *
+ * Notes:
+ *   - Uses map_loop with dist_weights for efficient area processing
+ *   - Applies special rules for devastated, sieged, and new settlements
+ *   - Communication range calculated by r10_region function
+ *   - Critical prerequisite for production and consumption calculations
+ *   - Minimum weight of 1 enforced for special circumstances
+ */
 void
 set_weights PARM_1(int, recalc)
 {
@@ -158,7 +258,35 @@ set_weights PARM_1(int, recalc)
 static SHEET_PTR region_spread;
 static int need_all;
 
-/* RG_PRODVAL -- Perform the increase of resources due to the sector */
+/*
+ * rg_prodval - Calculate sector's contribution to regional resource production
+ *
+ * Internal helper function that computes how much a specific sector contributes
+ * to the regional production totals based on its resource output and the city's
+ * influence weight. Distributes sector production proportionally according to
+ * the weight distribution system, accumulating results in region_spread.
+ *
+ * Parameters:
+ *   x - X coordinate of producing sector
+ *   y - Y coordinate of producing sector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Accumulates production values in global region_spread structure
+ *   - Updates people count, sector count, and material totals
+ *   - Modifies type-specific arrays when need_all is TRUE
+ *   - Calls sector_produce to get base production values
+ *
+ * Notes:
+ *   - Only processes sectors owned by current nation with population > 0
+ *   - Skips sectors with zero total weight (no city influence)
+ *   - Applies proportional distribution: (sector_output * CITY_WEIGHT) / total_weight
+ *   - Handles overflow protection with BIGITEM limits
+ *   - Called via map_loop from region_produce function
+ *   - Essential for calculating what a city can access from its region
+ */
 static void
 rg_prodval PARM_2(int, x, int, y)
 {
@@ -214,7 +342,36 @@ rg_prodval PARM_2(int, x, int, y)
   }
 }
 
-/* REGION_PRODUCE -- Calculate amount produced within communication range */
+/*
+ * region_produce - Calculate total resource production within city's communication range
+ *
+ * Computes the aggregate resource production available to a specified city
+ * from all sectors within its communication range. This includes raw materials,
+ * population, and detailed sector-type breakdowns. The calculation considers
+ * weighted distribution based on city influence and sector ownership.
+ *
+ * Parameters:
+ *   cname - Name of the city to calculate production for (must exist)
+ *   fullinfo - If TRUE, calculate detailed type-specific information; if FALSE, basic totals only
+ *
+ * Returns:
+ *   Dynamically allocated SHEET_PTR containing production totals,
+ *   NULL if city not found, invalid, or not owned by current nation
+ *
+ * Side Effects:
+ *   - Allocates memory for SHEET_STRUCT (caller must free)
+ *   - Sets global need_all flag for detailed calculations
+ *   - Uses map_loop with rg_prodval to process regional sectors
+ *   - Modifies global city_ptr and sct_ptr during processing
+ *
+ * Notes:
+ *   - Communication range determined by r10_region function
+ *   - Only processes sectors owned by current nation
+ *   - Weighted distribution ensures proportional resource allocation
+ *   - Essential for economic planning and resource management
+ *   - HEREIAM comment indicates planned minor designation adjustments
+ *   - Memory allocation failure triggers abort sequence
+ */
 SHEET_PTR
 region_produce PARM_2(char *, cname, int, fullinfo)
 {
@@ -265,7 +422,37 @@ region_produce PARM_2(char *, cname, int, fullinfo)
   return(region_spread);
 }
 
-/* RG_CONSVAL -- Add in consumption of sector if appropriate */
+/*
+ * rg_consval - Calculate sector's contribution to regional resource consumption
+ *
+ * Internal helper function that computes how much a specific sector consumes
+ * from the regional resource pool based on its consumption requirements and
+ * available city resources. Handles complex calculations including talon costs
+ * based on available resources and jewel multipliers for enhanced economics.
+ *
+ * Parameters:
+ *   x - X coordinate of consuming sector
+ *   y - Y coordinate of consuming sector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Accumulates consumption values in global region_spread structure
+ *   - Updates people count, sector count, and material consumption totals
+ *   - Modifies type-specific arrays when need_all is TRUE
+ *   - Calls sector_consume and find_resources for calculations
+ *   - Frees item_tptr memory after processing
+ *
+ * Notes:
+ *   - Only processes sectors owned by current nation
+ *   - Skips sectors without available resources (find_resources returns NULL)
+ *   - Special handling for talon consumption with jewel enhancement (10x multiplier)
+ *   - Proportional consumption based on available city resources vs sector needs
+ *   - Handles divide-by-zero with total_weight checks
+ *   - Called via map_loop from region_consume function
+ *   - Critical for supply chain and economic balance calculations
+ */
 static void
 rg_consval PARM_2(int, x, int, y)
 {
@@ -356,7 +543,38 @@ rg_consval PARM_2(int, x, int, y)
   }
 }
 
-/* REGION_CONSUME -- Calculate amount consumed from city resources */
+/*
+ * region_consume - Calculate total resource consumption within city's range
+ *
+ * Computes the comprehensive resource consumption requirements for a specified
+ * city region, including sector consumption, military unit supply costs (armies,
+ * navies, caravans), and economic overhead. This provides the complete economic
+ * demand picture for resource planning and budget calculations.
+ *
+ * Parameters:
+ *   cname - Name of the city to calculate consumption for (must exist)
+ *   fullinfo - If TRUE, calculate detailed type-specific information; if FALSE, basic totals only
+ *
+ * Returns:
+ *   Dynamically allocated SHEET_PTR containing consumption totals,
+ *   NULL if city not found, invalid, or not owned by current nation
+ *
+ * Side Effects:
+ *   - Allocates memory for SHEET_STRUCT (caller must free)
+ *   - Processes all military units within communication range
+ *   - Calls army_support, navy_support, cvn_support for unit costs
+ *   - Applies magic cost adjustments via mgk_cost_adjust
+ *   - Updates unit counts (army_men, ship_holds, caravan_wagons)
+ *
+ * Notes:
+ *   - Monster nations have zero consumption (early return)
+ *   - No processing if MAXSUPPLIES is 0 (supply system disabled)
+ *   - Complex supply chain validation with resource availability checks
+ *   - Handles different unit types: regular troops, leaders, monsters
+ *   - Special talon cost calculations with jewel enhancement
+ *   - Accumulates costs: army_cost, navy_cost, cvn_cost added to material totals
+ *   - Essential for economic balance and military sustainability
+ */
 SHEET_PTR
 region_consume PARM_2(char *, cname, int, fullinfo)
 {
@@ -606,7 +824,36 @@ region_consume PARM_2(char *, cname, int, fullinfo)
   return(region_spread);
 }
 
-/* NTN_TOTALS -- Gather together all of the city and item information */
+/*
+ * ntn_totals - Calculate comprehensive national statistics and resource totals
+ *
+ * Aggregates all national assets including materials, population, military units,
+ * ships, wagons, and territorial information. This provides a complete statistical
+ * overview of a nation's economic and military strength for reporting and
+ * game balance calculations. Processes all entities owned by the nation.
+ *
+ * Parameters:
+ *   nation - Nation number to calculate totals for (must be valid)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates all totals fields in the nation structure (ntn_tptr)
+ *   - Zeroes existing totals before recalculation
+ *   - Counts sectors, unsupplied sectors, population, military units
+ *   - Aggregates materials from cities, items, armies, navies, caravans
+ *   - Calculates ship counts, wagon counts, monster counts
+ *
+ * Notes:
+ *   - Processes entire nation territory within edge boundaries
+ *   - Handles map wraparound with modulo arithmetic ((i + MAPX) % MAPX)
+ *   - Distinguishes between leaders, regular troops, and monsters
+ *   - Includes civilian population on ships (galleys) and caravans
+ *   - Counts unsupplied sectors using sum_weights array
+ *   - Essential for national reporting, diplomacy, and victory conditions
+ *   - Updates: tmil, tciv, tmonst, tleaders, tsctrs, tunsctrs, tships, twagons
+ */
 void
 ntn_totals PARM_1(int, nation)
 {
@@ -702,7 +949,37 @@ ntn_totals PARM_1(int, nation)
   }
 }
 
-/* ADJUST_PRODUCTION -- Adjustment of produced raw materials */
+/*
+ * adjust_production - Apply magic and national modifiers to resource production
+ *
+ * Modifies raw production values based on active civilization and wizard magic
+ * effects, tax rates, and other national attributes. This system allows magic
+ * research to provide economic benefits and creates strategic choices in
+ * magical development paths. Handles both basic totals and detailed type breakdowns.
+ *
+ * Parameters:
+ *   produce_ptr - Pointer to production sheet to modify (must not be NULL)
+ *   fullinfo - If TRUE, apply adjustments to type-specific arrays; if FALSE, basic totals only
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies production values in-place within produce_ptr
+ *   - Applies percentage-based adjustments to material quantities
+ *   - Updates both general totals and type-specific arrays when fullinfo=TRUE
+ *
+ * Notes:
+ *   - Accountant magic: +20% talon income (MC_ACCOUNTANT)
+ *   - Socialism magic: +10% talon income (MC_SOCIALISM)
+ *   - Tax rate: Applied as percentage to talon income
+ *   - Farming magic: +20% food production (MC_FARMING)
+ *   - Earth magic: +10% food production (MW_EARTH, stacks with farming)
+ *   - Druidism magic: +20% wood production (MW_DRUIDISM)
+ *   - Miner magic: +20% jewels and metals production (MC_MINER)
+ *   - All adjustments use integer arithmetic with percentage scaling
+ *   - Critical for game balance and magic system effectiveness
+ */
 void
 adjust_production PARM_2( SHEET_PTR, produce_ptr, int, fullinfo )
 {
@@ -771,7 +1048,36 @@ adjust_production PARM_2( SHEET_PTR, produce_ptr, int, fullinfo )
   }
 }
 
-/* MGK_COST_ADJUST -- Just account for the adjustment of normal expensive */
+/*
+ * mgk_cost_adjust - Apply magic cost reduction modifiers to expenses
+ *
+ * Reduces various expense categories based on active magic powers, providing
+ * economic incentives for magical research investments. The type parameter
+ * determines which magic categories apply, allowing selective cost reductions
+ * for military, naval, construction, and resource processing activities.
+ *
+ * Parameters:
+ *   type - Bitmask indicating expense categories (1=military, 2=naval, 4=construction)
+ *   expenses - Array of material costs to modify (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies expense values in-place within expenses array
+ *   - Applies percentage-based cost reductions
+ *   - Stacks multiple magic effects where applicable
+ *
+ * Notes:
+ *   - Military (type & 1): Warrior chain reduces talon costs (20-40% total)
+ *   - Military (type & 1): Orc chain reduces jewel costs (20-60% total)
+ *   - Naval (type & 2): Sailor chain reduces talon costs (20-40% total)
+ *   - Construction (type & 4): Architect reduces metals/talons/wood costs (20%)
+ *   - Universal: Jeweler reduces jewel costs (20%), Metalcraft reduces metal costs (20%)
+ *   - Universal: Woodcraft reduces wood costs (20%)
+ *   - Magic effects stack additively within categories
+ *   - Essential for magic system balance and economic strategy
+ */
 void
 mgk_cost_adjust PARM_2(int, type, itemtype *, expenses)
 {
@@ -859,7 +1165,38 @@ mgk_cost_adjust PARM_2(int, type, itemtype *, expenses)
   }
 }
 
-/* R10_REGION -- Determine the supply range (x10) of the supply center */
+/*
+ * r10_region - Calculate communication/supply range for a city (scaled by 10)
+ *
+ * Determines the effective communication range of a supply center based on
+ * its designation type, national communication technology, construction status,
+ * and available trade goods. The range affects resource distribution, unit
+ * supply, and regional economic calculations. Returns value scaled by 10
+ * for precision in fractional range calculations.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation structure (must not be NULL)
+ *   c1_ptr - Pointer to city structure (must not be NULL)
+ *   s1_ptr - Pointer to sector structure (must not be NULL)
+ *
+ * Returns:
+ *   Communication range scaled by 10 (multiply by 10 for precise fractional ranges),
+ *   0 if invalid parameters or non-supply center
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base range from national BUTE_COMMRANGE attribute
+ *   - Stockade: 1/4 range, minimum 1.0 (returns 10)
+ *   - Town: 1/2 range, minimum 2.0 (returns 20)
+ *   - City: full range, minimum 3.0 (returns 30)
+ *   - Capital: full range + 1, minimum 3.0 (returns 30+)
+ *   - Under construction cities get downgraded one designation level
+ *   - Sieged or devastated centers return 0 (no communication)
+ *   - Trade goods can enhance range if conditions met
+ *   - Cache and lower designations not considered supply centers
+ */
 int
 r10_region PARM_3(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, SCT_PTR, s1_ptr)
 {
@@ -918,7 +1255,37 @@ r10_region PARM_3(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, SCT_PTR, s1_ptr)
   return(hold);
 }
 
-/* ATTRACT_VAL -- The attractiveness of a particular sector */
+/*
+ * attract_val - Calculate population attraction value for a sector
+ *
+ * Computes how attractive a sector is for population growth and migration
+ * based on terrain, designation, racial preferences, seasonal factors,
+ * and supply network connectivity. This drives the population movement
+ * and growth mechanics that shape territorial development over time.
+ *
+ * Parameters:
+ *   xloc - X coordinate of sector to evaluate
+ *   yloc - Y coordinate of sector to evaluate
+ *
+ * Returns:
+ *   Attraction value (higher = more attractive), 0 if unattractive or invalid
+ *
+ * Side Effects:
+ *   - Uses ntn_ptr if available, otherwise derives nation from sector owner
+ *   - Temporarily sets sct_tptr for sector access
+ *
+ * Notes:
+ *   - Combines vegetation, elevation, and designation attractiveness
+ *   - Special handling for extreme environments (ice, desert, swamp, jungle)
+ *   - Racial preferences affect base attractiveness values
+ *   - Mining sectors get bonus based on resource value and trade good viability
+ *   - Farming sectors vary by season and food scarcity
+ *   - Urban magic provides city attraction bonus
+ *   - Unsupplied sectors get major attraction penalty (÷8)
+ *   - Sieged and for-sale sectors are completely unattractive (return 0)
+ *   - Complex seasonal modifiers for agricultural sectors
+ *   - Essential for population dynamics and territorial growth
+ */
 int
 attract_val PARM_2(int, xloc, int, yloc)
 {
@@ -1064,7 +1431,36 @@ attract_val PARM_2(int, xloc, int, yloc)
   return(sum);
 }
 
-/* FIND_AREA -- This routine sets the limit indicators for a nation */
+/*
+ * find_area - Calculate territorial boundary edges for a nation
+ *
+ * Determines the rectangular boundary that encompasses all sectors owned
+ * by a nation, setting the edge coordinates used for efficient territorial
+ * processing. Handles map wraparound and optimizes the boundary rectangle
+ * to minimize area while including all owned territory.
+ *
+ * Parameters:
+ *   ntnnum - Nation number to calculate boundaries for (must be valid)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates nation's edge fields: leftedge, rightedge, topedge, bottomedge
+ *   - Sets edges to -1 if nation has no territory
+ *   - Allocates temporary memory for horizontal edge detection (non-SIMPLE_FIND)
+ *
+ * Notes:
+ *   - Searches entire map to find owned sectors
+ *   - bottomedge: lowest Y coordinate with owned sectors
+ *   - topedge: highest Y coordinate with owned sectors
+ *   - leftedge/rightedge: optimized for minimal rectangular area
+ *   - SIMPLE_FIND version: basic left/right edge detection
+ *   - Advanced version: handles map wraparound and gap optimization
+ *   - Chooses smaller of two possible rectangles when territory wraps map
+ *   - Essential for efficient sector iteration in other functions
+ *   - Used by ntn_totals and other nation-wide processing functions
+ */
 void
 find_area PARM_1(int, ntnnum)
 {
@@ -1195,7 +1591,32 @@ find_area PARM_1(int, ntnnum)
 #endif /*SIMPLE_FIND*/
 }
 
-/* INFL_OF -- computer the inflation expense on some talons */
+/*
+ * infl_of - Calculate inflation adjustment for talon expenditures
+ *
+ * Computes the additional cost imposed by national inflation on talon-based
+ * transactions. Inflation represents economic inefficiency and monetary
+ * devaluation that increases the real cost of purchases and maintenance.
+ * Used throughout the economic system for realistic cost modeling.
+ *
+ * Parameters:
+ *   talon_value - Base talon amount to apply inflation to
+ *
+ * Returns:
+ *   Additional inflation cost in talons, 0 if no nation context or zero value
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Uses nation's BUTE_INFLATION attribute as inflation percentage
+ *   - Applied to absolute value to handle both positive and negative amounts
+ *   - Returns additional cost only, not total adjusted cost
+ *   - Must be added to original value by caller
+ *   - No inflation applied if ntn_ptr is NULL or talon_value is 0
+ *   - Essential for economic realism and game balance
+ *   - Affects all talon-based transactions throughout the game
+ */
 itemtype
 infl_of PARM_1( itemtype, talon_value )
 {
@@ -1207,7 +1628,33 @@ infl_of PARM_1( itemtype, talon_value )
   return((itemtype) ntn_ptr->attribute[BUTE_INFLATION] * abs(talon_value));
 }
 
-/* FIND_NEWARMYNUM -- Determine a new army unit number by the given utype */
+/*
+ * find_newarmynum - Find next available army unit number for unit type
+ *
+ * Determines an appropriate unique unit identifier for a new army unit
+ * based on unit type and existing unit numbers. Ensures no conflicts
+ * with existing units while maintaining logical numbering patterns
+ * that group similar unit types together.
+ *
+ * Parameters:
+ *   utype - Unit type to determine base numbering range for
+ *
+ * Returns:
+ *   Next available unit number, skipping EMPTY_HOLD reserved values
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Uses unit_basenum to determine starting range for unit type
+ *   - Increments past EMPTY_HOLD reserved numbers
+ *   - Searches existing army list to find first unused number
+ *   - Maintains ascending order assumption in army list
+ *   - Breaks early when gap found in numbering sequence
+ *   - Essential for unit creation and organization systems
+ *   - Prevents duplicate unit numbers that would cause conflicts
+ *   - Groups similar unit types in logical number ranges
+ */
 int
 find_newarmynum PARM_1(int, utype)
 {
@@ -1234,7 +1681,36 @@ find_newarmynum PARM_1(int, utype)
   return(hold);
 }
 
-/* ARMY_REORGANIZE -- Reorganize all of the unit numbers */
+/*
+ * army_reorganize - Renumber all army units with optimized unit IDs
+ *
+ * Systematically renumbers all army units in a nation to eliminate gaps
+ * and optimize the numbering system. Maintains proper references between
+ * units (especially leader relationships) while creating a clean, organized
+ * unit numbering scheme for better management and display.
+ *
+ * Parameters:
+ *   None (operates on current nation via ntn_ptr)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Renumbers all army units in the nation
+ *   - Rebuilds army list with new numbering
+ *   - Updates leader references to maintain command relationships
+ *   - Calls army_sort to maintain list organization
+ *
+ * Notes:
+ *   - Temporarily removes units from list during renumbering
+ *   - Uses find_newarmynum for optimal number assignment
+ *   - Updates ARMYT_LEAD references when leaders are renumbered
+ *   - Maintains command structure integrity during reorganization
+ *   - Rebuilds list in reverse order, then sorts properly
+ *   - Essential for unit management cleanup and organization
+ *   - Safe operation that preserves all unit relationships
+ *   - Improves user interface and reduces numbering confusion
+ */
 void
 army_reorganize PARM_0(void)
 {
@@ -1276,7 +1752,35 @@ army_reorganize PARM_0(void)
   army_sort(FALSE);
 }
 
-/* ADJUST_ATTRIBUTE -- Shift a given national attribute by a given amount */
+/*
+ * adjust_attribute - Modify national attribute with boundary enforcement
+ *
+ * Safely adjusts a national attribute by a specified amount while enforcing
+ * minimum and maximum bounds defined in the attribute system. Prevents
+ * attribute values from exceeding design limits that could break game
+ * balance or cause undefined behavior in dependent calculations.
+ *
+ * Parameters:
+ *   bute_list - Array of attribute values to modify (must not be NULL)
+ *   butenum - Index of specific attribute to adjust (must be valid BUTE_ constant)
+ *   amount - Amount to add to current value (can be negative for reduction)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies the specified attribute value in-place
+ *   - Clamps result to valid range defined by bute_info bounds
+ *
+ * Notes:
+ *   - Validates butenum is within valid range [0, BUTE_NUMBER)
+ *   - Uses bute_info[butenum].max_base and .min_base for bounds checking
+ *   - Addition performed in temporary variable to avoid overflow issues
+ *   - Essential for safe attribute modification throughout the game
+ *   - Prevents exploits that could manipulate attributes beyond design limits
+ *   - Used by various systems for attribute rewards, penalties, and adjustments
+ *   - Maintains game balance by enforcing consistent attribute ranges
+ */
 void
 adjust_attribute PARM_3(short *, bute_list, int, butenum, int, amount)
 {
@@ -1297,7 +1801,34 @@ adjust_attribute PARM_3(short *, bute_list, int, butenum, int, amount)
   }
 }
 
-/* MERC_COSTRATE -- % of going rate that the current nation pays for mercs */
+/*
+ * merc_costrate - Calculate mercenary cost multiplier percentage
+ *
+ * Determines the cost multiplier for mercenary hiring based on the nation's
+ * mercenary reputation attribute. Nations with better reputations pay less
+ * for mercenary services, while those with poor reputations face premium
+ * pricing. This creates strategic incentives for maintaining good relations
+ * with mercenary organizations.
+ *
+ * Parameters:
+ *   None (uses current nation via ntn_ptr)
+ *
+ * Returns:
+ *   Cost percentage (100 = normal rate, <100 = discount, >100 = premium),
+ *   100 if no nation context available
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Formula: 150 - BUTE_MERCREP = cost percentage
+ *   - BUTE_MERCREP range typically 0-50, giving costs 150% to 100%
+ *   - Higher reputation (higher BUTE_MERCREP) = lower costs
+ *   - Default 100% cost when ntn_ptr is NULL
+ *   - Used by mercenary hiring and maintenance cost calculations
+ *   - Provides economic incentive for diplomatic/reputation management
+ *   - Essential for balanced mercenary economics in the game
+ */
 int
 merc_costrate PARM_0(void)
 {
