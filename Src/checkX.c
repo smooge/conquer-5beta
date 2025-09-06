@@ -1,5 +1,25 @@
-/* This file performs locking, error and status checking */
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * checkX.c - Data Validation, Integrity Checking, and File Locking
+ *
+ * This file provides comprehensive data validation and integrity checking
+ * for the Conquer game system. It ensures all game entities maintain valid
+ * states and enforces constraints to prevent data corruption. Also handles
+ * file locking for multi-user coordination.
+ *
+ * Key Functionality Areas:
+ *   - Nation data validation and constraint enforcement
+ *   - Army/Navy/Caravan/City/Item validation and cleanup
+ *   - Sector data integrity verification
+ *   - Cross-reference validation (diplomacy, ownership, etc.)
+ *   - File locking for concurrent access control
+ *   - User management and login validation
+ *   - Multi-user session tracking and display
+ *
+ * This module is critical for game stability and data integrity, preventing
+ * corruption that could crash the game or create unfair advantages. It performs
+ * extensive validation during updates and can automatically fix many issues.
+ *
+ * conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
  * code and it is our hope that you respect this.  We give permission
@@ -56,7 +76,38 @@ extern struct passwd *getpwuid();
 #include <sys/utsname.h>
 #endif
 
-/* VERIFY_NTN -- assure that information for all nations is valid */
+/*
+ * verify_ntn - Comprehensive nation data validation and integrity checking
+ *
+ * Performs extensive validation of all nations and their entities, checking
+ * constraints and automatically fixing violations. This is one of the most
+ * critical functions for maintaining game data integrity.
+ *
+ * Parameters:
+ *   __file__ - Source file name for error reporting (usually __FILE__)
+ *   __line__ - Source line number for error reporting (usually __LINE__)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Validates and fixes nation properties (name, login, race, capital, etc.)
+ *   - Checks and corrects army units (size, location, leadership chains)
+ *   - Validates navy units (ships, crew, cargo, location)
+ *   - Verifies caravan units (size, crew, cargo, location)
+ *   - Checks city data (location, ownership, designation, resources)
+ *   - Validates item/commodity data (location, quantities)
+ *   - Enforces diplomacy constraints (monster nations always at war)
+ *   - Removes invalid entities via dest_* functions
+ *   - Logs all violations and fixes to update file
+ *
+ * Notes:
+ *   - Automatically fixes many data integrity issues
+ *   - Can remove units that violate fundamental constraints
+ *   - Essential for preventing game crashes and exploits
+ *   - Called during update processing and debug verification
+ *   - Uses goto statements for efficient entity removal loops
+ */
 void
 verify_ntn PARM_2( char *, __file__, int, __line__ )
 {
@@ -550,7 +601,33 @@ verify_ntn PARM_2( char *, __file__, int, __line__ )
 
 } /* verify_ntn() */
 
-/* VERIFY_SCT -- Assure that all sectors contain valid information */
+/*
+ * verify_sct - Validate sector data integrity across the world map
+ *
+ * Scans every sector on the map and validates sector properties,
+ * automatically correcting violations and inconsistencies. Ensures
+ * map data remains consistent and valid.
+ *
+ * Parameters:
+ *   __file__ - Source file name for error reporting (usually __FILE__)
+ *   __line__ - Source line number for error reporting (usually __LINE__)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Validates tradegood types and resets invalid ones to TG_NONE
+ *   - Checks mineral deposits match appropriate tradegood types
+ *   - Enforces population limits (0 to ABSMAXPEOPLE)
+ *   - Prevents ownership of water sectors (except by unowned)
+ *   - Logs all violations and corrections to update file
+ *
+ * Notes:
+ *   - Processes entire world map (MAPX * MAPY sectors)
+ *   - Critical for preventing invalid map states
+ *   - Called as part of comprehensive data verification
+ *   - Automatically fixes many common map data corruption issues
+ */
 void
 verify_sct PARM_2(char *, __file__, int, __line__ )
 {
@@ -603,7 +680,30 @@ verify_sct PARM_2(char *, __file__, int, __line__ )
 
 } /* verify_sct() */
 
-/* VERIFY_DATA -- Verify all of the data */
+/*
+ * verify_data - Master data integrity verification function
+ *
+ * Top-level function that performs complete game data validation by
+ * calling all specialized verification routines. This is the main
+ * entry point for comprehensive data integrity checking.
+ *
+ * Parameters:
+ *   __file__ - Source file name for error reporting (usually __FILE__)
+ *   __line__ - Source line number for error reporting (usually __LINE__)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls verify_ntn() to check all nation data
+ *   - Calls verify_sct() to check all sector data
+ *   - Indirectly logs all violations and fixes via sub-functions
+ *
+ * Notes:
+ *   - Central coordination point for all data validation
+ *   - Used during updates and debug verification
+ *   - Can be called from any location for data integrity checks
+ */
 void
 verify_data PARM_2( char *, __file__, int, __line__ )
 {
@@ -613,7 +713,29 @@ verify_data PARM_2( char *, __file__, int, __line__ )
 }
 
 #ifdef DEBUG
-/* CHECKOUT -- display current location and verify data for debugging trace */
+/*
+ * checkout - Debug trace function with data verification
+ *
+ * Debugging utility that prints current execution location and
+ * performs complete data verification. Used for tracing execution
+ * and catching data corruption at specific code points.
+ *
+ * Parameters:
+ *   file - Source file name for trace output
+ *   line - Source line number for trace output
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Prints location information to update log
+ *   - Calls verify_data() for complete integrity check
+ *
+ * Notes:
+ *   - Only compiled in DEBUG builds
+ *   - Useful for tracking down data corruption sources
+ *   - Can be placed at any code location for monitoring
+ */
 void
 checkout PARM_2 ( char *, file, int, line )
 {
@@ -715,7 +837,34 @@ canseelogin PARM_0(void)
 }
 #endif /* LISTUSERS */
 
-/* WHO_IS_ON -- Routine to list all users currently logged in */
+/*
+ * who_is_on - Display all users currently logged into the game
+ *
+ * Shows comprehensive information about current game activity including
+ * active players, ongoing updates, and system status. Provides different
+ * levels of detail based on user permissions and compilation options.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Prints campaign information and current turn details
+ *   - Shows last update time if available
+ *   - Checks for ongoing update or nation addition processes
+ *   - Scans all nations for active login sessions
+ *   - Displays user details if LISTUSERS is enabled and permissions allow
+ *   - Counts and reports total active users
+ *
+ * Notes:
+ *   - Uses file locking to detect active sessions
+ *   - Different output based on LISTUSERS compilation flag
+ *   - Respects privacy settings (hide_login option)
+ *   - Essential tool for game administration and player coordination
+ *   - Checks special lock files for system operations
+ */
 void
 who_is_on PARM_0(void)
 {
@@ -827,8 +976,36 @@ who_is_on PARM_0(void)
   printf("\n");
 }
 
-/* CHECK_LOCK -- Set/Check lock on a file... return -1 if already active
-                 set keeplock to true to set lock after checking */
+/*
+ * check_lock - File locking mechanism for multi-user coordination
+ *
+ * Implements file-based locking to coordinate access between multiple
+ * game processes and users. Prevents conflicts during updates, logins,
+ * and other critical operations. Supports both real file locking and
+ * timestamp-based locking depending on system capabilities.
+ *
+ * Parameters:
+ *   filename - Name of lock file to check/create
+ *   keeplock - If TRUE, maintain lock after checking; if FALSE, release immediately
+ *
+ * Returns:
+ *   File descriptor (> 0) if lock acquired successfully
+ *   0 if no lock needed or released
+ *   -1 if file is already locked by another process
+ *
+ * Side Effects:
+ *   - Creates lock file if keeplock is TRUE
+ *   - Uses flock()/lockf() or timestamp checking based on FILELOCK setting
+ *   - Stores user information in lock file if LISTUSERS is enabled
+ *   - Removes stale lock files automatically (timestamp method)
+ *   - May terminate program on compiler optimization detection
+ *
+ * Notes:
+ *   - Critical for preventing data corruption in multi-user environment
+ *   - Two locking strategies: FILELOCK (real locks) vs timestamps
+ *   - Includes compiler optimization detection for Sun/gcc compatibility
+ *   - Used throughout system for session management and update coordination
+ */
 int
 check_lock PARM_2 (char *, filename, int, keeplock)
 {
@@ -900,7 +1077,29 @@ check_lock PARM_2 (char *, filename, int, keeplock)
   return(filed_id);
 }
 
-/* KILL_LOCK -- Remove a previously set lock, by number */
+/*
+ * kill_lock - Remove a previously acquired file lock
+ *
+ * Safely removes a file lock by closing the file descriptor and
+ * unlinking the lock file. Provides error reporting if removal fails.
+ *
+ * Parameters:
+ *   fid - File descriptor of the lock file to remove
+ *   fname - Name of the lock file to unlink
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Closes the file descriptor
+ *   - Removes the lock file from filesystem
+ *   - Logs warning if removal fails
+ *
+ * Notes:
+ *   - Always call this to properly release locks
+ *   - Essential for preventing lock file accumulation
+ *   - Used in conjunction with check_lock()
+ */
 void
 kill_lock PARM_2(int, fid, char *, fname)
 {
@@ -911,7 +1110,28 @@ kill_lock PARM_2(int, fid, char *, fname)
   }
 }
 
-/* USER_EXISTS -- Returns TRUE if user is a valid name of the system */
+/*
+ * user_exists - Validate if a username exists on the system
+ *
+ * Checks if the specified username corresponds to a valid system user
+ * account. Used for validating nation login names and ensuring only
+ * legitimate users can control nations.
+ *
+ * Parameters:
+ *   who - Username string to validate
+ *
+ * Returns:
+ *   TRUE if user exists on system, FALSE otherwise
+ *
+ * Side Effects:
+ *   None
+ *
+ * Notes:
+ *   - Uses getpwnam() on Unix systems for validation
+ *   - Returns TRUE on VMS systems (simplified validation)
+ *   - Critical for preventing unauthorized nation access
+ *   - Called during nation login validation
+ */
 int
 user_exists PARM_1 (char *, who)
 {
@@ -926,7 +1146,30 @@ user_exists PARM_1 (char *, who)
 #endif /* VAXC */
 }
 
-/* GET_USERID -- Find the user name if possible */
+/*
+ * get_userid - Retrieve current user's login name
+ *
+ * Determines the login name of the currently executing user using
+ * system calls. Provides fallback mechanisms for different Unix
+ * variants and handles memory allocation for the result.
+ *
+ * Parameters:
+ *   outname - Buffer to store username, or NULL to allocate new buffer
+ *
+ * Returns:
+ *   Pointer to username string on success
+ *   NULL on failure or if user cannot be determined
+ *
+ * Side Effects:
+ *   - May allocate memory if outname is NULL
+ *   - Calls abrt() on malloc failure
+ *
+ * Notes:
+ *   - Uses getpwuid(getuid()) or cuserid() depending on availability
+ *   - Essential for identifying users in multi-user environment
+ *   - Handles both provided buffers and dynamic allocation
+ *   - Platform-specific implementation variations
+ */
 char *
 get_userid PARM_1(char *, outname)
 {
