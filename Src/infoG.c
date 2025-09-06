@@ -1,4 +1,36 @@
-/* This file creates formatted displays of various information */
+/*
+ * infoG.c - Information Display System for Conquer Game Interface
+ *
+ * This module provides comprehensive information display and reporting capabilities
+ * for the Conquer game. It handles formatted display of game data including armies,
+ * navies, cities, items, nations, and diplomatic relationships. The system supports
+ * multiple report formats, paging, searching, and interactive navigation.
+ *
+ * Key Components:
+ * - Multi-format information displays (army, navy, city, item, nation, diplomatic)
+ * - City economic and resource reporting with three display modes
+ * - Interactive paging and navigation through large data sets
+ * - Search functionality for specific items by ID or name
+ * - Production/consumption analysis for cities and nations
+ * - Real-time economic calculations including inflation effects
+ * - Support for both player and deity (god mode) viewing
+ *
+ * Display Architecture:
+ * - Configurable column layouts based on screen width
+ * - Automatic positioning and spacing calculations
+ * - Multi-column displays with proper alignment
+ * - Context-sensitive help and navigation prompts
+ * - Screen refresh and redraw management
+ *
+ * Report Types:
+ * - Army Report: Unit details, status, movement, supply, costs
+ * - Naval Report: Ship composition, efficiency, crew, cargo
+ * - City Report: Three modes (Resource, Economy, Summary)
+ * - Item Report: Commodity locations and quantities
+ * - Nation Report: Demographics, scores, diplomatic status
+ * - Diplomatic Report: Bilateral relationship status
+ */
+
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -65,7 +97,34 @@ static int city_finish, city_start;
 #define CINFO_WIDTH1	28
 #define CINFO_WIDTH2	60
 
-/* DISP_CITY_INFO -- Provide information on city/region */
+/*
+ * disp_city_info - Display comprehensive city or nation information
+ *
+ * Provides detailed economic and demographic information for either a specific
+ * city/region or an entire nation. Supports three display modes: resource
+ * production, economic analysis, and sector summary. Handles complex production
+ * and consumption calculations including taxation, magic effects, and inflation.
+ *
+ * Parameters:
+ *   xpos - X position for display output (adjusted for screen width)
+ *   line - Starting line position for display
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays formatted information on screen using curses
+ *   - May show "Thinking..." message for large nations (>10 cities)
+ *   - Allocates and frees memory for production/consumption calculations
+ *   - Modifies global variables for city display state
+ *
+ * Notes:
+ *   - Uses global city_Iptr to determine if showing city vs. nation data
+ *   - Supports three report modes via global city_mode variable
+ *   - Calculates real-time production/consumption including tax effects
+ *   - Handles inflation calculations for economic projections
+ *   - Display automatically adjusts column spacing based on screen width
+ */
 static void
 disp_city_info PARM_2 (int, xpos, int, line)
 {
@@ -593,7 +652,36 @@ disp_city_info PARM_2 (int, xpos, int, line)
   }
 }
 
-/* DISP_INFO -- Show information about the selected item */
+/*
+ * disp_info - Display detailed information for specific game entities
+ *
+ * Shows formatted information for different types of game objects including
+ * armies, navies, caravans, cities, items, nations, and diplomatic relationships.
+ * Each entity type has a specific display format with relevant statistics,
+ * status indicators, and contextual information.
+ *
+ * Parameters:
+ *   x - X coordinate for display positioning
+ *   y - Y coordinate for display positioning  
+ *   choice - Information type (INFO_ARMY, INFO_NAVY, INFO_CITY, etc.)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays formatted entity information using curses output
+ *   - Uses standout() for highlighting critical information
+ *   - May call disp_city_info() for city information display
+ *   - Accesses global entity pointers (army_Iptr, navy_Iptr, etc.)
+ *
+ * Notes:
+ *   - Army display includes strength, efficiency, status, movement, supply
+ *   - Navy display shows ship composition, efficiency, crew levels, cargo
+ *   - City display delegates to disp_city_info() for complex formatting
+ *   - Nation display respects score hiding and monster nation privacy
+ *   - Diplomatic display shows bilateral relationship status
+ *   - God mode provides additional detailed information
+ */
 static void
 disp_info PARM_3 (int, x, int, y, Infotype, choice)
 {
@@ -926,7 +1014,33 @@ disp_info PARM_3 (int, x, int, y, Infotype, choice)
   }
 }
 
-/* TITLE_INFO -- Display the desired titles for the information */
+/*
+ * title_info - Display report titles and column headers
+ *
+ * Generates and displays appropriate titles for different information report
+ * types. Handles both simple titles and complex column headers for multi-column
+ * displays like diplomatic reports. Centers titles on screen and applies
+ * proper formatting.
+ *
+ * Parameters:
+ *   choice - Information type determining title format and content
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays centered title at top of screen using standout formatting
+ *   - For diplomatic reports, creates column headers with proper spacing
+ *   - Uses global variables like ntn_ptr->name for nation-specific titles
+ *   - Calculates column positioning based on screen width
+ *
+ * Notes:
+ *   - Army/Navy reports show nation name in title
+ *   - City reports indicate current report mode (Resource/Economy/Summary)
+ *   - Diplomatic reports create multi-column headers with alignment indicators
+ *   - Nation reports use generic "World Status Report" title
+ *   - Handles screen width constraints for diplomatic report formatting
+ */
 static void
 title_info PARM_1 (Infotype, choice)
 {
@@ -988,7 +1102,33 @@ title_info PARM_1 (Infotype, choice)
   standend();
 }
 
-/* DESC_INFO -- Display decription of each row */
+/*
+ * desc_info - Display row descriptions and field labels
+ *
+ * Provides descriptive labels for each row of information in reports.
+ * Creates a legend explaining what each line of data represents, with
+ * labels positioned in the leftmost column of the display.
+ *
+ * Parameters:
+ *   line - Starting line position for descriptions
+ *   choice - Information type determining which labels to display
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays row labels in left column starting at specified line
+ *   - Uses different label sets based on information type
+ *   - Handles conditional labels based on game configuration (supplies, god mode)
+ *
+ * Notes:
+ *   - Army descriptions include strength, efficiency, status, location, movement
+ *   - Navy descriptions cover ship types, efficiency, location, crew, cargo
+ *   - Item descriptions show location and material contents
+ *   - Nation descriptions include leader, race, class, alignment, statistics
+ *   - God mode provides additional labels for debugging information
+ *   - Supply system labels depend on MAXSUPPLIES configuration
+ */
 static void
 desc_info PARM_2 (int, line, Infotype, choice)
 {
@@ -1094,7 +1234,31 @@ desc_info PARM_2 (int, line, Infotype, choice)
   }
 }
 
-/* INC_INFO -- Select the next item for display */
+/*
+ * inc_info - Advance to next item in information sequence
+ *
+ * Moves the current information pointer to the next item in the appropriate
+ * linked list or array. Each information type has its own navigation method
+ * through the data structures.
+ *
+ * Parameters:
+ *   choice - Information type determining which pointer to advance
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies global pointers (army_Iptr, navy_Iptr, city_Iptr, etc.)
+ *   - May set special completion flags (city_finish for city reports)
+ *   - For nation/diplomatic reports, increments country index
+ *
+ * Notes:
+ *   - Army reports use standard linked list navigation (next pointer)
+ *   - Group army reports use nearby army navigation (nrby pointer)
+ *   - City reports handle special case of nation summary (NULL pointer)
+ *   - Nation/diplomatic reports skip invalid or same-nation entries
+ *   - Reaches end of sequence when pointer becomes NULL or index exceeds limits
+ */
 static void
 inc_info PARM_1 (Infotype, choice)
 {
@@ -1145,7 +1309,28 @@ inc_info PARM_1 (Infotype, choice)
   }
 }
 
-/* DONE_INFO -- Return test result if search is done */
+/*
+ * done_info - Check if information sequence traversal is complete
+ *
+ * Determines whether the current information display has reached the end
+ * of available data. Each information type has specific completion criteria
+ * based on pointer states or index limits.
+ *
+ * Parameters:
+ *   choice - Information type to check for completion
+ *
+ * Returns:
+ *   TRUE if sequence is complete (no more items), FALSE if more items available
+ *
+ * Side Effects:
+ *   None (read-only function)
+ *
+ * Notes:
+ *   - Most types check for NULL pointer indicating end of linked list
+ *   - City reports have special logic for nation summary completion
+ *   - Nation/diplomatic reports check country index against maximum
+ *   - Used by paging logic to determine when to wrap or stop display
+ */
 static int
 done_info PARM_1 (Infotype, choice)
 {
@@ -1180,7 +1365,33 @@ done_info PARM_1 (Infotype, choice)
   return (hold);
 }
 
-/* INIT_INFO -- Begin from the beginning of the list of items */
+/*
+ * init_info - Initialize information pointers to start of data
+ *
+ * Sets up the appropriate starting positions for information display by
+ * pointing to the first item in each data structure. Handles special cases
+ * like group army reports (sector-specific) and city reports (current location).
+ *
+ * Parameters:
+ *   choice - Information type determining which pointers to initialize
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets global pointers to start of appropriate linked lists
+ *   - For group armies, finds first army in current sector
+ *   - For cities, may start with current location if valid
+ *   - Initializes nation/diplomatic reports to first valid nation
+ *   - Resets city display state flags
+ *
+ * Notes:
+ *   - Army reports start with nation's army list head
+ *   - Group army reports filter by current map coordinates
+ *   - City reports prefer current sector city, fall back to nation list
+ *   - Nation reports skip player's own nation for diplomatic display
+ *   - Handles edge cases like empty lists gracefully
+ */
 static void
 init_info PARM_1 (Infotype, choice)
 {
@@ -1236,7 +1447,29 @@ init_info PARM_1 (Infotype, choice)
   }
 }
 
-/* SAVEPAGE_INFO -- Note which item is at the beginning of the page */
+/*
+ * savepage_info - Save current position as page start marker
+ *
+ * Records the current information pointer positions to enable returning
+ * to the beginning of the current page after navigation or screen updates.
+ * Used for pagination and maintaining display context.
+ *
+ * Parameters:
+ *   choice - Information type determining which pointers to save
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Copies current pointers to corresponding page marker variables
+ *   - Saves both entity pointers and index positions as appropriate
+ *
+ * Notes:
+ *   - Saves army_Iptr to army_Pptr, navy_Iptr to navy_Pptr, etc.
+ *   - For nation/diplomatic reports, saves both pointer and country index
+ *   - Used in conjunction with setpage_info() for page navigation
+ *   - Essential for implementing "previous page" functionality
+ */
 static void
 savepage_info PARM_1 (Infotype, choice)
 {
@@ -1265,7 +1498,29 @@ savepage_info PARM_1 (Infotype, choice)
   }
 }
 
-/* SETPAGE_INFO -- Reset to the beginning of the page */
+/*
+ * setpage_info - Restore position to saved page start marker
+ *
+ * Restores information pointers to previously saved page beginning positions.
+ * Used to return to the start of current page after navigation operations,
+ * searches, or screen refreshes.
+ *
+ * Parameters:
+ *   choice - Information type determining which pointers to restore
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Restores current pointers from corresponding page marker variables
+ *   - Restores both entity pointers and index positions as appropriate
+ *
+ * Notes:
+ *   - Restores army_Pptr to army_Iptr, navy_Pptr to navy_Iptr, etc.
+ *   - For nation/diplomatic reports, restores both pointer and country index
+ *   - Used after search operations to return to original page context
+ *   - Paired with savepage_info() for complete page state management
+ */
 static void
 setpage_info PARM_1 (Infotype, choice)
 {
@@ -1294,7 +1549,34 @@ setpage_info PARM_1 (Infotype, choice)
   }
 }
 
-/* SEARCH_INFO -- Go to a selected item */
+/*
+ * search_info - Interactive search for specific items
+ *
+ * Provides user interface for jumping directly to specific items within
+ * information displays. Prompts user for item identifier (number or name)
+ * and navigates to that item if found. Handles error cases and validation.
+ *
+ * Parameters:
+ *   choice - Information type determining search method and validation
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area for input prompt
+ *   - Prompts user for item identifier using appropriate input method
+ *   - Updates current information pointer if item found
+ *   - Displays error messages for invalid or missing items
+ *   - Saves page position if search successful
+ *
+ * Notes:
+ *   - Army/Navy/Caravan/Item searches use numeric IDs
+ *   - City searches accept city names or "*" for nation summary
+ *   - Nation searches use get_country() for name/number input
+ *   - Group army searches verify item is in current sector
+ *   - Handles user cancellation (no_input) gracefully
+ *   - Error messages are context-specific for each search type
+ */
 static void
 search_info PARM_1 (Infotype, choice)
 {
@@ -1380,7 +1662,36 @@ search_info PARM_1 (Infotype, choice)
   }
 }
 
-/* SHOW_INFO -- Page through information on a selected item */
+/*
+ * show_info - Main information display and navigation controller
+ *
+ * Core function that manages the complete information display system.
+ * Handles initialization, screen layout, pagination, user input processing,
+ * and cleanup for all information report types. Provides interactive
+ * navigation including paging, searching, mode switching, and editing.
+ *
+ * Parameters:
+ *   inchoice - Information type to display (cast to Infotype)
+ *
+ * Returns:
+ *   FALSE on normal completion, TRUE if no data to display
+ *
+ * Side Effects:
+ *   - Clears and redraws entire screen multiple times
+ *   - Sets redraw flag to DRAW_FULL for complete screen refresh
+ *   - May enter deity mode for restricted information access
+ *   - Processes keyboard input for navigation and commands
+ *   - Modifies city_mode for city report type switching
+ *   - Calls edit_info() for interactive item modification
+ *
+ * Notes:
+ *   - Supports keyboard commands: Q(uit), /(search), Enter(edit), E/R/T(city modes)
+ *   - Automatically handles screen width calculations and column positioning
+ *   - Implements multi-column display with proper spacing and alignment
+ *   - Provides context-sensitive help prompts based on report type
+ *   - Handles edge cases like empty data sets and screen size constraints
+ *   - God mode initialization affects display layout for debugging information
+ */
 int
 show_info PARM_1 (int, inchoice)
 {
@@ -1591,7 +1902,30 @@ show_info PARM_1 (int, inchoice)
   return(FALSE);
 }
 
-/* SHOW_CITY_INFO -- Filter to call the show_info routine */
+/*
+ * show_city_info - Entry point for city information display
+ *
+ * Convenience wrapper function that initializes city report mode and
+ * calls the main show_info() function with appropriate parameters.
+ * Provides validation and default mode selection for city reports.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   MOVECOST on successful completion
+ *
+ * Side Effects:
+ *   - Sets city_start flag to enable current location preference
+ *   - Validates and corrects city_mode if out of valid range
+ *   - May display "no cities" error message if nation has no cities
+ *
+ * Notes:
+ *   - Defaults to CINFO_ECONOMY mode if city_mode is invalid
+ *   - Sets city_start flag to attempt starting with current sector city
+ *   - Returns movement cost to integrate with game's action system
+ *   - Used as the main entry point for city information commands
+ */
 int
 show_city_info PARM_0(void)
 {
