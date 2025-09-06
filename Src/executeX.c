@@ -1,4 +1,29 @@
-/* This file reads in player commands from the execute file */
+/*
+ * executeX.c - Command execution engine for game state modification
+ *
+ * This file implements the command execution system that processes player
+ * and game commands from execute files. It serves as the primary interface
+ * for modifying game state including armies, navies, caravans, cities, items,
+ * and nation-level settings through structured command files.
+ *
+ * The execution system supports multiple command categories:
+ * - Army commands (movement, combat stats, creation/destruction)
+ * - Navy commands (fleet management, ship configurations, cargo)
+ * - Caravan commands (trade unit management, materials transport)
+ * - City commands (population, resources, fortifications)
+ * - Item commands (commodity and equipment management)
+ * - Resource commands (taking and distributing materials)
+ * - Miscellaneous commands (nation settings, diplomacy, magic)
+ *
+ * Commands are processed from tab-delimited files with different data types
+ * (integer, long, double) and comprehensive error checking and validation.
+ * The system maintains game state consistency and provides detailed error
+ * reporting for invalid operations.
+ *
+ * This module is critical for game persistence, turn processing, and
+ * administrative operations, serving as the primary mechanism for applying
+ * changes to the game world.
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -39,7 +64,50 @@ int idnum, ival1, ival2;
 Exectype cmdnum;
 long lval1, lval2;
 
-/* EXEC_ARMY -- Process individual army commands */
+/*
+ * exec_army - Process individual army unit commands
+ *
+ * Executes commands that modify army unit properties including location,
+ * type, status, movement, leadership, size, and combat effectiveness.
+ * Handles army creation and destruction with proper validation and
+ * error checking for all operations.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on the army specified by global idnum. Most commands
+ * require an existing army except for creation and mercenary adjustment.
+ *
+ * Supported Commands:
+ * - EX_ARMYLOC/EX_ARMYOLOC: Set current/previous location with map bounds checking
+ * - EX_ARMYTYPE: Change army type with validation against available types
+ * - EX_ARMYSTAT: Modify army status flags and operational state
+ * - EX_ARMYMOVE: Set movement points with range validation (0-200)
+ * - EX_ARMYLEAD: Assign leader with circular reference prevention
+ * - EX_ARMYSIZE: Set unit size with non-negative validation
+ * - EX_ARMYID: Change unit ID with uniqueness verification
+ * - EX_ARMYSPLY: Set supply level within valid range (0-MAXSUPPLIES)
+ * - EX_ARMYSPTS: Set spell points with reasonable limits (0-200)
+ * - EX_ARMYEFF/EX_ARMYMAXEFF: Set efficiency and maximum efficiency
+ * - EX_ARMYCREATE: Create new army with type validation and ID assignment
+ * - EX_ARMYDESTROY: Remove army from game with cleanup
+ * - EX_ARMYMERCS: Adjust mercenary counts for recruitment tracking
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies army data structures directly
+ * - Updates army sorting order when location/ID changes
+ * - Generates error messages for invalid operations
+ * - May create or destroy army units affecting global army list
+ * - Updates mercenary recruitment tracking counters
+ *
+ * Notes:
+ * - Validates all input parameters before applying changes
+ * - Maintains referential integrity for leader assignments
+ * - Preserves army sorting order after modifications
+ * - Thread safety depends on global variable access patterns
+ */
 static void
 exec_army PARM_0(void)
 {
@@ -243,7 +311,51 @@ exec_army PARM_0(void)
   }
 }
 
-/* EXEC_NAVY -- Process navy commands */
+/*
+ * exec_navy - Process naval fleet commands
+ *
+ * Executes commands that modify navy unit properties including location,
+ * ship configuration, crew levels, movement, and cargo management.
+ * Handles navy creation and destruction with validation for all naval
+ * operations including ship class management and efficiency tracking.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on the navy specified by global idnum. Most commands
+ * require an existing navy except for creation operations.
+ *
+ * Supported Commands:
+ * - EX_NAVYLOC/EX_NAVYOLOC: Set current/previous location with map validation
+ * - EX_NAVYSHIP: Configure ship class quantities with class/value validation
+ * - EX_NAVYSTAT: Modify navy status flags and operational state
+ * - EX_NAVYMOVE: Set movement points with range validation (0-200)
+ * - EX_NAVYID: Change unit ID with uniqueness verification and sorting
+ * - EX_NAVYCREW: Set crew percentage with range validation (0-100)
+ * - EX_NAVYPEOP: Set people carried per hold (0-255 range)
+ * - EX_NAVYMTRLS: Adjust raw materials with type and value validation
+ * - EX_NAVYSPLY: Set supply level within extended naval range (0-MAXSUPPLIES*4)
+ * - EX_NAVYARMY/EX_NAVYCVN: Assign carried units with existence validation
+ * - EX_NAVYEFF: Set ship class efficiency with class and percentage validation
+ * - EX_NAVYCREATE: Create new navy with automatic ID assignment
+ * - EX_NAVYDESTROY: Remove navy from game with existence checking
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies navy data structures directly
+ * - Updates navy sorting order when ID changes
+ * - Generates error messages for invalid operations
+ * - May create or destroy navy units affecting global navy list
+ * - Validates carried unit references for data integrity
+ *
+ * Notes:
+ * - Ship class validation ensures valid NSHP_NUMBER range
+ * - Material type validation uses MTRLS_NUMBER bounds checking
+ * - Crew percentages and efficiency values bounded to realistic ranges
+ * - Supports higher supply limits than armies due to naval logistics
+ * - Maintains referential integrity for carried army/caravan units
+ */
 static void
 exec_navy PARM_0(void)
 {
@@ -447,7 +559,51 @@ exec_navy PARM_0(void)
   }
 }
 
-/* EXEC_CVN -- Process caravan commands */
+/*
+ * exec_cvn - Process caravan trade unit commands
+ *
+ * Executes commands that modify caravan unit properties including location,
+ * size, movement, crew levels, and material transport capabilities.
+ * Handles caravan creation and destruction with validation for all trade
+ * operations including cargo management and efficiency tracking.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on the caravan specified by global idnum. Most commands
+ * require an existing caravan except for creation operations.
+ *
+ * Supported Commands:
+ * - EX_CVNLOC/EX_CVNOLOC: Set current/previous location with map validation
+ * - EX_CVNSIZE: Set caravan size with validation (0-255 range)
+ * - EX_CVNSTAT: Modify caravan status flags and operational state
+ * - EX_CVNMOVE: Set movement points with range validation (0-200)
+ * - EX_CVNID: Change unit ID with uniqueness verification and sorting
+ * - EX_CVNCREW: Set crew percentage with range validation (0-100)
+ * - EX_CVNPEOP: Set people carried per unit (0-255 range)
+ * - EX_CVNMTRLS: Adjust raw materials with type and value validation
+ * - EX_CVNSPLY: Set supply level within caravan range (0-MAXSUPPLIES*2)
+ * - EX_CVNEFF: Set caravan efficiency with percentage validation (0-100)
+ * - EX_CVNCREATE: Create new caravan with automatic ID assignment
+ * - EX_CVNDESTROY: Remove caravan from game with existence checking
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies caravan data structures directly
+ * - Updates caravan sorting order when ID changes
+ * - Generates error messages for invalid operations
+ * - May create or destroy caravan units affecting global caravan list
+ * - Validates material types and quantities for trade operations
+ *
+ * Notes:
+ * - Size validation ensures reasonable caravan capacity limits
+ * - Material type validation uses MTRLS_NUMBER bounds checking
+ * - Crew percentages bounded to realistic operational ranges
+ * - Supply limits reflect caravan logistics capabilities (2x army base)
+ * - Efficiency affects caravan movement and cargo handling capacity
+ * - All byte-sized values validated against 255 maximum
+ */
 static void
 exec_cvn PARM_0(void)
 {
@@ -621,7 +777,50 @@ exec_cvn PARM_0(void)
   }
 }
 
-/* EXEC_CITY -- Process city commands */
+/*
+ * exec_city - Process city settlement commands
+ *
+ * Executes commands that modify city properties including location, name,
+ * population, resource distribution weighting, material stockpiles, and
+ * fortification levels. Handles city creation and destruction with
+ * validation for all urban management operations.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on the city specified by str1 (city name). Most commands
+ * require an existing city except for creation operations.
+ *
+ * Supported Commands:
+ * - EX_CITYLOC: Set city location with map bounds validation
+ * - EX_CITYNAME: Change city name with uniqueness verification and sorting
+ * - EX_CITYPEOP: Set population with reasonable range validation (>= -50)
+ * - EX_CITYWEIGHT: Set distribution weighting (0-255) affecting resource flow
+ * - EX_CITYMTRLS: Adjust city material stockpiles with type validation
+ * - EX_CITYSTALONS: Set starting treasury amount for economic planning
+ * - EX_CITYIMTRLS: Set incremental material production rates
+ * - EX_CITYFORT: Set fortification level with maximum value validation
+ * - EX_CITYCREATE: Create new city with name validation and initialization
+ * - EX_CITYDESTROY: Remove city from game with weight recalculation
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies city data structures directly
+ * - Updates city sorting order when name changes
+ * - Triggers resource distribution weight recalculation
+ * - Generates error messages for invalid operations
+ * - May create or destroy cities affecting global city list
+ * - Validates material types using MTRLS_NUMBER bounds
+ *
+ * Notes:
+ * - City lookup uses string names (str1) rather than numeric IDs
+ * - Population can be negative (represents debt/deficit situations)
+ * - Distribution weights affect how resources flow between cities
+ * - Material validation allows negative talons but not other materials
+ * - Fortification bounded by MAXFORTVAL game balance constant
+ * - Weight changes trigger immediate recalculation for consistency
+ */
 static void
 exec_city PARM_0(void)
 {
@@ -760,7 +959,50 @@ exec_city PARM_0(void)
   }
 }
 
-/* EXEC_ITEM -- Process item commands */
+/*
+ * exec_item - Process commodity and equipment item commands
+ *
+ * Executes commands that modify item properties including location, ID,
+ * material composition, manpower requirements, and unit associations.
+ * Handles item creation and destruction with validation for all commodity
+ * and equipment management operations.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on the item specified by global idnum. Most commands
+ * require an existing item except for creation operations.
+ *
+ * Supported Commands:
+ * - EX_ITEMLOC: Set item location with map bounds validation
+ * - EX_ITEMID: Change item ID with uniqueness verification and sorting
+ * - EX_ITEMMTRLS: Adjust item material composition with type validation
+ * - EX_ITEMMEN: Set manpower requirements with non-negative validation
+ * - EX_ITEMINFO: Set item information flags and metadata
+ * - EX_ITEMTYPE: Set item type classification for game mechanics
+ * - EX_ITEMARMY: Associate item with army unit (with existence checking)
+ * - EX_ITEMNAVY: Associate item with navy unit (with existence checking)
+ * - EX_ITEMCVN: Associate item with caravan unit (with existence checking)
+ * - EX_ITEMCREATE: Create new item with automatic ID assignment
+ * - EX_ITEMDESTROY: Remove item from game with cleanup
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies item data structures directly
+ * - Updates item sorting order when ID changes
+ * - Generates error messages for invalid operations
+ * - May create or destroy items affecting global item list
+ * - Validates associated unit references for data integrity
+ *
+ * Notes:
+ * - Item ID validation ensures uniqueness across all items
+ * - Material type validation uses MTRLS_NUMBER bounds checking
+ * - Allows negative talons but validates other materials as non-negative
+ * - Unit associations checked for existence before assignment
+ * - Manpower requirements affect item transport and usage mechanics
+ * - Item type affects game behavior and interaction possibilities
+ */
 static void
 exec_item PARM_0(void)
 {
@@ -902,7 +1144,46 @@ exec_item PARM_0(void)
   }
 }
 
-/* EXEC_TAKE -- Handle the resource selection commands */
+/*
+ * exec_take - Handle resource extraction command sequences
+ *
+ * Processes multi-command sequences for extracting resources from sectors.
+ * Uses a static cost_ptr to accumulate material requirements across
+ * multiple commands before executing the final resource extraction operation.
+ * Provides validation and coordinate checking for all extraction operations.
+ *
+ * The function maintains state between commands using a static ITEM_PTR
+ * to track the extraction location and material requirements. Commands
+ * must be processed in the correct sequence: START -> MTRLS -> FINISH.
+ *
+ * Supported Commands:
+ * - EX_TAKESTART: Initialize extraction operation at specified coordinates
+ * - EX_TAKEMTRLS: Add material requirements to extraction (multiple calls)
+ * - EX_TAKEFINISH: Execute resource extraction with validation
+ *
+ * Command Sequence:
+ * 1. TAKESTART establishes location and initializes material arrays
+ * 2. Multiple TAKEMTRLS commands specify material types and quantities
+ * 3. TAKEFINISH validates coordinates and executes the extraction
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Maintains static cost_ptr between commands for sequence processing
+ * - Allocates and frees temporary item structures for extraction data
+ * - Calls take_resources() to execute actual resource extraction
+ * - Generates error messages for sequence violations or mismatched coordinates
+ * - Modifies sector resource levels when extraction completes successfully
+ *
+ * Notes:
+ * - Coordinate validation ensures START and FINISH match
+ * - Material command validation uses offset arithmetic (cmdnum - EX_TAKEMTRLS)
+ * - Static pointer maintains state across function calls during sequence
+ * - Memory management includes proper allocation and cleanup
+ * - Supports extraction of all material types defined by MTRLS_NUMBER
+ */
 static void
 exec_take PARM_0(void)
 {
@@ -970,7 +1251,47 @@ exec_take PARM_0(void)
   }
 }
 
-/* EXEC_GIVE -- Handle the resource distribution commands */
+/*
+ * exec_give - Handle resource distribution command sequences
+ *
+ * Processes multi-command sequences for distributing resources to sectors.
+ * Uses a static give_ptr to accumulate material quantities across
+ * multiple commands before executing the final resource distribution operation.
+ * Provides validation and coordinate checking for all distribution operations.
+ *
+ * The function maintains state between commands using a static ITEM_PTR
+ * to track the distribution location and material quantities. Commands
+ * must be processed in the correct sequence: START -> MTRLS -> FINISH.
+ *
+ * Supported Commands:
+ * - EX_GIVESTART: Initialize distribution operation at specified coordinates
+ * - EX_GIVEMTRLS: Add material quantities to distribution (multiple calls)
+ * - EX_GIVEFINISH: Execute resource distribution with validation
+ *
+ * Command Sequence:
+ * 1. GIVESTART establishes location and initializes material arrays
+ * 2. Multiple GIVEMTRLS commands specify material types and quantities
+ * 3. GIVEFINISH validates coordinates and executes the distribution
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Maintains static give_ptr between commands for sequence processing
+ * - Allocates and frees temporary item structures for distribution data
+ * - Calls send_resources() to execute actual resource distribution
+ * - Generates error messages for sequence violations or mismatched coordinates
+ * - Modifies sector resource levels when distribution completes successfully
+ *
+ * Notes:
+ * - Coordinate validation ensures START and FINISH match
+ * - Material command validation uses offset arithmetic (cmdnum - EX_GIVEMTRLS)
+ * - Static pointer maintains state across function calls during sequence
+ * - Memory management includes proper allocation and cleanup
+ * - Supports distribution of all material types defined by MTRLS_NUMBER
+ * - Parallel structure to exec_take() but for resource distribution
+ */
 static void
 exec_give PARM_0(void)
 {
@@ -1038,7 +1359,85 @@ exec_give PARM_0(void)
   }
 }
 
-/* EXEC_MISC -- This routine takes care of the remaining commands */
+/*
+ * exec_misc - Process miscellaneous game state commands
+ *
+ * Handles a diverse collection of commands for nation-level settings,
+ * group management, diplomacy, sector modification, magic systems,
+ * and administrative operations. This function serves as the catch-all
+ * for commands not handled by the specialized unit processors.
+ *
+ * The function processes commands based on the global cmdnum variable
+ * and operates on various game entities depending on the command type.
+ * Most commands perform extensive validation before applying changes.
+ *
+ * Command Categories:
+ *
+ * Group Commands:
+ * - EX_GRPLOC: Set group location with leader validation and map bounds
+ * - EX_GRPMOVE: Set group movement with speed and movement range validation
+ *
+ * Nation Commands:
+ * - EX_NTNNAME: Change nation name with uniqueness and length validation
+ * - EX_NTNLOGIN: Set user login with system user existence checking
+ * - EX_NTNPASSWD: Set nation password with length validation
+ * - EX_NTNLEADER: Set leader name with length validation
+ * - EX_NTNLOC: Set capital location with map bounds validation
+ * - EX_NTNAPLUS/EX_NTNDPLUS: Set attack/defense bonuses
+ * - EX_NTNACTIVE: Modify nation activity status with admin restrictions
+ * - EX_NTNDIPLO: Set diplomatic relations with status validation
+ * - EX_NTNBUTE: Modify nation attributes with range validation
+ * - EX_NTNRLOC: Set nation center coordinates
+ * - EX_NTNREPRO: Set reproduction rate (0-15 range)
+ * - EX_NTNRACE: Set nation race with race validation
+ * - EX_NTNMARK: Set nation map marker with validity checking
+ * - EX_NTNLEDGE/EX_NTNREDGE: Set map edge boundaries for nation view
+ * - EX_NTNBEDGE/EX_NTNTEDGE: Set vertical map boundaries
+ * - EX_NTNCLASS: Set nation class with class validation
+ * - EX_NTNSCORE: Set nation score
+ * - EX_NTNMOVE: Set nation movement allowance (4-50 range)
+ * - EX_BRIBE: Process bribery operations (unimplemented)
+ * - EX_NEWSSIZE/EX_MAILSIZE: Set news and mail buffer sizes
+ *
+ * Sector Commands:
+ * - EX_SCTDESG: Set sector designation with validation
+ * - EX_SCTPEOPLE: Set sector population with bounds checking
+ * - EX_SCTOWN: Set sector owner with nation validation
+ * - EX_SCTALT: Set sector altitude with elevation bounds
+ * - EX_SCTVEG: Set sector vegetation type
+ * - EX_SCTTGOOD: Set sector trade good with type validation
+ * - EX_SCTMNRLS: Set sector mineral value (0-255 range)
+ *
+ * Magic Commands:
+ * - EX_MGK_ADJ: Adjust magic powers with checksum validation
+ * - EX_MGKSPELL: Process spell examination and recording
+ * - EX_MGKSENDING: Handle monster sending operations with creation
+ *
+ * Administrative Commands:
+ * - EX_NTNRENUM: Trigger army reorganization
+ * - EX_UNUMCOPY/EX_UNUMRESET/EX_UNUMDEFAULT: Unit number management
+ * - EX_UNUMSLOT: Assign unit number slots
+ *
+ * Parameters: None (operates on global variables)
+ *
+ * Returns: Nothing (void)
+ *
+ * Side Effects:
+ * - Modifies nation, sector, and global game state
+ * - Generates news entries for significant changes
+ * - Updates file systems for name changes
+ * - Triggers various recalculation and sorting operations
+ * - May create monster units during magic operations
+ * - Maintains diplomatic relationship consistency
+ *
+ * Notes:
+ * - Extensive validation prevents invalid game states
+ * - News generation documents major nation changes
+ * - File operations handle login/name changes
+ * - Magic operations include power validation and monster creation
+ * - Administrative commands reset various game subsystems
+ * - God-level permissions required for some operations
+ */
 static void
 exec_misc PARM_0(void)
 {
@@ -1567,8 +1966,65 @@ exec_misc PARM_0(void)
   }
 }
 
-/* EXECUTE -- Read in the commands entered using the conquer interface
-              Returns 0 for no file, 1 for success, > or -1 for errors */
+/*
+ * execute - Main command execution interface for game state modification
+ *
+ * Reads and processes commands from execute files generated by the game
+ * interface or administrative tools. This function serves as the primary
+ * entry point for applying changes to the game world, handling file I/O,
+ * command parsing, and delegation to appropriate command processors.
+ *
+ * The function opens nation-specific execute files (name.exe or god.exe),
+ * parses tab-delimited command lines with different data types, and
+ * routes commands to specialized processing functions based on command
+ * categories. Provides comprehensive error checking and validation.
+ *
+ * File Format:
+ * Commands are stored in tab-delimited format with the following structure:
+ * [Type]_[Category]\t[Command]\t[ID]\t[Value1]\t[Value2]\t[String1]\t[String2]
+ *
+ * Where Type is:
+ * - 'D' for double precision floating point values
+ * - 'L' for long integer values  
+ * - 'I' (default) for standard integer values
+ *
+ * Command Categories:
+ * - EX_ARMYBEGIN to EX_ARMYEND: Army unit commands
+ * - EX_NAVYBEGIN to EX_NAVYEND: Navy unit commands
+ * - EX_CVNBEGIN to EX_CVNEND: Caravan unit commands
+ * - EX_CITYBEGIN to EX_CITYEND: City management commands
+ * - EX_ITEMBEGIN to EX_ITEMEND: Item and commodity commands
+ * - EX_TAKEBEGIN to EX_TAKEEND: Resource extraction commands
+ * - EX_GIVEBEGIN to EX_GIVEEND: Resource distribution commands
+ * - Other: Miscellaneous commands (nations, sectors, magic, admin)
+ *
+ * Parameters:
+ *   cntry - Nation number to process commands for (0-ABSMAXNTN-1)
+ *          UNOWNED for god-level administrative commands
+ *
+ * Returns:
+ *   0 - No execute file found (normal condition)
+ *   1 - File processed successfully
+ *   >1 - Number of lines processed (success with line count)
+ *   -1 - Invalid country parameter or nation doesn't exist
+ *
+ * Side Effects:
+ * - Modifies global game state through command execution
+ * - Sets resource distribution weights for the nation
+ * - Updates global pointers (army_ptr, city_ptr, etc.) during processing
+ * - Calculates and updates national totals after command processing
+ * - Generates error messages for malformed commands or validation failures
+ * - Preserves original pointer state after execution completion
+ *
+ * Notes:
+ * - File naming convention: "nationname.exe" or "god.exe" for admin
+ * - Supports three data types with automatic parsing based on line prefix
+ * - Command validation includes format checking and parameter validation
+ * - Global pointer management ensures consistent state during execution
+ * - Weight recalculation affects resource distribution across the game
+ * - National totals updated after all commands to maintain consistency
+ * - Thread safety depends on file locking and global state management
+ */
 int
 execute PARM_1(int, cntry)
 {
