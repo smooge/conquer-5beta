@@ -1,4 +1,50 @@
-/* This file contains the conquer map display routines */
+/*
+ * hexmapG.c - Hexagonal Map Display and Rendering System
+ *
+ * This file contains the complete map display and visualization system for Conquer,
+ * supporting both hexagonal and rectangular map modes. It handles all aspects of
+ * map rendering, cursor positioning, movement navigation, visibility calculation,
+ * and interactive display features.
+ *
+ * CORE FUNCTIONALITY:
+ * - Map character generation and sector rendering with multiple display modes
+ * - 8-directional cursor movement and screen-based scrolling navigation
+ * - Complex highlighting system for units, nations, resources, and strategic info
+ * - Fog-of-war visibility calculation based on unit sight ranges and owned sectors
+ * - Real-time map updates with efficient redraw strategies
+ * - Coordinate system management with relative and absolute positioning
+ *
+ * DISPLAY MODES SUPPORTED:
+ * - Terrain: elevation, vegetation, and geographic features
+ * - Political: nation ownership, diplomatic relations, race information
+ * - Military: unit locations, movement costs, defense values
+ * - Economic: resources (food, metal, jewels, magic), trade goods, city weights
+ * - Strategic: designations, supported sectors, region highlighting
+ *
+ * HIGHLIGHTING SYSTEM:
+ * - Unit-based: moveable units, scouts, owned/all units
+ * - Political: allied/enemy/neutral nations, ownership patterns
+ * - Resource-based: trade goods, specific designations, unsupported sectors
+ * - Strategic: movement range, region control, line-of-sight areas
+ *
+ * VISIBILITY MECHANICS:
+ * - Owned sectors provide base visibility in surrounding area
+ * - Army units extend sight range based on type and status
+ * - Navy units provide coastal and sea visibility
+ * - Caravan units offer limited local visibility
+ * - Special units (agents, scouts) have enhanced sight capabilities
+ * - Fog-of-war system tracks multiple visibility levels (none/partial/most/full/all)
+ *
+ * COORDINATE SYSTEMS:
+ * - Absolute coordinates: fixed world position (XREAL, YREAL)
+ * - Cursor coordinates: screen position (xcurs, ycurs) 
+ * - Offset coordinates: screen viewport position (xoffset, yoffset)
+ * - Relative coordinates: nation-centered coordinate system for players
+ *
+ * The system seamlessly switches between hexagonal and rectangular map modes,
+ * automatically adjusting movement patterns, display algorithms, and coordinate
+ * calculations to match the selected map topology.
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -34,7 +80,35 @@
 #define PRINT_CODES
 #include "worldX.h"
 
-/* SHOW_CURSOR -- Move the cursor to the proper position */
+/*
+ * show_cursor - Position cursor at proper screen location for current sector
+ *
+ * Calculates and moves the display cursor to the correct screen position
+ * based on the current sector coordinates (xcurs, ycurs), zoom level, and
+ * display mode. Handles hexagonal and rectangular map positioning with
+ * proper offset calculations for borders and focus positioning.
+ *
+ * The function performs complex coordinate transformations:
+ * 1. Determines horizontal offset based on border presence and cursor position
+ * 2. Calculates vertical offset with special handling for hexagonal odd-lift
+ * 3. Applies zoom-level specific shift values for proper scaling
+ * 4. Adjusts for focus position within detailed sector display
+ * 5. Converts to final screen coordinates and positions cursor
+ *
+ * Parameters: None (uses global cursor and display state variables)
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Moves terminal cursor to calculated position using move() curses call
+ *   - Position calculation depends on curmap_screen[zoom_level] settings
+ *   - Uses display_mode.focus for fine positioning within sectors
+ *
+ * Notes:
+ *   - Coordinate calculation differs between hex and rectangular modes
+ *   - Odd-numbered x coordinates get special vertical lift in hex mode
+ *   - Final y-coordinate is inverted for proper screen positioning
+ */
 void
 show_cursor PARM_0(void)
 {
@@ -71,7 +145,31 @@ show_cursor PARM_0(void)
   move(SCREEN_Y_SIZE - yhold - 1, xhold);
 }
 
-/* MAX_XCURS -- Determine the maximum xcurs value */
+/*
+ * max_xcurs - Calculate maximum horizontal cursor position for current display
+ *
+ * Determines the maximum valid xcurs value based on the current screen size
+ * and display zoom level. This prevents the cursor from moving beyond the
+ * visible screen area and ensures proper map boundaries.
+ *
+ * The calculation considers:
+ * - Available horizontal screen space (SCREEN_X_SIZE)
+ * - Current zoom level's display parameters (xsize, xshift)
+ * - Map scaling and sector size requirements
+ *
+ * Formula: (available_space) / xshift
+ * Where available_space = SCREEN_X_SIZE - (xsize - xshift)
+ *
+ * Parameters: None (uses global screen and zoom settings)
+ *
+ * Returns:
+ *   Maximum valid xcurs value for current display configuration
+ *
+ * Notes:
+ *   - Value changes when zoom level changes
+ *   - Used by cursor movement and boundary checking functions
+ *   - Critical for preventing off-screen cursor positioning
+ */
 int
 max_xcurs PARM_0(void)
 {
@@ -85,7 +183,31 @@ max_xcurs PARM_0(void)
   return(available / curmap_screen[zoom_level].xshift);
 }
 
-/* MAX_YCURS -- Determine the maximum ycurs value */
+/*
+ * max_ycurs - Calculate maximum vertical cursor position for given x-coordinate
+ *
+ * Determines the maximum valid ycurs value based on the current screen size,
+ * display zoom level, and specific x-coordinate. In hexagonal mode, the
+ * maximum y position can vary depending on the x-coordinate due to the
+ * odd-lift positioning of alternating columns.
+ *
+ * The calculation considers:
+ * - Available vertical screen space (SCREEN_Y_SIZE)
+ * - Current zoom level's vertical shift parameters
+ * - Hexagonal odd-lift adjustment for specific x coordinates
+ * - Map offset positioning (xoffset)
+ *
+ * Parameters:
+ *   xval - X coordinate to calculate maximum Y position for
+ *
+ * Returns:
+ *   Maximum valid ycurs value for the given x-coordinate
+ *
+ * Notes:
+ *   - In hexagonal mode, odd x-coordinates may have reduced max y due to lift
+ *   - Result varies with zoom level and display mode
+ *   - Critical for boundary checking in vertical cursor movement
+ */
 int
 max_ycurs PARM_1(int, xval)
 {
@@ -102,7 +224,35 @@ max_ycurs PARM_1(int, xval)
   return(available / curmap_screen[zoom_level].yshift);
 }
 
-/* ON_SCREEN -- Is the sector on the display screen? */
+/*
+ * on_screen - Check if sector coordinates are visible on current screen
+ *
+ * Determines whether the specified world sector coordinates (x, y) are
+ * currently visible within the display screen boundaries. Handles horizontal
+ * wrap-around for the cylindrical world map and performs boundary checking
+ * against current screen limits.
+ *
+ * The function:
+ * 1. Adjusts for horizontal map wrap-around if x < xoffset
+ * 2. Checks if adjusted x coordinate exceeds maximum horizontal cursor
+ * 3. Verifies y coordinate is within vertical screen boundaries
+ * 4. Uses max_ycurs(x) for x-dependent vertical boundary checking
+ *
+ * Parameters:
+ *   x - World x-coordinate to check
+ *   y - World y-coordinate to check
+ *
+ * Returns:
+ *   TRUE if sector is visible on screen, FALSE otherwise
+ *
+ * Side Effects:
+ *   - Modifies local x variable for wrap-around calculation (not parameter)
+ *
+ * Notes:
+ *   - Handles cylindrical world wrap-around in x-direction only
+ *   - Y boundaries are absolute (no wrap-around)
+ *   - Critical for determining which sectors need rendering
+ */
 int
 on_screen PARM_2(int, x, int, y)
 {
@@ -122,7 +272,38 @@ on_screen PARM_2(int, x, int, y)
   return(hold);
 }
 
-/* CENTERMAP -- Relocated the current sector to the center of the screen */
+/*
+ * centermap - Recenter map display with current sector at screen center
+ *
+ * Repositions the map display so that the current sector (XREAL, YREAL) appears
+ * at the center of the screen. Performs complex coordinate calculations to handle
+ * both hexagonal and rectangular map modes, with special consideration for map
+ * boundaries, relative coordinate systems, and hexagonal odd-lift alignment.
+ *
+ * The centering process:
+ * 1. Calculates optimal xcurs position (max_xcurs() / 2)
+ * 2. Sets xoffset to position current sector at calculated xcurs
+ * 3. Adjusts for hexagonal odd-lift alignment constraints
+ * 4. Handles horizontal wrap-around at map edges
+ * 5. Calculates optimal ycurs position with boundary checking
+ * 6. Handles relative vs. absolute coordinate systems
+ * 7. Prevents centering beyond map boundaries
+ *
+ * Parameters: None (uses global position variables XREAL, YREAL)
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Modifies global variables: xcurs, ycurs, xoffset, yoffset
+ *   - Changes current screen viewport position
+ *   - Affects all subsequent map display operations
+ *
+ * Notes:
+ *   - Behavior differs for gods vs. players (relative_map setting)
+ *   - Hexagonal mode requires special odd-lift edge alignment
+ *   - Respects map boundaries and visibility restrictions
+ *   - Essential for smooth map navigation and viewport management
+ */
 void
 centermap PARM_0(void)
 {
@@ -172,7 +353,33 @@ centermap PARM_0(void)
   }
 }
 
-/* STYLE_VOIDABLE -- This mode cannot view into voided sectors */
+/*
+ * style_voidable - Check if display style is blocked by void magic
+ *
+ * Determines whether the specified display style can show information in
+ * sectors that are protected by "The Void" magic spell. Certain display
+ * modes (like defense, resources, people, food) are blocked by void magic,
+ * while others (like terrain, elevation) can still be seen.
+ *
+ * Voidable display styles include:
+ * - DI_DEFENSE: defensive strength information
+ * - DI_JEWEL, DI_METAL, DI_MAGIC: resource value displays
+ * - DI_PEOP: population information
+ * - DI_FOOD: food production information
+ * - DI_DESG, DI_TGDESGS: designation information
+ *
+ * Parameters:
+ *   style - Display style constant to check (DI_* values)
+ *
+ * Returns:
+ *   TRUE if style is blocked by void magic, FALSE if always visible
+ *
+ * Notes:
+ *   - Used in conjunction with magic checking functions
+ *   - Essential for implementing strategic void magic concealment
+ *   - Terrain and basic elevation info cannot be voided
+ *   - Part of the fog-of-war and strategic concealment system
+ */
 static int
 style_voidable PARM_1(int, style)
 {
@@ -200,7 +407,32 @@ style_voidable PARM_1(int, style)
   return(outval);
 }
 
-/* NEED_WEDGE -- Is there land below this water sector? */
+/*
+ * need_wedge - Check if water sector needs bottom wedge display character
+ *
+ * Determines whether a water sector should display a wedge character ('_')
+ * at its bottom edge to indicate land immediately below. This creates a
+ * visual coastline effect where water meets land, improving map readability
+ * by clearly showing the boundary between water and land sectors.
+ *
+ * The function checks:
+ * 1. If sector below (x, y-1) is on the map
+ * 2. If the sector below is visible on screen
+ * 3. If the sector below is not water (altitude != ELE_WATER)
+ *
+ * Parameters:
+ *   x - X coordinate of water sector to check
+ *   y - Y coordinate of water sector to check
+ *
+ * Returns:
+ *   TRUE if land exists below this water sector, FALSE otherwise
+ *
+ * Notes:
+ *   - Only used for water sectors in detailed display modes
+ *   - Creates attractive coastline visual effects
+ *   - Works with conq_bottomlines and conq_waterbottoms display options
+ *   - Part of the aesthetic map rendering system
+ */
 static int
 need_wedge PARM_2(int, x, int, y)
 {
@@ -218,7 +450,54 @@ need_wedge PARM_2(int, x, int, y)
   return(hold);
 }
 
-/* MAP_CHAR -- Get a character for the single sector of the screen */
+/*
+ * map_char - Generate display character for sector based on style and position
+ *
+ * This is the core map rendering function that determines what character to
+ * display for a specific sector position based on the display style, sector
+ * data, visibility, and magical effects. Handles all display modes from basic
+ * terrain to complex resource and strategic information displays.
+ *
+ * The function implements extensive display logic:
+ * 1. Validates sector coordinates and handles out-of-bounds cases
+ * 2. Checks for void magic concealment by enemy nations
+ * 3. Processes display style to determine information type to show
+ * 4. Handles special cases for water sectors and unit displays
+ * 5. Applies distortion effects for partially visible sectors
+ * 6. Returns appropriate character based on calculated values
+ *
+ * Supported display styles include:
+ * - Movement costs (DI_AMOVE, DI_FMOVE, DI_NMOVE): army, flying, navy movement
+ * - Resources (DI_FOOD, DI_JEWEL, DI_METAL, DI_MAGIC): production values
+ * - Terrain (DI_VEGE, DI_CONT): vegetation and elevation information
+ * - Political (DI_NATN, DI_RACE): ownership and racial information
+ * - Strategic (DI_DESG, DI_YDESG, DI_DEFENSE): designations and defense
+ * - Economic (DI_PEOP, DI_VALUES, DI_WOOD, DI_WEIGHTS): population and trade
+ *
+ * Position parameter affects detailed sector display:
+ * - HXPOS_LOWLEFT, HXPOS_LOWRIGHT: bottom row of detailed display
+ * - HXPOS_UPLEFT, HXPOS_UPRIGHT: top row of detailed display
+ * - HXPOS_MINIMAL: single character display for zoomed-out view
+ *
+ * Parameters:
+ *   x - World X coordinate of sector
+ *   y - World Y coordinate of sector  
+ *   position - Display position within sector (HXPOS_* constants)
+ *   style - Display style mode (DI_* constants)
+ *
+ * Returns:
+ *   Display character for the specified sector and style
+ *
+ * Side Effects:
+ *   - Sets global sct_ptr to current sector for optimization
+ *   - Sets global ntn_tptr to sector owner's nation data
+ *
+ * Notes:
+ *   - Most complex function in map display system
+ *   - Handles fog-of-war, magic concealment, and vision distortion
+ *   - Critical for all map visualization modes
+ *   - Water sectors get special fleet and coastline display logic
+ */
 static char
 map_char PARM_4(int, x, int, y, int, position, int, style)
 {
@@ -595,7 +874,56 @@ map_char PARM_4(int, x, int, y, int, position, int, style)
   return (ch);
 }
 
-/* MAP_HIGHLIGHT -- Is the sector in need of highlight? */
+/*
+ * map_highlight - Determine if sector should be highlighted based on criteria
+ *
+ * This function implements the complex highlighting system that allows players
+ * to visually emphasize specific types of sectors on the map. It evaluates
+ * various highlighting criteria including unit status, diplomatic relations,
+ * resource availability, and strategic importance.
+ *
+ * The function uses static caching to optimize performance by avoiding
+ * redundant calculations for the same sector and style combination. It
+ * performs comprehensive checking of sector ownership, magical concealment,
+ * and visibility before applying highlighting logic.
+ *
+ * Supported highlighting modes:
+ * - HI_MOVEABLE: units with full movement points remaining
+ * - HI_SCOUT: sectors containing scouting units
+ * - HI_YUNITS: player-owned units (armies, navies, caravans)
+ * - HI_UNITS: all units visible on the map
+ * - HI_TGOODS: sectors with trade goods (with class filtering)
+ * - HI_OWN: sectors owned by specific nation or any nation
+ * - HI_ALLIED: sectors owned by diplomatically allied nations
+ * - HI_ENEMY: sectors owned by hostile or evil nations
+ * - HI_NEUTRAL: sectors owned by neutral/unmet nations
+ * - HI_MINDESG: sectors with specific minor designations
+ * - HI_MAJDESG: sectors with specific major designations
+ * - HI_RANGE: sectors within city influence range
+ * - HI_REGION: sectors in same region as cursor
+ * - HI_SUPPORTED: sectors with supply line support
+ * - HI_UNSUPPORTED: sectors lacking supply line support
+ *
+ * Parameters:
+ *   x - World X coordinate to check
+ *   y - World Y coordinate to check
+ *   style - Highlighting style (HI_* constants)
+ *   opval - Optional parameter for style-specific filtering
+ *
+ * Returns:
+ *   TRUE if sector should be highlighted, FALSE otherwise
+ *
+ * Side Effects:
+ *   - Uses static variables for caching previous results
+ *   - Sets global sct_ptr and ntn_tptr for sector access
+ *   - May call complex diplomatic and magical checking functions
+ *
+ * Notes:
+ *   - Caches results using static variables for performance optimization
+ *   - Handles magical concealment (illusion, void magic)
+ *   - Critical for strategic map analysis and unit management
+ *   - opval meaning varies by highlighting style (trade good class, nation ID, etc.)
+ */
 static int
 map_highlight PARM_4(int, x, int, y, int, style, int, opval)
 {
@@ -855,7 +1183,44 @@ map_highlight PARM_4(int, x, int, y, int, style, int, opval)
   return(hold);
 }
 
-/* HEX_INIT -- Initialize information for the hex-map display */
+/*
+ * hex_init - Initialize hexagonal map display system and base display modes
+ *
+ * Performs complete initialization of the map display system, setting up
+ * display modes, screen parameters, and map positioning. This function is
+ * called once during game startup to prepare the map visualization system
+ * for operation.
+ *
+ * Initialization process:
+ * 1. Selects appropriate screen parameters (hexmap_screen vs rectmap_screen)
+ * 2. Centers the map at the current position using centermap()
+ * 3. Creates and configures all base display modes (DMODE_NUMBER modes)
+ * 4. Sets up focus, style, highlighting, and target parameters for each mode
+ * 5. Performs memory-dependent calculations via hex_recalc()
+ * 6. Initializes supply line weight calculations
+ *
+ * The function configures display modes from the base_modes array, setting:
+ * - Display focus position for detailed sector view
+ * - Style arrays for different hex positions (HXPOS_NUMBER positions)
+ * - Highlighting arrays for visual emphasis
+ * - Target arrays for highlighting parameter values
+ *
+ * Parameters: None (uses global world and display settings)
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Sets global curmap_screen to appropriate screen parameter array
+ *   - Creates all display modes in the global display mode list
+ *   - Initializes map position via centermap()
+ *   - Allocates and calculates map data structures
+ *   - Modifies global display and positioning variables
+ *
+ * Notes:
+ *   - Must be called before any map display operations
+ *   - Switches between hex and rectangular modes based on world.hexmap
+ *   - Essential for proper map visualization system initialization
+ */
 void
 hex_init PARM_0(void)
 {
@@ -887,7 +1252,50 @@ hex_init PARM_0(void)
   set_weights(FALSE);
 }
 
-/* HEX_RECALC -- Recalculate the information for the hex-map */
+/*
+ * hex_recalc - Recalculate map data structures and unit visibility arrays
+ *
+ * Performs comprehensive recalculation of map data structures, rebuilding
+ * the unit location tracking arrays and movement status indicators. This
+ * function is called whenever the map needs to be updated due to unit
+ * movement, turn progression, or visibility changes.
+ *
+ * Recalculation process:
+ * 1. Resets and reallocates sectstat and trooplocs arrays
+ * 2. Iterates through all active nations and their units
+ * 3. Updates unit visibility based on magical concealment
+ * 4. Records unit positions in trooplocs array for display
+ * 5. Sets movement status flags (movable, unmoved, scouts)
+ * 6. Handles troop ownership and monster unit special cases
+ * 7. Recalculates visibility maps via whatcansee()
+ *
+ * The function processes three unit types:
+ * - Armies: land-based military units with scout detection
+ * - Navies: water-based units with movement tracking
+ * - Caravans: supply and trade units with basic movement
+ *
+ * Magical concealment handling:
+ * - Void magic can hide entire nations from enemy view
+ * - Illusion magic creates uncertainty in unit positions
+ * - Vision magic can penetrate illusion concealment
+ * - Random factors affect illusion penetration
+ *
+ * Parameters: None (operates on global game state)
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Reallocates sectstat and trooplocs memory arrays
+ *   - Updates global unit position and status tracking
+ *   - Modifies visibility calculations via whatcansee()
+ *   - Preserves army_ptr, navy_ptr, cvn_ptr values
+ *
+ * Notes:
+ *   - Essential for accurate map display after any game state change
+ *   - Performance-critical function called frequently during gameplay
+ *   - Handles complex magical concealment and visibility rules
+ *   - Must maintain consistency between unit lists and display arrays
+ */
 void
 hex_recalc PARM_0(void)
 {
@@ -1062,7 +1470,26 @@ hex_recalc PARM_0(void)
   cvn_ptr = chold_ptr;
 }
 
-/* GO_NORTH -- Move north */
+/*
+ * go_north - Move cursor one sector north
+ *
+ * Moves the map cursor one sector northward (increasing Y coordinate).
+ * This function implements basic single-step cursor movement for navigation.
+ * Automatically resets selection state (pager and selector) when moving.
+ *
+ * Parameters: None (modifies global cursor position)
+ *
+ * Returns: 0 (success)
+ *
+ * Side Effects:
+ *   - Increments ycurs by 1
+ *   - Resets pager and selector to 0 (clears unit selection)
+ *
+ * Notes:
+ *   - Movement is identical for both hex and rectangular modes
+ *   - Part of 8-directional movement system
+ *   - Boundary checking handled by calling code
+ */
 int
 go_north PARM_0(void)
 {
@@ -1072,7 +1499,33 @@ go_north PARM_0(void)
   return(0);
 }
 
-/* GO_NE -- Move northeast */
+/*
+ * go_ne - Move cursor one sector northeast
+ *
+ * Moves the map cursor one sector in the northeast direction. The movement
+ * algorithm differs significantly between hexagonal and rectangular map modes
+ * due to the different coordinate systems and adjacency patterns.
+ *
+ * Movement patterns:
+ * - Hexagonal mode: xcurs++, ycurs += (XREAL % 2)
+ *   Northeast movement depends on current column parity (even/odd)
+ *   Even columns: move right only, odd columns: move right and up
+ * - Rectangular mode: xcurs++, ycurs++ (simple diagonal movement)
+ *
+ * Parameters: None (modifies global cursor position)
+ *
+ * Returns: 0 (success)
+ *
+ * Side Effects:
+ *   - Modifies xcurs and ycurs based on map mode
+ *   - Resets pager and selector to 0 (clears unit selection)
+ *
+ * Notes:
+ *   - Demonstrates hexagonal coordinate system complexity
+ *   - XREAL % 2 determines column parity for hex movement
+ *   - Essential for proper 6-directional hex navigation
+ *   - Part of 8-directional movement system (8 dirs for rect, 6 for hex)
+ */
 int
 go_ne PARM_0(void)
 {
@@ -1258,8 +1711,54 @@ scr_sw PARM_0(void)
   return(0);
 }
 
-/* SHOW_SECT -- Show the sector at the indicated position,
-                a position of -1, -1 indicates to go to normal place */
+/*
+ * show_sect - Render individual sector at specified screen position
+ *
+ * This function handles the actual drawing of a single map sector to the
+ * screen, supporting both detailed (4-character) and simple (1-character)
+ * display modes. It performs coordinate transformation, visibility checking,
+ * highlighting calculation, and character rendering for map visualization.
+ *
+ * The function supports two positioning modes:
+ * 1. Automatic positioning: x_loc/y_loc = -1, calculates screen position
+ * 2. Manual positioning: specific x_loc/y_loc screen coordinates provided
+ *
+ * Rendering process:
+ * 1. Validates sector visibility and screen boundaries
+ * 2. Performs coordinate transformation from world to screen space
+ * 3. Handles hexagonal vs rectangular coordinate differences
+ * 4. Determines appropriate display characters via map_char()
+ * 5. Applies highlighting effects via map_highlight()
+ * 6. Renders characters using curses drawing functions
+ *
+ * Display modes supported:
+ * - ZOOM_DETAIL: 4-character sector display with borders and multiple positions
+ * - Other zoom levels: single character display at focus position
+ *
+ * Method parameter controls special rendering options:
+ * - Bit 0: bypass visibility checking if set
+ * - Bit 1: add top border decoration if set
+ *
+ * Parameters:
+ *   x - World X coordinate of sector to display
+ *   y - World Y coordinate of sector to display
+ *   x_loc - Screen X position (-1 for automatic calculation)
+ *   y_loc - Screen Y position (-1 for automatic calculation)
+ *   method - Rendering flags controlling special display options
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Draws characters to screen using curses mvaddch/mvprintw functions
+ *   - May enable/disable standout mode for highlighting
+ *   - Updates screen cursor position during rendering
+ *
+ * Notes:
+ *   - Core rendering function for all map display operations
+ *   - Handles complex coordinate transformations for hex/rect modes
+ *   - Integrates with highlighting system for visual emphasis
+ *   - Essential for both full map rendering and incremental updates
+ */
 void
 show_sect PARM_5(int, x, int, y, int, x_loc, int, y_loc, int, method)
 {
@@ -1750,7 +2249,53 @@ hs_armysee PARM_2(int, x, int, y)
   }
 }
 
-/* WHATCANSEE -- track visibility of map or screen*/
+/*
+ * whatcansee - Calculate complete map visibility based on nation's assets
+ *
+ * This is the core fog-of-war calculation function that determines what sectors
+ * the current nation can see based on owned territory, unit positions, and
+ * special abilities. It implements a sophisticated visibility system with
+ * multiple levels of sight and strategic concealment.
+ *
+ * Visibility calculation process:
+ * 1. Gods and deity mode: grant complete map visibility (HS_SEEALL)
+ * 2. Clear entire visibility map to HS_NOSEE (no visibility)
+ * 3. Owned sectors: provide base visibility around territory (LANDSEE range)
+ * 4. Navy units: grant sea and coastal visibility (NAVYSEE range)
+ * 5. Army units: provide tactical visibility with enhanced sight for scouts
+ * 6. Caravan units: offer limited local visibility (CVNSEE range)
+ * 7. Special units: agents and scouts get enhanced visibility levels
+ *
+ * Visibility levels implemented:
+ * - HS_NOSEE: complete darkness, no information available
+ * - HS_SEEPART: basic terrain visible, limited detail
+ * - HS_SEEMOST: most sector information visible
+ * - HS_SEEFULL: complete sector detail visible
+ * - HS_SEEALL: perfect visibility including hidden information
+ *
+ * Unit sight capabilities:
+ * - Standard armies: ARMYSEE range base visibility, 1-hex detailed view
+ * - Scout armies: enhanced sight range and can penetrate concealment
+ * - Agent armies: perfect local visibility if capable of seeing
+ * - All navies: NAVYSEE range for water and coastal reconnaissance
+ * - Caravans: CVNSEE range limited local visibility for trade routes
+ *
+ * Parameters: None (operates on current nation's global game state)
+ *
+ * Returns: void
+ *
+ * Side Effects:
+ *   - Completely recalculates and updates global visibility array
+ *   - Sets VIS_STORE values for all map sectors
+ *   - Affects all subsequent map display and strategic calculations
+ *
+ * Notes:
+ *   - Performance-critical function affecting entire game experience
+ *   - Implements complex fog-of-war strategy game mechanics
+ *   - Balances strategic information vs. realistic limited visibility
+ *   - Essential for multiplayer competitive gameplay
+ *   - Supports both exploration and reconnaissance gameplay elements
+ */
 void
 whatcansee PARM_0(void)
 {
