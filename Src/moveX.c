@@ -1,4 +1,33 @@
-/* routines concerning the relocation of units between sectors */
+/*
+ * moveX.c - Unit movement and relocation cost calculation system
+ *
+ * This file implements the core movement mechanics for all unit types in
+ * the Conquer game system. It provides sophisticated movement cost calculations
+ * that consider terrain, elevation, vegetation, diplomatic status, magic
+ * effects, and unit-specific movement capabilities.
+ *
+ * Key Function Categories:
+ * - Movement Cost Calculation: Complex terrain-based cost computation
+ * - Diplomatic Movement Rules: Access control based on nation relationships  
+ * - Terrain Analysis: Water sector counting and accessibility checks
+ * - Unit Movement Potential: Movement point calculation for different unit types
+ * - Magic Movement Effects: Spell-based movement bonuses and restrictions
+ *
+ * Movement Types Supported:
+ * - MOVE_ARMY: Land-based army movement with terrain costs
+ * - MOVE_NAVY: Naval movement with water depth and access calculations
+ * - MOVE_CVN: Caravan movement with trade route restrictions
+ * - MOVE_FLYARMY/MOVE_FLYCVN: Flying unit movement with altitude costs
+ * - MOVE_PEOPLE: Population movement with habitation requirements
+ * - MOVE_TELEPORT: Magical teleportation with range and visibility limits
+ * - MOVE_PATROL: Wall patrol movement along fortifications
+ * - MOVE_ONEWAY: One-way movement restriction enforcement
+ *
+ * The system implements realistic movement costs based on terrain difficulty,
+ * diplomatic relations, magical effects, and infrastructure improvements.
+ * Roads reduce movement costs, while canals and walls may increase them.
+ * Naval movement considers water depth and coastal access patterns.
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -31,7 +60,30 @@ static int mp_potential = 1;
 int xhome, yhome, range_limit;
 int mult_10 = FALSE;
 
-/* MV_CNTWATER -- Count the water sectors */
+/*
+ * mv_cntwater - Count water sectors in map loop operations
+ *
+ * Helper function used by map_loop() to count the number of water sectors
+ * within a specified radius around a target location. Increments global_int
+ * for each water sector encountered during the loop iteration.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   Nothing (uses global_int for counting)
+ *
+ * Side Effects:
+ *   - Increments global_int counter for each water sector found
+ *   - Used internally by naval movement cost calculations
+ *
+ * Notes:
+ *   - Static function only called from within this module
+ *   - Designed for use with map_loop() iteration functions
+ *   - Essential for naval movement cost determination
+ *   - Water sectors have altitude == ELE_WATER
+ */
 static void
 mv_cntwater PARM_2(int, x, int, y)
 {
@@ -40,7 +92,47 @@ mv_cntwater PARM_2(int, x, int, y)
   }
 }
 
-/* MOVE_COST -- Routine to calculate the move cost for a specified unit type */
+/*
+ * move_cost - Calculate movement cost for unit to enter a sector
+ *
+ * Computes the movement point cost for a specified unit type to move into
+ * a given map sector. This is the core movement calculation function that
+ * considers terrain difficulty, elevation costs, vegetation effects, diplomatic
+ * restrictions, magic bonuses, infrastructure improvements, and unit-specific
+ * movement capabilities.
+ *
+ * Parameters:
+ *   x - Target sector X coordinate
+ *   y - Target sector Y coordinate  
+ *   type - Movement type constant (MOVE_ARMY, MOVE_NAVY, etc.)
+ *
+ * Returns:
+ *   Movement cost in movement points (0+ for valid movement)
+ *   Negative error codes for invalid/impossible movement:
+ *   - MV_OFFMAP: Target sector is off the map
+ *   - MV_WATER: Land unit cannot cross water
+ *   - MV_IMPASSABLE: Terrain is impassable for this unit type
+ *   - MV_UNMET: Diplomatic status prevents entry (unmet nation)
+ *   - MV_ACTOFWAR: Entry would be an act of war
+ *   - MV_HOSTILE: Entry into hostile territory blocked
+ *   - MV_TOOFAR: Beyond movement range limit
+ *   - MV_UNSEEN: Target sector not visible
+ *   - And other movement restriction codes
+ *
+ * Side Effects:
+ *   - Temporarily modifies sct_ptr for sector access
+ *   - Uses caching to optimize repeated calls with same parameters
+ *   - May trigger diplomatic status checks
+ *
+ * Notes:
+ *   - Caches results for identical (x,y,type) combinations
+ *   - God mode bypasses most movement restrictions
+ *   - Handles complex naval movement with water depth calculations
+ *   - Supports magical movement bonuses (Dervish, Amphibian, Fire magic)
+ *   - Roads halve movement cost, canals/walls double it
+ *   - Flying units use different cost tables (flight_cost vs move_cost)
+ *   - Diplomatic restrictions vary by movement type and unit capabilities
+ */
 int
 move_cost PARM_3( int, x, int, y, int, type )
 {
@@ -463,7 +555,37 @@ move_cost PARM_3( int, x, int, y, int, type )
   return(hold);
 }
 
-/* SET_MOVEPOTENTIAL -- Set the movement potential for a unit */
+/*
+ * set_movepotential - Configure movement potential for unit type
+ *
+ * Sets the movement potential (maximum movement points) for a unit based on
+ * its type and current capabilities. This value is used by move_cost() to
+ * calculate percentage-based movement costs and determine how far a unit
+ * can move in a single turn.
+ *
+ * Parameters:
+ *   type - Movement type constant specifying unit category
+ *
+ * Returns:
+ *   Nothing
+ *
+ * Side Effects:
+ *   - Sets global variable mp_potential for use by movement calculations
+ *   - Must be called before movement cost calculations
+ *
+ * Movement Type Handling:
+ *   - MOVE_ARMY/MOVE_FLYARMY/MOVE_ONEWAY: Uses army_mvpts() for army movement
+ *   - MOVE_NAVY: Uses navy_mvpts() for naval movement points
+ *   - MOVE_CVN/MOVE_FLYCVN: Uses cvn_mvpts() for caravan movement
+ *   - MOVE_PATROL: Fixed at 1 for 100% cost per sector wall patrol
+ *   - Default: Fixed at 100 for 1% cost per relocation (teleport, people)
+ *
+ * Notes:
+ *   - Assumes unit pointers (army_ptr, navy_ptr, cvn_ptr) are properly set
+ *   - Movement point calculations consider unit stats, nation bonuses, magic
+ *   - Higher mp_potential allows more movement per turn
+ *   - Used in percentage calculations: (cost * 100) / mp_potential
+ */
 void
 set_movepotential PARM_1(int, type)
 {
