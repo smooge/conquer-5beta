@@ -1,3 +1,34 @@
+/*
+ * displayG.c - Map Display and User Interface Rendering System
+ *
+ * This module manages the primary visual interface for the Conquer game client,
+ * handling map rendering, sidebar information display, highlighting systems,
+ * and interactive display customization. It provides the core visualization
+ * engine that presents game state information to players in an organized,
+ * customizable format.
+ *
+ * Key Functionality:
+ * - Map rendering with configurable display styles and highlighting
+ * - Sidebar unit information display (armies, navies, caravans)
+ * - Sector information display with visibility rules
+ * - Interactive display mode customization and management
+ * - Multi-level highlighting system for tactical analysis
+ * - Character symbol customization for terrain and designations
+ * - Zoom controls and screen centering management
+ * - Unit listing and troop composition displays
+ * - Information mode toggle for detailed sector analysis
+ *
+ * Display Architecture:
+ * - Flexible highlighting system with 4 focus positions (corners)
+ * - Configurable display modes stored as user preferences
+ * - Vision-based information filtering for realistic gameplay
+ * - Multi-nation unit display with proper visibility rules
+ * - Responsive layout supporting different screen sizes
+ *
+ * The module serves as the primary interface between game logic and visual
+ * presentation, ensuring players have access to all necessary information
+ * while maintaining game balance through proper visibility restrictions.
+ */
 /* This file creates the map and sidebar displays for conquer */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
@@ -39,7 +70,32 @@
 /* this variable is only used between set_select() and make_side() */
 extern int scnd_selector, scnd_pager;
 
-/* MAKEMAP -- Display the visible map to the screen */
+/*
+ * makemap - Render the complete visible map to the screen
+ *
+ * Displays the main game map by iterating through all visible sectors within
+ * the current screen boundaries and calling show_sect for each position.
+ * Handles screen offset calculations and ensures the cursor is positioned
+ * correctly after rendering. This is the primary map display function called
+ * whenever the map needs to be redrawn.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Renders map sectors to screen using show_sect
+ *   - Updates cursor position via show_cursor
+ *   - Uses global xoffset and yoffset for screen positioning
+ *
+ * Notes:
+ *   - Respects screen boundaries via max_xcurs() and max_ycurs()
+ *   - Uses display mode 2 for sector rendering
+ *   - Essential function for all map display operations
+ *   - Called after display mode changes or screen updates
+ */
 void
 makemap PARM_0(void)
 {
@@ -66,7 +122,34 @@ makemap PARM_0(void)
   show_cursor();
 }
 
-/* GET_TARGET -- Routine to select the setting of the target */
+/*
+ * get_target - Interactive selection of highlighting target parameters
+ *
+ * Prompts the user to select specific targets for different highlighting
+ * styles, such as which designation, nation, or tradegood class to highlight.
+ * Provides appropriate input validation and error messaging for each
+ * highlight type. Used internally by highlighting configuration functions.
+ *
+ * Parameters:
+ *   style - Type of highlighting requiring target selection (HI_MINDESG, HI_MAJDESG, HI_OWN, HI_TGOODS)
+ *
+ * Returns:
+ *   Selected target value for the highlighting style,
+ *   -2 if user cancelled input (no_input = TRUE),
+ *   appropriate type-specific value for the highlighting system
+ *
+ * Side Effects:
+ *   - Displays interactive prompts to user
+ *   - Sets no_input flag on user cancellation
+ *   - Shows error messages for invalid selections
+ *
+ * Notes:
+ *   - HI_MINDESG: Returns minor designation index
+ *   - HI_MAJDESG: Returns major designation index
+ *   - HI_OWN: Returns nation number or UNOWNED for "*" (all)
+ *   - HI_TGOODS: Returns tradegood class or TG_NONE for "*" (all)
+ *   - Input validation ensures only valid targets are returned
+ */
 static int
 get_target PARM_1(int, style)
 {
@@ -142,7 +225,31 @@ get_target PARM_1(int, style)
   return(hold);
 }
 
-/* CHANGE_HMODE -- Change the current highlighting method */
+/*
+ * change_hmode - Modify highlighting settings for specified focus positions
+ *
+ * Updates the highlighting configuration for one or more focus positions
+ * based on a bitmask. Gets new highlighting type from user via get_hd_info,
+ * and if the highlighting type requires a target, prompts for target selection.
+ * Applied changes are stored in the global display_mode structure.
+ *
+ * Parameters:
+ *   maskval - Bitmask indicating which focus positions to modify (bit N = position N)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies display_mode.highlight[] and display_mode.target[] arrays
+ *   - Interacts with user via get_hd_info and get_target
+ *   - Sets no_input flag if user cancels
+ *
+ * Notes:
+ *   - Maskval bits: 0x01=UL, 0x02=UR, 0x04=LL, 0x08=LR positions
+ *   - Only highlights requiring targets call get_target
+ *   - Changes apply immediately to display system
+ *   - Used by all highlight modification functions
+ */
 static void
 change_hmode PARM_1(int, maskval)
 {
@@ -178,7 +285,29 @@ change_hmode PARM_1(int, maskval)
 
 /* == The various user interfaces to the highlight changes == */
 
-/* HL_ALL -- Change all of the highlights */
+/*
+ * hl_all - Set highlighting for all four corner positions simultaneously
+ *
+ * Convenience function that applies the same highlighting configuration
+ * to all four focus positions (upper-left, upper-right, lower-left,
+ * lower-right). Prompts user for highlighting type and target, then
+ * applies to all positions for consistent map highlighting.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask 0x0F (all 4 positions)
+ *   - Modifies all display_mode highlighting settings
+ *
+ * Notes:
+ *   - Bitmask 0x0F = binary 1111 (all 4 corner positions)
+ *   - Useful for applying uniform highlighting across entire map
+ *   - Interactive function requiring user input
+ */
 int
 hl_all PARM_0(void)
 {
@@ -186,7 +315,28 @@ hl_all PARM_0(void)
   return(0);
 }
 
-/* HL_ULLR -- Change upper left and lower right highlights */
+/*
+ * hl_ullr - Set highlighting for upper-left and lower-right positions
+ *
+ * Configures highlighting for diagonal opposite corners (upper-left and
+ * lower-right focus positions). Useful for creating diagonal highlighting
+ * patterns or emphasizing specific map regions in a balanced manner.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask 0x06 (positions 1 and 2)
+ *   - Modifies display_mode highlighting for specified positions
+ *
+ * Notes:
+ *   - Bitmask 0x06 = binary 0110 (upper-right + lower-left)
+ *   - Creates diagonal highlighting pattern
+ *   - Interactive function requiring user input
+ */
 int
 hl_ullr PARM_0(void)
 {
@@ -194,7 +344,28 @@ hl_ullr PARM_0(void)
   return(0);
 }
 
-/* HL_URLL -- Change the upper right and lower left highlights */
+/*
+ * hl_urll - Set highlighting for upper-right and lower-left positions
+ *
+ * Configures highlighting for the other diagonal pair (upper-right and
+ * lower-left focus positions). Complements hl_ullr to provide full
+ * diagonal highlighting control for tactical map analysis.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask 0x09 (positions 0 and 3)
+ *   - Modifies display_mode highlighting for specified positions
+ *
+ * Notes:
+ *   - Bitmask 0x09 = binary 1001 (upper-left + lower-right)
+ *   - Creates opposite diagonal highlighting pattern
+ *   - Interactive function requiring user input
+ */
 int
 hl_urll PARM_0(void)
 {
@@ -202,7 +373,30 @@ hl_urll PARM_0(void)
   return(0);
 }
 
-/* HL_VERT -- Change the verticle highlighting */
+/*
+ * hl_vert - Set highlighting for vertical column positions
+ *
+ * Configures highlighting for either the left or right vertical column
+ * of focus positions, depending on the current focus setting. Creates
+ * vertical highlighting patterns useful for analyzing north-south corridors
+ * or territorial boundaries.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask based on focus position
+ *   - Modifies display_mode highlighting for vertical positions
+ *
+ * Notes:
+ *   - Uses focus % 2 to determine left (0x0A) vs right (0x05) column
+ *   - Mask 0x0A = binary 1010 (positions 1,3: upper-right, lower-right)
+ *   - Mask 0x05 = binary 0101 (positions 0,2: upper-left, lower-left)
+ *   - Interactive function requiring user input
+ */
 int
 hl_vert PARM_0(void)
 {
@@ -211,7 +405,30 @@ hl_vert PARM_0(void)
   return(0);
 }
 
-/* HL_HORZ -- Change the horizontal highlighting */
+/*
+ * hl_horz - Set highlighting for horizontal row positions
+ *
+ * Configures highlighting for either the top or bottom horizontal row
+ * of focus positions, depending on the current focus setting. Creates
+ * horizontal highlighting patterns useful for analyzing east-west corridors
+ * or geographical features.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask based on focus position
+ *   - Modifies display_mode highlighting for horizontal positions
+ *
+ * Notes:
+ *   - Uses focus / 2 to determine top (0x03) vs bottom (0x0C) row
+ *   - Mask 0x03 = binary 0011 (positions 0,1: upper-left, upper-right)
+ *   - Mask 0x0C = binary 1100 (positions 2,3: lower-left, lower-right)
+ *   - Interactive function requiring user input
+ */
 int
 hl_horz PARM_0(void)
 {
@@ -220,7 +437,29 @@ hl_horz PARM_0(void)
   return(0);
 }
 
-/* HL_CURRENT -- Change the current focus highlight */
+/*
+ * hl_current - Set highlighting for the currently focused position only
+ *
+ * Configures highlighting for just the current focus position, allowing
+ * precise control over individual corner highlighting. Useful for fine-tuned
+ * tactical analysis where only one quadrant needs special highlighting.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls change_hmode with mask for current focus position only
+ *   - Modifies display_mode highlighting for single position
+ *
+ * Notes:
+ *   - Uses (1 << display_mode.focus) to create single-bit mask
+ *   - Only affects the currently selected focus position
+ *   - Most precise highlighting control function
+ *   - Interactive function requiring user input
+ */
 int
 hl_current PARM_0(void)
 {
@@ -228,7 +467,29 @@ hl_current PARM_0(void)
   return(0);
 }
 
-/* SHIFT_FOCUS -- Shift the focus slot to the next position */
+/*
+ * shift_focus - Advance focus to the next corner position
+ *
+ * Cycles the current focus position through the four corner positions
+ * in sequence (0->1->2->3->0). Used for navigating between different
+ * highlighting quadrants during display customization or tactical analysis.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies display_mode.focus value
+ *   - Cycles through positions: UL->UR->LL->LR->UL
+ *
+ * Notes:
+ *   - Uses modulo arithmetic for wraparound (focus + 1) % HXPOS_NUMBER
+ *   - HXPOS_NUMBER = 4 (four corner positions)
+ *   - Essential for display customization interface navigation
+ *   - Immediate effect on focus indicator display
+ */
 int
 shift_focus PARM_0(void)
 {
@@ -236,7 +497,30 @@ shift_focus PARM_0(void)
   return(0);
 }
 
-/* SHIFT_RFOCUS -- Shift the focus slot to the next position */
+/*
+ * shift_rfocus - Reverse focus to the previous corner position
+ *
+ * Cycles the current focus position backwards through the four corner
+ * positions (3->2->1->0->3). Provides reverse navigation for display
+ * customization interface, allowing users to move in either direction
+ * through the focus positions.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies display_mode.focus value
+ *   - Cycles backwards: LR->LL->UR->UL->LR
+ *
+ * Notes:
+ *   - Uses (focus + HXPOS_NUMBER - 1) % HXPOS_NUMBER for reverse cycling
+ *   - Prevents negative modulo results with +HXPOS_NUMBER offset
+ *   - Complement to shift_focus for bidirectional navigation
+ *   - Immediate effect on focus indicator display
+ */
 int
 shift_rfocus PARM_0(void)
 {
@@ -245,7 +529,31 @@ shift_rfocus PARM_0(void)
   return(0);
 }
 
-/* CHANGE_DMODE -- Change the curent display mode to the provided one */
+/*
+ * change_dmode - Apply a new display mode configuration
+ *
+ * Updates the current display mode settings from a provided display mode
+ * structure. Handles selective updating based on the keepkeep flag, allowing
+ * either complete replacement or preservation of certain DI_KEEP/HI_KEEP
+ * settings. Central function for display mode management.
+ *
+ * Parameters:
+ *   d1_ptr - Pointer to display mode structure to apply (must not be NULL)
+ *   keepkeep - If TRUE, apply all settings; if FALSE, preserve DI_KEEP/HI_KEEP values
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates display_mode.name, focus, style[], highlight[], target[] arrays
+ *   - Modifies global display configuration
+ *
+ * Notes:
+ *   - keepkeep=TRUE: Force application of all settings, including KEEP values
+ *   - keepkeep=FALSE: Preserve existing settings where new mode has KEEP values
+ *   - DI_KEEP and HI_KEEP preserve current settings during mode switching
+ *   - Essential for display mode switching and customization systems
+ */
 static void
 change_dmode PARM_2(DISPLAY_PTR, d1_ptr, int, keepkeep)
 {
@@ -274,7 +582,30 @@ change_dmode PARM_2(DISPLAY_PTR, d1_ptr, int, keepkeep)
   }
 }
 
-/* DMODE_BYNAME -- Return pointer to the given display mode if it exists */
+/*
+ * dmode_byname - Find display mode by name in the mode list
+ *
+ * Searches through the linked list of defined display modes to find one
+ * matching the specified name. Used for display mode lookup during mode
+ * switching and customization operations. Returns pointer to mode structure
+ * or NULL if not found.
+ *
+ * Parameters:
+ *   dname - Name of display mode to find (must not be NULL)
+ *
+ * Returns:
+ *   Pointer to DMODE_STRUCT if found, NULL if no matching mode exists
+ *
+ * Side Effects:
+ *   - Sets dmode_tptr to found mode or NULL
+ *   - Traverses dmode_list linked list
+ *
+ * Notes:
+ *   - Uses exact string comparison (strcmp)
+ *   - Case-sensitive name matching
+ *   - Essential for named display mode management
+ *   - Used by display mode switching and customization functions
+ */
 static DMODE_PTR
 dmode_byname PARM_1(char *, dname)
 {
@@ -287,7 +618,35 @@ dmode_byname PARM_1(char *, dname)
   return(dmode_tptr);
 }
 
-/* CUSTOM_DISPLAY -- Allow interactive customization of the display */
+/*
+ * custom_display - Interactive display mode customization interface
+ *
+ * Provides a comprehensive interface for creating and modifying display modes.
+ * Allows users to adjust focus position, display styles, highlighting options,
+ * and mode names through an interactive visual editor. Supports both editing
+ * existing modes and creating new ones. Central hub for display customization.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 on completion (always successful)
+ *
+ * Side Effects:
+ *   - Modifies display_mode configuration during editing
+ *   - Creates new display modes in dmode_list
+ *   - Updates existing display mode configurations
+ *   - Extensive screen output and user interaction
+ *   - Temporary display mode changes during preview
+ *
+ * Notes:
+ *   - Supports full interactive editing with visual preview
+ *   - Handles mode creation, editing, naming, and abandonment
+ *   - Preserves original settings on abort (ESC key)
+ *   - Uses backup/restore for safe editing
+ *   - Complex state machine with multiple editing commands
+ *   - Essential for user interface customization
+ */
 int
 custom_display PARM_0(void)
 {
@@ -578,7 +937,31 @@ custom_display PARM_0(void)
   return(0);
 }
 
-/* ADJ_DISPLAY -- Select a different highlight or display mode */
+/*
+ * adj_display - Switch to a different named display mode
+ *
+ * Allows users to select and activate a different display mode from the
+ * list of defined modes. Prompts for mode name, validates the selection,
+ * and applies the new mode configuration. Provides quick switching between
+ * predefined display configurations.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 on completion (always successful)
+ *
+ * Side Effects:
+ *   - Changes current display_mode configuration
+ *   - Prompts user for mode selection
+ *   - Shows error messages for invalid modes
+ *
+ * Notes:
+ *   - Uses get_dmode for interactive mode selection
+ *   - Applies mode with keepkeep=FALSE (respects KEEP settings)
+ *   - Essential for quick display mode switching
+ *   - Validates mode existence before application
+ */
 int
 adj_display PARM_0(void)
 {
@@ -597,7 +980,31 @@ adj_display PARM_0(void)
   return(0);
 }
 
-/* GET_HD_INFO -- Get a highlight or display selection */
+/*
+ * get_hd_info - Interactive selection of highlight or display options
+ *
+ * Displays available highlight or display options and prompts user to select
+ * one by first character. Handles both highlighting types (for map emphasis)
+ * and display types (for sector visualization). Provides formatted option
+ * list with intelligent line wrapping.
+ *
+ * Parameters:
+ *   hilitep - TRUE for highlight options, FALSE for display options
+ *
+ * Returns:
+ *   Selected option index (0 to max_val), or max_val+1 if invalid/cancelled
+ *
+ * Side Effects:
+ *   - Displays formatted option list to screen
+ *   - Sets no_input flag on user cancellation
+ *   - Clears bottom screen area
+ *
+ * Notes:
+ *   - Uses hip_string for highlighted first character display
+ *   - Handles line wrapping for long option lists
+ *   - Returns option index matching first character typed
+ *   - Essential for display and highlight customization
+ */
 int
 get_hd_info PARM_1(int, hilitep)
 {
@@ -660,7 +1067,28 @@ get_hd_info PARM_1(int, hilitep)
   return(temp);
 }
 
-/* RECENTER_SCREEN -- Recenter the current location into middle of screen */
+/*
+ * recenter_screen - Center the map display on current cursor position
+ *
+ * Simple wrapper function that calls centermap() to recenter the display
+ * around the current cursor location. Useful for navigation when the
+ * cursor has moved to the edge of the visible area.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Calls centermap() to recalculate screen offsets
+ *   - Redraws map display centered on current position
+ *
+ * Notes:
+ *   - Simple convenience wrapper for centermap()
+ *   - Bound to user interface commands for map navigation
+ *   - Essential for maintaining cursor visibility during movement
+ */
 int
 recenter_screen PARM_0(void)
 {
@@ -669,7 +1097,33 @@ recenter_screen PARM_0(void)
   return(0);
 }
 
-/* MAKEBOTTOM -- Place standard display at bottom of screen */
+/*
+ * makebottom - Display standard game information at screen bottom
+ *
+ * Renders the standard bottom-screen display showing game status, turn
+ * information, nation details, treasury, calendar, and mail notifications.
+ * Provides essential game state information in a consistent format across
+ * all game modes. Central status display function.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears and redraws bottom screen area
+ *   - Displays turn number, version, nation info, treasury, calendar
+ *   - Shows mail status notifications (conquer mail, news, system mail)
+ *   - Updates command help text
+ *
+ * Notes:
+ *   - Shows turn as Roman numeral relative to START_TURN
+ *   - Treasury display for non-god players only
+ *   - Mail status uses STMAIL_NEW flag for notifications
+ *   - SYSMAIL compilation conditional for system mail display
+ *   - Essential status information for game play
+ */
 void
 makebottom PARM_0(void)
 {
@@ -718,7 +1172,31 @@ makebottom PARM_0(void)
 
 }
 
-/* MSIDE_CHECK -- Set the value if within vision range */
+/*
+ * mside_check - Check if sector is visible and set global flag
+ *
+ * Helper function used with map_loop to determine if any sector within
+ * a region is visible to the current player. Sets global_int to TRUE if
+ * the specified sector has visibility greater than HS_NOSEE. Used for
+ * determining sidebar display eligibility.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to check
+ *   y - Y coordinate of sector to check
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets global_int to TRUE if sector is visible
+ *   - Used as callback function with map_loop
+ *
+ * Notes:
+ *   - Called via map_loop for vision range checking
+ *   - Uses VIS_CHECK macro for visibility determination
+ *   - Part of sidebar visibility calculation system
+ *   - Sets flag but never clears it (OR operation)
+ */
 static void
 mside_check PARM_2(int, x, int, y)
 {
@@ -1223,8 +1701,35 @@ s_sideshow PARM_1(int, move_ind)
   }
 }
 
-/* MAKESIDE -- Show information about sector along side of screen;
-               alwayssee indicates that all info should be shown */
+/*
+ * makeside - Display comprehensive sector and unit information in sidebar
+ *
+ * Main sidebar rendering function that displays detailed information about
+ * the current sector, including all units present (armies, navies, caravans)
+ * and sector characteristics. Handles visibility rules, unit pagination,
+ * and multi-nation display. Core function for tactical information display.
+ *
+ * Parameters:
+ *   alwayssee - If TRUE, ignore visibility restrictions and show all info
+ *   moveind - Movement indicator type (MOVEIND_NORM, MOVEIND_FLY, MOVEIND_WATER)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears and redraws entire right sidebar area
+ *   - Displays sector coordinates, units, and sector information
+ *   - Updates pager and selector if out of bounds
+ *   - Handles multi-page unit display with "more" indicators
+ *   - Calls s_sideshow and sect_info for sector details
+ *
+ * Notes:
+ *   - Respects visibility rules unless alwayssee=TRUE
+ *   - Supports god mode (country=UNOWNED) for all-nation display
+ *   - Paginates units with SCREEN_SIDE units per page
+ *   - Shows enemy units with proper vision-based restrictions
+ *   - Essential for game situational awareness
+ */
 void
 makeside PARM_2 (int, alwayssee, int, moveind)
 {
@@ -1628,7 +2133,31 @@ change_view PARM_0(void)
   return(0);
 }
 
-/* TROOP_LISTING -- List all of the troops within the sector */
+/*
+ * troop_listing - Display detailed listing of all troops in current sector
+ *
+ * Provides a full-screen detailed view of all military units in the current
+ * sector, including those belonging to other nations. Requires appropriate
+ * visibility level to access detailed troop information. Useful for tactical
+ * analysis and detailed unit inspection.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 on completion (always successful)
+ *
+ * Side Effects:
+ *   - Clears right side of screen
+ *   - Displays comprehensive troop listing via side_troops
+ *   - Shows error message if insufficient visibility
+ *
+ * Notes:
+ *   - Requires sector ownership or HS_SEEMOST visibility level
+ *   - Uses side_troops with show_all=TRUE for complete listing
+ *   - Essential for detailed tactical intelligence
+ *   - Interactive display with user continuation prompts
+ */
 int
 troop_listing PARM_0(void)
 {
@@ -1885,7 +2414,30 @@ side_troops PARM_3(int, start_pos, int, max_pos, int, show_all)
   return(found2);
 }
 
-/* ZOOM_OUT -- Make the range of sectors covered larger */
+/*
+ * zoom_out - Increase map zoom level to show larger area
+ *
+ * Increases the zoom level to display a larger area of the map with less
+ * detail per sector. Provides strategic overview by showing more territory
+ * at once. Automatically recenters the map after zoom change.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Increments zoom_level if not at maximum
+ *   - Calls centermap() to recalculate display
+ *   - Changes map scale and visible area
+ *
+ * Notes:
+ *   - Maximum zoom level is ZOOM_NUMBER - 1
+ *   - Higher zoom_level = larger area, less detail
+ *   - Essential for strategic map navigation
+ *   - Bound to user interface zoom commands
+ */
 int
 zoom_out PARM_0(void)
 {
@@ -1896,7 +2448,30 @@ zoom_out PARM_0(void)
   return(0);
 }
 
-/* ZOOM_IN -- Increase the detail of the map */
+/*
+ * zoom_in - Decrease map zoom level to show more detail
+ *
+ * Decreases the zoom level to display a smaller area of the map with more
+ * detail per sector. Provides tactical detail by focusing on immediate
+ * area around cursor. Automatically recenters the map after zoom change.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Decrements zoom_level if not at minimum
+ *   - Calls centermap() to recalculate display
+ *   - Changes map scale and visible area
+ *
+ * Notes:
+ *   - Minimum zoom level is 0
+ *   - Lower zoom_level = smaller area, more detail
+ *   - Essential for tactical map navigation
+ *   - Bound to user interface zoom commands
+ */
 int
 zoom_in PARM_0(void)
 {
@@ -1907,7 +2482,31 @@ zoom_in PARM_0(void)
   return(0);
 }
 
-/* TOGGLE_INFOMODE -- toggle the information mode */
+/*
+ * toggle_infomode - Switch between normal and information display modes
+ *
+ * Toggles the global conq_infomode flag between TRUE and FALSE, switching
+ * the display between normal game view and detailed information mode.
+ * Information mode provides additional sector details and modified layout
+ * for enhanced tactical analysis.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Toggles conq_infomode global flag
+ *   - Calls centermap() to refresh display with new layout
+ *   - Changes sidebar positioning and information density
+ *
+ * Notes:
+ *   - Information mode affects makeside() and sect_info() behavior
+ *   - Changes positioning calculations throughout display system
+ *   - Essential for switching between tactical and strategic views
+ *   - Bound to user interface toggle commands
+ */
 int
 toggle_infomode PARM_0(void)
 {
