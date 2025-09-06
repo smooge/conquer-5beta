@@ -1,3 +1,26 @@
+/*
+ * mainG.c - Main Game Interface and Command Line Processing
+ *
+ * This module provides the primary entry point and user interface for the
+ * Conquer game client. It handles command line argument parsing, user
+ * authentication, session initialization, and the main game loop. The file
+ * establishes the interactive gaming environment and manages the transition
+ * from system startup to active gameplay.
+ *
+ * Key Functionality:
+ * - Command line option processing and validation
+ * - Nation selection and password authentication
+ * - Session management and file locking
+ * - Display initialization and terminal setup
+ * - Interactive game loop with input parsing
+ * - Administrative functions (scores, user lists, MOTD editing)
+ * - Print-mode map generation for non-interactive display
+ * - Security validation and access control
+ *
+ * The module serves as the bridge between the operating system environment
+ * and the game's internal systems, ensuring proper initialization of all
+ * game subsystems before transitioning to interactive gameplay.
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -30,7 +53,30 @@
 int conquer_done = FALSE;
 int nologouts = FALSE;
 
-/* FNAME_CHAR -- FALSE if character is not a normal part of a filename */
+/*
+ * fname_char - Test if character is valid for use in filenames
+ *
+ * Determines whether a given character can safely appear in a filename
+ * on the current operating system. This is used for parsing command-line
+ * arguments and extracting program names from full path specifications.
+ * Handles platform-specific path separators and invalid filename characters.
+ *
+ * Parameters:
+ *   ch - Character code to test for filename validity
+ *
+ * Returns:
+ *   TRUE if character is valid in filenames, FALSE if it's a path separator
+ *   or other invalid filename character
+ *
+ * Side Effects:
+ *   - None (pure function)
+ *
+ * Notes:
+ *   - Platform-specific: recognizes DOS backslash, VMS brackets and colons
+ *   - Unix forward slash always recognized as path separator
+ *   - Used primarily for extracting program name from argv[0]
+ *   - Conservative approach: assumes character is valid unless known invalid
+ */
 static int
 fname_char PARM_1(int, ch)
 {
@@ -49,7 +95,33 @@ fname_char PARM_1(int, ch)
   return(TRUE);
 }
 
-/* TOGGLE_OUT -- Quickly output the status of a switchable option */
+/*
+ * toggle_out - Display status of a command-line toggle option
+ *
+ * Outputs a formatted help line showing the current state of a boolean
+ * command-line option. Used by the help system to show users which
+ * options are currently enabled or disabled, along with the command-line
+ * flag needed to toggle them. Provides consistent formatting for all
+ * toggle options in the help display.
+ *
+ * Parameters:
+ *   outstr - Description string for the option (e.g., "use blanks, not underlines")
+ *   outch - Single character command-line flag (e.g., 'B' for -B option)
+ *   val - Current boolean state of the option (TRUE = enabled, FALSE = disabled)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes formatted help line to stderr
+ *   - Displays "don't" prefix when option is currently enabled
+ *
+ * Notes:
+ *   - Output format: "-X       [don't] description [toggle]"
+ *   - "don't" appears only when val is TRUE (option currently enabled)
+ *   - Used exclusively in command-line help display (-? option)
+ *   - Helps users understand current configuration state
+ */
 static void
 toggle_out PARM_3(char *, outstr, int, outch, int, val)
 {
@@ -57,7 +129,42 @@ toggle_out PARM_3(char *, outstr, int, outch, int, val)
 	  (char)outch, val ? "don't ":"", outstr);
 }
 
-/* MAIN -- Interpret command line arguments and parse user input */
+/*
+ * main - Primary entry point for the Conquer game client
+ *
+ * Processes command-line arguments, authenticates users, initializes the game
+ * environment, and enters the main interactive game loop. Handles all aspects
+ * of session startup including nation selection, password verification, file
+ * locking, display initialization, and security validation. Supports various
+ * non-interactive modes for administration, map printing, and information display.
+ *
+ * Parameters:
+ *   argc - Number of command-line arguments
+ *   argv - Array of command-line argument strings
+ *
+ * Returns:
+ *   0 on successful completion, exits with FAIL on errors
+ *
+ * Side Effects:
+ *   - Changes working directory to game data directory
+ *   - Creates lock files for session management
+ *   - Initializes curses display system
+ *   - Sets up signal handlers for clean shutdown
+ *   - Modifies global game state variables
+ *   - May execute external programs (help, editor)
+ *   - Reads/writes various game data files
+ *
+ * Notes:
+ *   - Supports extensive command-line options: -h (help), -l (who), -s (scores)
+ *   - Administrative modes: -M (MOTD edit), -D (dump), -c (clear locks)
+ *   - Display options: -p (print map), -P (print highlighted map)
+ *   - Configuration flags: -B, -b, -w, -G, -H, -i, -t, -X, -e
+ *   - Security: validates passwords, login permissions, and file access
+ *   - Session management: prevents duplicate logins, handles lock files
+ *   - Time checking: enforces game schedule restrictions
+ *   - Interactive mode: enters main game loop with input parsing
+ *   - Cleanup: ensures proper session termination and file closure
+ */
 int
 main PARM_2 (int, argc, char **, argv)
 {
