@@ -1541,7 +1541,30 @@ go_ne PARM_0(void)
   return(0);
 }
 
-/* GO_NW -- Move northwest */
+/*
+ * go_nw - Move cursor one sector northwest
+ *
+ * Advances the cursor position one sector in the northwest direction.
+ * In hexagonal mode, northwest movement depends on column parity due to
+ * the offset layout of hex grids. Movement involves adjusting both xcurs
+ * and ycurs coordinates according to hex geometry rules.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Updates xcurs and ycurs cursor position
+ *   - Movement pattern differs between hex and rectangular modes
+ *
+ * Notes:
+ *   - Hex mode: ycurs += (XREAL % 2), xcurs-- (column parity adjustment)
+ *   - Rectangular mode: xcurs--, ycurs++ (simple diagonal)
+ *   - Uses XREAL for world coordinate to determine hex column parity
+ */
 int
 go_nw PARM_0(void)
 {
@@ -1557,7 +1580,30 @@ go_nw PARM_0(void)
   return(0);
 }
 
-/* GO_WEST -- Move west */
+/*
+ * go_west - Move cursor one sector west
+ *
+ * Advances the cursor position one sector directly west. In hexagonal
+ * mode, west movement requires moving 2 cursor positions due to the
+ * compressed hex display where each hex sector spans 2 character columns.
+ * This maintains proper hex geometry alignment.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Updates xcurs cursor position (west)
+ *   - No ycurs change (pure horizontal movement)
+ *
+ * Notes:
+ *   - Hex mode: xcurs -= 2 (hex sectors span 2 char columns)
+ *   - Rectangular mode: xcurs-- (single character movement)
+ *   - Simplest movement function with no vertical component
+ */
 int
 go_west PARM_0(void)
 {
@@ -1571,7 +1617,30 @@ go_west PARM_0(void)
   return(0);
 }
 
-/* GO_EAST -- Move east */
+/*
+ * go_east - Move cursor one sector east
+ *
+ * Advances the cursor position one sector directly east. Mirror function
+ * of go_west(), following the same hexagonal geometry rules. In hex mode,
+ * east movement requires advancing 2 cursor positions to maintain proper
+ * alignment with the compressed hex display format.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Updates xcurs cursor position (east)
+ *   - No ycurs change (pure horizontal movement)
+ *
+ * Notes:
+ *   - Hex mode: xcurs += 2 (hex sectors span 2 char columns)
+ *   - Rectangular mode: xcurs++ (single character movement)
+ *   - Complement to go_west() with identical logic but opposite direction
+ */
 int
 go_east PARM_0(void)
 {
@@ -1585,7 +1654,30 @@ go_east PARM_0(void)
   return(0);
 }
 
-/* GO_SOUTH -- Move south */
+/*
+ * go_south - Move cursor one sector south
+ *
+ * Advances the cursor position one sector directly south. This is the
+ * simplest movement function as south movement works identically in both
+ * hexagonal and rectangular display modes. Only affects the ycurs
+ * coordinate with no horizontal component.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Decrements ycurs cursor position (screen coordinates)
+ *   - No xcurs change (pure vertical movement)
+ *
+ * Notes:
+ *   - Identical behavior in both hex and rectangular modes
+ *   - ycurs-- (screen y coordinates increase upward)
+ *   - Complement to go_north() which increments ycurs
+ */
 int
 go_south PARM_0(void)
 {
@@ -1595,7 +1687,30 @@ go_south PARM_0(void)
   return(0);
 }
 
-/* GO_SE -- Move southeast */
+/*
+ * go_se - Move cursor one sector southeast
+ *
+ * Advances the cursor position one sector in the southeast direction.
+ * In hexagonal mode, uses the opposite parity calculation from go_ne()
+ * by using (XREAL + 1) % 2 instead of XREAL % 2. This ensures proper
+ * hex geometry when moving from northeast to southeast directions.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Updates both xcurs and ycurs cursor positions
+ *   - Movement pattern differs between hex and rectangular modes
+ *
+ * Notes:
+ *   - Hex mode: ycurs -= (XREAL + 1) % 2, xcurs++ (inverted parity)
+ *   - Rectangular mode: ycurs--, xcurs++ (simple diagonal)
+ *   - Uses inverted column parity compared to go_ne()
+ */
 int
 go_se PARM_0(void)
 {
@@ -1611,7 +1726,30 @@ go_se PARM_0(void)
   return(0);
 }
 
-/* GO_SW -- Move southwest */
+/*
+ * go_sw - Move cursor one sector southwest
+ *
+ * Advances the cursor position one sector in the southwest direction.
+ * Uses the same parity calculation as go_se() with (XREAL + 1) % 2
+ * but moves west instead of east. This maintains proper hex geometry
+ * for the southern diagonal directions.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Updates both xcurs and ycurs cursor positions
+ *   - Movement pattern differs between hex and rectangular modes
+ *
+ * Notes:
+ *   - Hex mode: ycurs -= (XREAL + 1) % 2, xcurs-- (inverted parity)
+ *   - Rectangular mode: ycurs--, xcurs-- (simple diagonal)
+ *   - Complements go_nw() for southwest movement pattern
+ */
 int
 go_sw PARM_0(void)
 {
@@ -1627,7 +1765,30 @@ go_sw PARM_0(void)
   return(0);
 }
 
-/* SCR_NORTH -- Move north */
+/*
+ * scr_north - Move cursor north by half-screen distance
+ *
+ * Advances the cursor position northward by approximately half the visible
+ * screen height. This provides efficient navigation for large maps by
+ * allowing rapid movement across significant distances. Uses max_ycurs()
+ * to calculate the appropriate screen-relative movement distance.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Advances ycurs by half the maximum screen height
+ *   - Movement distance adapts to current screen dimensions
+ *
+ * Notes:
+ *   - Uses max_ycurs(xcurs) / 2 for adaptive screen-relative movement
+ *   - Movement distance depends on current cursor x position
+ *   - Useful for rapid map navigation and exploration
+ */
 int
 scr_north PARM_0(void)
 {
@@ -1637,7 +1798,31 @@ scr_north PARM_0(void)
   return(0);
 }
 
-/* SCR_NE -- Move northeast */
+/*
+ * scr_ne - Move cursor northeast by half-screen distance
+ *
+ * Advances the cursor position diagonally northeast by approximately
+ * half the visible screen dimensions in both x and y directions. This
+ * combines half-screen movement in both axes for efficient diagonal
+ * navigation across large map areas.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Advances xcurs by half the maximum screen width
+ *   - Advances ycurs by half the maximum screen height
+ *   - Movement distance adapts to current screen dimensions
+ *
+ * Notes:
+ *   - xcurs += max_xcurs() / 2, ycurs += max_ycurs(xcurs) / 2
+ *   - Combines horizontal and vertical half-screen movements
+ *   - Efficient for diagonal map exploration and navigation
+ */
 int
 scr_ne PARM_0(void)
 {
@@ -1648,7 +1833,31 @@ scr_ne PARM_0(void)
   return(0);
 }
 
-/* SCR_NW -- Move northwest */
+/*
+ * scr_nw - Move cursor northwest by half-screen distance
+ *
+ * Advances the cursor position diagonally northwest by approximately
+ * half the visible screen dimensions. Moves west by half-screen width
+ * while moving north by half-screen height, enabling efficient diagonal
+ * navigation in the northwest direction.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Retreats xcurs by half the maximum screen width
+ *   - Advances ycurs by half the maximum screen height
+ *   - Movement distance adapts to current screen dimensions
+ *
+ * Notes:
+ *   - xcurs -= max_xcurs() / 2, ycurs += max_ycurs(xcurs) / 2
+ *   - Mirror of scr_ne() but moves west instead of east
+ *   - Useful for rapid northwest map exploration
+ */
 int
 scr_nw PARM_0(void)
 {
@@ -1659,7 +1868,30 @@ scr_nw PARM_0(void)
   return(0);
 }
 
-/* SCR_WEST -- Move west */
+/*
+ * scr_west - Move cursor west by half-screen distance
+ *
+ * Advances the cursor position westward by approximately half the visible
+ * screen width. This provides efficient horizontal navigation for large
+ * maps by allowing rapid east-west movement across significant distances.
+ * Pure horizontal movement with no vertical component.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Retreats xcurs by half the maximum screen width
+ *   - No ycurs change (pure horizontal movement)
+ *
+ * Notes:
+ *   - xcurs -= max_xcurs() / 2 (half-screen westward)
+ *   - Complement to scr_east() with identical logic but opposite direction
+ *   - Efficient for horizontal map scanning and navigation
+ */
 int
 scr_west PARM_0(void)
 {
@@ -1669,7 +1901,30 @@ scr_west PARM_0(void)
   return(0);
 }
 
-/* SCR_EAST -- Move east */
+/*
+ * scr_east - Move cursor east by half-screen distance
+ *
+ * Advances the cursor position eastward by approximately half the visible
+ * screen width. Mirror function of scr_west(), providing efficient
+ * horizontal navigation for rapid east-west movement across large map
+ * areas. Pure horizontal movement with no vertical component.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Advances xcurs by half the maximum screen width
+ *   - No ycurs change (pure horizontal movement)
+ *
+ * Notes:
+ *   - xcurs += max_xcurs() / 2 (half-screen eastward)
+ *   - Complement to scr_west() with identical logic but opposite direction
+ *   - Efficient for horizontal map scanning and navigation
+ */
 int
 scr_east PARM_0(void)
 {
@@ -1679,7 +1934,30 @@ scr_east PARM_0(void)
   return(0);
 }
 
-/* SCR_SOUTH -- Move south */
+/*
+ * scr_south - Move cursor south by half-screen distance
+ *
+ * Advances the cursor position southward by approximately half the visible
+ * screen height. Mirror function of scr_north(), providing efficient
+ * vertical navigation for rapid north-south movement across large map
+ * areas. Pure vertical movement with no horizontal component.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Retreats ycurs by half the maximum screen height
+ *   - No xcurs change (pure vertical movement)
+ *
+ * Notes:
+ *   - ycurs -= max_ycurs(xcurs) / 2 (half-screen southward)
+ *   - Complement to scr_north() with identical logic but opposite direction
+ *   - Movement distance depends on current cursor x position
+ */
 int
 scr_south PARM_0(void)
 {
@@ -1689,7 +1967,31 @@ scr_south PARM_0(void)
   return(0);
 }
 
-/* SCR_SE -- Move southeast */
+/*
+ * scr_se - Move cursor southeast by half-screen distance
+ *
+ * Advances the cursor position diagonally southeast by approximately
+ * half the visible screen dimensions. Moves south by half-screen height
+ * while moving east by half-screen width, enabling efficient diagonal
+ * navigation in the southeast direction.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Retreats ycurs by half the maximum screen height
+ *   - Advances xcurs by half the maximum screen width
+ *   - Movement distance adapts to current screen dimensions
+ *
+ * Notes:
+ *   - ycurs -= max_ycurs(xcurs) / 2, xcurs += max_xcurs() / 2
+ *   - Mirror of scr_nw() but moves south and east instead
+ *   - Useful for rapid southeast map exploration
+ */
 int
 scr_se PARM_0(void)
 {
@@ -1700,7 +2002,31 @@ scr_se PARM_0(void)
   return(0);
 }
 
-/* SCR_SW -- Move southwest */
+/*
+ * scr_sw - Move cursor southwest by half-screen distance
+ *
+ * Advances the cursor position diagonally southwest by approximately
+ * half the visible screen dimensions. Moves south by half-screen height
+ * while moving west by half-screen width, enabling efficient diagonal
+ * navigation in the southwest direction.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Resets pager and selector to 0 (clears paging state)
+ *   - Retreats ycurs by half the maximum screen height
+ *   - Retreats xcurs by half the maximum screen width
+ *   - Movement distance adapts to current screen dimensions
+ *
+ * Notes:
+ *   - ycurs -= max_ycurs(xcurs) / 2, xcurs -= max_xcurs() / 2
+ *   - Mirror of scr_ne() but moves south and west instead
+ *   - Completes the 8-direction screen movement function set
+ */
 int
 scr_sw PARM_0(void)
 {
@@ -1865,7 +2191,37 @@ show_sect PARM_5(int, x, int, y, int, x_loc, int, y_loc, int, method)
   }
 }
 
-/* PRINT_MAP -- Send a map to the standard output */
+/*
+ * print_map - Send formatted map output to stdout (UNIMPLEMENTED)
+ *
+ * This function was designed to generate complete map output to stdout
+ * for capture and printing purposes. Currently disabled via #ifdef UNIMPLEMENTED,
+ * it would provide an interactive interface for selecting highlighting modes
+ * and display options before generating formatted map output.
+ *
+ * Intended functionality:
+ * - Interactive highlighting mode selection from HI_MAXIMUM options
+ * - Display style selection for terrain, political, or strategic views
+ * - Coordinate system display options
+ * - Map boundary and centering controls
+ * - Full map rendering to stdout with selected formatting
+ *
+ * Parameters:
+ *   widemap - Flag for wide format output (enables additional options)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Would output interactive prompts to stderr
+ *   - Would generate formatted map to stdout
+ *   - Currently does nothing due to UNIMPLEMENTED ifdef
+ *
+ * Notes:
+ *   - Implementation is complete but disabled for production
+ *   - Requires user interaction via scanf for option selection
+ *   - Designed for external map capture and printing workflows
+ */
 void
 print_map PARM_1(int, widemap)
 {
@@ -2117,14 +2473,66 @@ print_map PARM_1(int, widemap)
 #endif /* UNIMPLEMENTED */
 }
 
-/* SEE_ONE -- See just this one sector if posible */
+/*
+ * see_one - Display individual sector with forced visibility
+ *
+ * Helper function that renders a single sector to the screen with
+ * forced visibility parameters. Used by see_around() to display
+ * sectors in the immediate vicinity without regard to normal
+ * visibility restrictions. Provides tactical view of specific areas.
+ *
+ * Parameters:
+ *   x - Absolute world x coordinate of sector to display
+ *   y - Absolute world y coordinate of sector to display
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls show_sect() with forced display parameters
+ *   - May override normal fog-of-war visibility
+ *   - Updates screen display for specified sector
+ *
+ * Notes:
+ *   - Static function used internally by visibility system
+ *   - Screen position parameters (-1, -1) let show_sect() calculate position
+ *   - Force parameter (1) overrides visibility restrictions
+ */
 static void
 see_one PARM_2(int, x, int, y)
 {
   show_sect(x, y, -1, -1, 1);
 }
 
-/* SEE_AROUND -- Simply show the surrounding sectors */
+/*
+ * see_around - Display all sectors within 1-hex radius of position
+ *
+ * Renders all sectors immediately surrounding the specified coordinates,
+ * providing a tactical overview of the local area. Uses map_loop() to
+ * visit each sector in a 1-hex radius and calls see_one() to force
+ * display regardless of normal visibility restrictions.
+ *
+ * This function is used for tactical displays where the player needs
+ * to see immediate surroundings, such as during unit movement or when
+ * examining specific areas of strategic importance.
+ *
+ * Parameters:
+ *   x - Central absolute world x coordinate
+ *   y - Central absolute world y coordinate
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates screen display for 7 sectors (center + 6 adjacent)
+ *   - May override normal fog-of-war visibility restrictions
+ *   - Calls see_one() for each sector via map_loop()
+ *
+ * Notes:
+ *   - Uses map_loop(x, y, 1, see_one) for efficient sector iteration
+ *   - Radius of 1 includes center hex plus 6 adjacent hexes
+ *   - Forced visibility overrides concealment and fog-of-war
+ */
 void
 see_around PARM_2 ( int, x, int, y )
 {
@@ -2132,7 +2540,46 @@ see_around PARM_2 ( int, x, int, y )
   map_loop(x, y, 1, see_one);
 }
 
-/* COFFMAP -- Check if the cursor is out of bounds */
+/*
+ * coffmap - Check cursor bounds and trigger screen redraw if needed
+ *
+ * This critical function monitors cursor position to detect when it has
+ * moved outside the visible screen boundaries and triggers appropriate
+ * screen recentering and redrawing. It handles both relative and absolute
+ * coordinate systems, implementing different boundary checking logic for
+ * gods versus normal players.
+ *
+ * Boundary checking logic:
+ * - Gods/absolute mode: Uses world boundaries (MAPY) with special edge cases
+ * - Relative mode: Uses screen boundaries with automatic recentering
+ * - Handles screen wrapping and edge cases for both hex and rectangular modes
+ *
+ * Screen redraw management:
+ * - DRAW_FULL: Complete screen clear and redraw (including VAX compatibility)
+ * - Partial redraw: Clear from cursor to bottom, preserves top content
+ * - Calls makemap() to rebuild the map display
+ * - Updates bottom status and side information panels
+ * - Restores cursor position and refreshes display
+ *
+ * Parameters:
+ *   None (operates on global cursor state)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May call centermap() to recenter view when cursor goes out of bounds
+ *   - Clears and redraws screen based on redraw mode
+ *   - Updates makebottom() and makeside() displays
+ *   - Calls show_cursor() and refresh() to finalize display
+ *   - Resets redraw flag to DRAW_DONE when complete
+ *
+ * Notes:
+ *   - Name suggests "Cursor Off Map" - boundary detection function
+ *   - Handles special VAX curses compatibility with extra refresh()
+ *   - Critical for maintaining proper display during navigation
+ *   - Different logic for relative vs absolute coordinate systems
+ */
 void
 coffmap PARM_0(void)
 {
@@ -2225,7 +2672,30 @@ coffmap PARM_0(void)
   }
 }
 
-/* HS_SEEPART -- Assign the HS_SEEPART to the visibility setting */
+/*
+ * hs_seepart - Set sector visibility to partial sight level
+ *
+ * Helper function that upgrades sector visibility to HS_SEEPART level
+ * if current visibility is lower. This provides basic terrain visibility
+ * without revealing detailed information about units, ownership, or
+ * strategic resources. Part of the fog-of-war visibility system.
+ *
+ * Parameters:
+ *   x - Absolute world x coordinate of sector
+ *   y - Absolute world y coordinate of sector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates VIS_STORE(x, y) to HS_SEEPART if current visibility is lower
+ *   - Does not downgrade visibility if already higher than HS_SEEPART
+ *
+ * Notes:
+ *   - Static helper function used by visibility calculation systems
+ *   - HS_SEEPART allows basic terrain recognition without strategic detail
+ *   - Part of graduated visibility system: NOSEE < SEEPART < SEEMOST < SEEFULL < SEEALL
+ */
 static void
 hs_seepart PARM_2(int, x, int, y)
 {
@@ -2234,7 +2704,37 @@ hs_seepart PARM_2(int, x, int, y)
     VIS_STORE(x, y, HS_SEEPART);
 }
 
-/* HS_ARMYSEE -- Closeup visibility based on army information */
+/*
+ * hs_armysee - Set sector visibility based on army sight capabilities
+ *
+ * Helper function that determines appropriate visibility level for sectors
+ * containing armies, based on the army's sight capabilities and status.
+ * Armies that can see (a_cansee) and are not sieged provide full visibility,
+ * while limited armies provide partial visibility.
+ *
+ * Visibility logic:
+ * - Armies with sight capability + not sieged: HS_SEEFULL (complete detail)
+ * - Limited or sieged armies: HS_SEEMOST (most information visible)
+ * - Never downgrades existing higher visibility levels
+ *
+ * Parameters:
+ *   x - Absolute world x coordinate of sector with army
+ *   y - Absolute world y coordinate of sector with army
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates VIS_STORE(x, y) based on army sight capabilities
+ *   - Checks ARMY_TYPE macro and unit_status() for army properties
+ *   - May upgrade visibility to HS_SEEFULL or HS_SEEMOST
+ *
+ * Notes:
+ *   - Static helper function used by whatcansee() visibility calculation
+ *   - Sieged armies have reduced sight capabilities
+ *   - a_cansee(ARMY_TYPE) determines if army has sight capability
+ *   - Part of tactical visibility system for unit-based reconnaissance
+ */
 static void
 hs_armysee PARM_2(int, x, int, y)
 {
@@ -2404,7 +2904,38 @@ whatcansee PARM_0(void)
 
 }
 
-/* MARK_SECTOR -- Store the current sector position */
+/*
+ * mark_sector - Store current cursor position for jump-to-mark feature
+ *
+ * Records the current cursor position in global mark variables (xloc_mark,
+ * yloc_mark) for later retrieval via the "jump-to-mark" command. This
+ * provides a bookmark system allowing players to mark strategic locations
+ * and quickly return to them during gameplay.
+ *
+ * User feedback:
+ * - Clears bottom screen area for message display
+ * - Shows confirmation message about jump-to-mark availability
+ * - Pauses for 2 seconds to ensure message visibility
+ * - Stores current XREAL, YREAL coordinates as mark position
+ *
+ * Parameters:
+ *   None (operates on current cursor position)
+ *
+ * Returns:
+ *   0 always (success)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area with clear_bottom(0)
+ *   - Displays user message via bottommsg()
+ *   - Updates global xloc_mark and yloc_mark variables
+ *   - Pauses execution for 2 seconds for user feedback
+ *
+ * Notes:
+ *   - Stores absolute world coordinates (XREAL, YREAL)
+ *   - Mark persists until overwritten by another mark_sector() call
+ *   - Essential for strategic gameplay and map navigation efficiency
+ *   - Complemented by jump-to-mark command for retrieval
+ */
 int
 mark_sector PARM_0(void)
 {
@@ -2417,7 +2948,44 @@ mark_sector PARM_0(void)
   return(0);
 }
 
-/* RECENTER_NTN -- Realign relative center at the current position */
+/*
+ * recenter_ntn - Realign nation's relative coordinate system to current position
+ *
+ * Adjusts the nation's relative coordinate system center to the current
+ * cursor position, allowing players to redefine their coordinate reference
+ * point. This is essential for nations using relative mapping mode where
+ * coordinates are displayed relative to a central reference point.
+ *
+ * Validation checks:
+ * - Only functions in relative map mode (world.relative_map)
+ * - Gods and null nations don't need coordinate adjustment
+ * - Target sector must be on-map and visible (charted territory)
+ * - Provides appropriate error messages for invalid operations
+ *
+ * Recentering process:
+ * - Updates nation's centerx and centery to current XREAL, YREAL
+ * - Displays confirmation message about coordinate alignment
+ * - Prompts user for permanent adjustment (via y_or_n())
+ * - If confirmed, calls XADJRLOC to make adjustment permanent
+ *
+ * Parameters:
+ *   None (operates on current nation and cursor position)
+ *
+ * Returns:
+ *   0 always (success or graceful failure)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area for user interaction
+ *   - Updates ntn_ptr->centerx and ntn_ptr->centery coordinates
+ *   - May call XADJRLOC macro to save permanent coordinate adjustment
+ *   - Displays status messages and prompts for user confirmation
+ *
+ * Notes:
+ *   - Only valid for non-god players in relative map mode
+ *   - Cannot center on uncharted or invisible sectors
+ *   - Permanent adjustment affects future game sessions
+ *   - Critical for relative coordinate system usability
+ */
 int
 recenter_ntn PARM_0(void)
 {
