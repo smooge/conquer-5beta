@@ -1,5 +1,25 @@
-/* This file handles mallocing, sorting and other memory dohickys */
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * memoryX.c - Memory Management and Data Structure Operations
+ *
+ * This file provides comprehensive memory management, dynamic allocation,
+ * and data structure manipulation for the Conquer game system. It handles
+ * all aspects of creating, destroying, and organizing game entities.
+ *
+ * Key Functionality Areas:
+ *   - Memory allocation for game structures (armies, navies, cities, etc.)
+ *   - Linked list sorting algorithms for all entity types
+ *   - Data structure creation and initialization
+ *   - Memory deallocation and cleanup
+ *   - Nation management and organization
+ *   - 2D array allocation for map data
+ *   - Display mode management
+ *
+ * This module is critical for game stability and performance, ensuring
+ * proper memory usage and maintaining sorted lists for efficient access.
+ * All dynamic memory allocation goes through these functions to provide
+ * centralized error handling and consistent initialization.
+ *
+ * conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
  * code and it is our hope that you respect this.  We give permission
@@ -28,7 +48,28 @@
 #include "displayX.h"
 #include "dstatusX.h"
 
-/* CLR_MEMORY -- Clear out a patch of memory */
+/*
+ * clr_memory - Clear a block of memory to zero
+ *
+ * Provides a portable way to zero-initialize memory blocks across different
+ * platforms. Uses either bzero() (BSD systems) or memset() (standard C)
+ * depending on compile-time configuration.
+ *
+ * Parameters:
+ *   mem_ptr - Pointer to memory block to clear (must not be NULL)
+ *   len - Number of bytes to clear (must be positive)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Zeroes len bytes starting at mem_ptr
+ *   - No bounds checking performed - caller must ensure valid memory range
+ *
+ * Notes:
+ *   - Platform abstraction layer for memory clearing
+ *   - Used throughout the codebase for structure initialization
+ */
 void
 clr_memory PARM_2(char *, mem_ptr, int, len)
 {
@@ -40,7 +81,42 @@ clr_memory PARM_2(char *, mem_ptr, int, len)
 #endif /* BZERO */
 }
 
-/* ALIGN_DATA -- Destroy nations and count elements */
+/*
+ * align_data - Clean up nations and count all game elements
+ *
+ * Performs comprehensive data cleanup and counting during game updates.
+ * Removes inactive nations, counts all entity types for each nation,
+ * and recalculates nation territories. This is a critical maintenance
+ * function called during update processing.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes nations marked as INACTIVE by calling dest_ntn()
+ *   - Updates MAXNTN to current number of nations
+ *   - Sets world.active_ntns counter
+ *   - For each nation, counts and sets:
+ *     * num_army (army units)
+ *     * num_navy (naval units) 
+ *     * num_cvn (caravan units)
+ *     * num_city (cities)
+ *     * num_item (items/commodities)
+ *     * num_unum (unit numbering structures)
+ *     * num_maps (map structures)
+ *   - Recalculates territory boundaries via find_area()
+ *   - Counts default world unit numbering structures
+ *   - Calls ntn_sort() to reorganize nations if in update mode
+ *   - Prints progress to update log file
+ *
+ * Notes:
+ *   - Essential for maintaining data integrity between turns
+ *   - Heavy operation that touches all game entities
+ *   - Only sorts nations during actual updates (is_update == TRUE)
+ */
 void
 align_data PARM_0(void)
 {
@@ -143,9 +219,34 @@ align_data PARM_0(void)
   if (is_update == TRUE) ntn_sort();
 }
 
-/* M2ALLOC -- Allocate a two dimensional array of memory
-              nrows: number of rows, ncols: number of columns
-              entrysize: number of bytes in a unit            */
+/*
+ * m2alloc - Allocate a two-dimensional array of memory
+ *
+ * Creates a dynamically allocated 2D array with contiguous memory layout.
+ * The array is allocated as a single block with properly aligned row pointers,
+ * allowing efficient access via array[row][col] syntax.
+ *
+ * Parameters:
+ *   nrows - Number of rows to allocate (must be >= 0)
+ *   ncols - Number of columns per row (must be > 0)
+ *   entrysize - Size in bytes of each array element (must be > 0)
+ *
+ * Returns:
+ *   Pointer to array of row pointers (char **) on success
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates memory for both row pointers and data
+ *   - Sets up row pointers for direct array access
+ *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Notes:
+ *   - Memory layout: [row_pointers][data_block]
+ *   - Enables efficient 2D array access patterns
+ *   - Used primarily for map data structures
+ *   - Caller must free returned pointer when done
+ *   - Total allocation: nrows * (sizeof(char*) + ncols * entrysize)
+ */
 char **
 m2alloc PARM_3 (int, nrows, int, ncols, int, entrysize)
 {
@@ -170,8 +271,30 @@ m2alloc PARM_3 (int, nrows, int, ncols, int, entrysize)
   return(baseaddr);
 }
 
-/* ARMY_SORT() -- Resort army list into ascending order and connect
-                  armies in same sector by the near structure       */
+/*
+ * army_sort - Sort army list by ID and establish proximity links
+ *
+ * Performs bubble sort on the nation's army list to maintain ascending
+ * order by army ID. Optionally establishes proximity links between
+ * armies in the same sector via the "nrby" (nearby) pointers.
+ *
+ * Parameters:
+ *   skipnears - If TRUE, skip proximity linking; if FALSE, call align_armynear()
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reorders ntn_ptr->army_list in ascending armyid order
+ *   - Updates next pointers to maintain proper linked list structure
+ *   - If skipnears is FALSE, calls align_armynear() to set proximity links
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (O(n²) complexity)
+ *   - Handles empty lists and single-element lists efficiently
+ *   - Essential for maintaining consistent army order in UI and commands
+ *   - Proximity linking allows quick access to co-located units
+ */
 void
 army_sort PARM_1(int, skipnears)
 {
@@ -219,7 +342,28 @@ army_sort PARM_1(int, skipnears)
   }
 }
 
-/* NAVY_SORT() -- Resort navy list into ascending order */
+/*
+ * navy_sort - Sort navy list by ID in ascending order
+ *
+ * Maintains the nation's navy list in ascending order by navy ID using
+ * a bubble sort algorithm. Similar to army_sort but simpler since navies
+ * don't require proximity linking.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reorders ntn_ptr->navy_list in ascending navyid order
+ *   - Updates next pointers to maintain linked list integrity
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (O(n²) complexity)
+ *   - Handles empty and single-element lists efficiently
+ *   - Required for consistent navy numbering and UI display
+ */
 void
 navy_sort PARM_0(void)
 {
@@ -260,7 +404,29 @@ navy_sort PARM_0(void)
   }
 }
 
-/* CITY_SORT() -- Resort city list into ascending order */
+/*
+ * city_sort - Sort city list alphabetically by name
+ *
+ * Maintains the nation's city list in alphabetical order by city name
+ * using bubble sort. Unlike army/navy sorts, this sorts by string
+ * comparison rather than numeric ID.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reorders ntn_ptr->city_list in alphabetical order by name
+ *   - Updates next pointers to maintain linked list integrity
+ *   - Uses str_test() for string comparison
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm with string comparison
+ *   - Alphabetical ordering makes city lists user-friendly
+ *   - Essential for consistent city display in interfaces
+ */
 void
 city_sort PARM_0(void)
 {
@@ -301,7 +467,27 @@ city_sort PARM_0(void)
   }
 }
 
-/* CVN_SORT() -- Resort caravan list into ascending order */
+/*
+ * cvn_sort - Sort caravan list by ID in ascending order
+ *
+ * Maintains the nation's caravan list in ascending order by caravan ID
+ * using bubble sort algorithm. Similar to navy_sort for caravan entities.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reorders ntn_ptr->cvn_list in ascending cvnid order
+ *   - Updates next pointers to maintain linked list integrity
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (O(n²) complexity)
+ *   - Essential for consistent caravan numbering and display
+ *   - Handles empty and single-element lists efficiently
+ */
 void
 cvn_sort PARM_0(void)
 {
@@ -342,7 +528,27 @@ cvn_sort PARM_0(void)
   }
 }
 
-/* ITEM_SORT() -- Resort item list into ascending order */
+/*
+ * item_sort - Sort item list by ID in ascending order
+ *
+ * Maintains the nation's item/commodity list in ascending order by item ID
+ * using bubble sort algorithm. Similar to other entity sorting functions.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reorders ntn_ptr->item_list in ascending itemid order
+ *   - Updates next pointers to maintain linked list integrity
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (O(n²) complexity)
+ *   - Essential for consistent item numbering and inventory display
+ *   - Handles empty and single-element lists efficiently
+ */
 void
 item_sort PARM_0(void)
 {
@@ -383,7 +589,31 @@ item_sort PARM_0(void)
   }
 }
 
-/* ALIGN_ARMYNEAR -- Assign location pointers properly */
+/*
+ * align_armynear - Establish proximity links between co-located armies
+ *
+ * Scans through the nation's army list and sets up "nrby" (nearby) pointers
+ * to link armies that are located in the same sector. This creates a 
+ * secondary linked list structure for quick access to units at the same
+ * coordinates.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets nrby pointer for each army to point to next army at same location
+ *   - Sets nrby to NULL if no other army is at the same coordinates
+ *   - Must be called after army_sort() to work on sorted list
+ *
+ * Notes:
+ *   - Assumes army list is already sorted by army_sort()
+ *   - Creates linked chains of armies at each coordinate
+ *   - Essential for multi-unit movement and combat calculations
+ *   - Only links to the immediately next co-located unit, not all units
+ */
 void
 align_armynear PARM_0(void)
 {
@@ -406,7 +636,30 @@ align_armynear PARM_0(void)
 
 }
 
-/* NEW_MAPCHAR -- Allocate character memory the size of the world */
+/*
+ * new_mapchar - Allocate world-sized character array
+ *
+ * Allocates or reuses a character array large enough to hold one byte
+ * per world sector (MAPX * MAPY). Initializes the memory to zero.
+ * Used for various map overlays and temporary data storage.
+ *
+ * Parameters:
+ *   mem_ptr - Existing memory pointer to reuse, or NULL to allocate new
+ *
+ * Returns:
+ *   Pointer to initialized character array of size MAPX * MAPY
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates MAPX * MAPY bytes if mem_ptr is NULL
+ *   - Zeroes all bytes in the array via clr_memory()
+ *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Notes:
+ *   - Optimized for map-sized data structures
+ *   - Allows memory reuse to avoid repeated allocations
+ *   - Common pattern for temporary map calculations
+ */
 char *
 new_mapchar PARM_1(char *, mem_ptr)
 {
@@ -423,7 +676,30 @@ new_mapchar PARM_1(char *, mem_ptr)
   return(mem_ptr);
 }
 
-/* NEW_MAPSHORT -- Allocate short integer memory the size of the world */
+/*
+ * new_mapshort - Allocate world-sized short integer array
+ *
+ * Allocates or reuses a short integer array large enough to hold one
+ * short per world sector (MAPX * MAPY). Initializes the memory to zero.
+ * Used for map data requiring larger value ranges than char arrays.
+ *
+ * Parameters:
+ *   mem_ptr - Existing memory pointer to reuse, or NULL to allocate new
+ *
+ * Returns:
+ *   Pointer to initialized short array of size MAPX * MAPY
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates MAPX * MAPY * sizeof(short) bytes if mem_ptr is NULL
+ *   - Zeroes all bytes in the array via clr_memory()
+ *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Notes:
+ *   - For map data requiring values > 255 (char range)
+ *   - Memory reuse pattern same as new_mapchar()
+ *   - Commonly used for distance maps, weights, counters
+ */
 short *
 new_mapshort PARM_1(short *, mem_ptr)
 {
@@ -441,7 +717,30 @@ new_mapshort PARM_1(short *, mem_ptr)
   return(mem_ptr);
 }
 
-/* NEW_MAPLONG -- Allocate long integer memory the size of the world */
+/*
+ * new_maplong - Allocate world-sized long integer array
+ *
+ * Allocates or reuses a long integer array large enough to hold one
+ * long per world sector (MAPX * MAPY). Initializes the memory to zero.
+ * Used for map data requiring full long integer range.
+ *
+ * Parameters:
+ *   mem_ptr - Existing memory pointer to reuse, or NULL to allocate new
+ *
+ * Returns:
+ *   Pointer to initialized long array of size MAPX * MAPY
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates MAPX * MAPY * sizeof(long) bytes if mem_ptr is NULL
+ *   - Zeroes all bytes in the array via clr_memory()
+ *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Notes:
+ *   - For map data requiring large numeric values
+ *   - Memory reuse pattern consistent with other new_map*() functions
+ *   - Used for calculations involving large sums, distances, or complex data
+ */
 long *
 new_maplong PARM_1(long *, mem_ptr)
 {
@@ -458,7 +757,30 @@ new_maplong PARM_1(long *, mem_ptr)
   return(mem_ptr);
 }
 
-/* NEW_DMODE -- Allocate space for a new display entry */
+/*
+ * new_dmode - Allocate memory for a new display mode structure
+ *
+ * Allocates memory for a DMODE_STRUCT to store display mode configuration.
+ * Display modes control how different elements are highlighted and displayed
+ * in the game interface.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated DMODE_STRUCT
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(DMODE_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Notes:
+ *   - Part of display system memory management
+ *   - Caller responsible for linking into display mode list
+ *   - Must be freed by caller when no longer needed
+ */
 DMODE_PTR
 new_dmode PARM_0(void)
 {
@@ -475,7 +797,27 @@ new_dmode PARM_0(void)
   return(d1_ptr);
 }
 
-/* NEW_UNUM -- Allocate space for a new unit numbering structure */
+/*
+ * new_unum - Allocate memory for a unit numbering structure
+ *
+ * Allocates memory for a UNITNUM structure used to manage unit numbering
+ * schemes and ID assignment ranges for different unit types.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated UNITNUM structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(UNITNUM) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Notes:
+ *   - Used for managing unit ID assignment ranges
+ *   - Caller responsible for initialization and linking
+ */
 UNUM_PTR
 new_unum PARM_0(void)
 {
@@ -491,6 +833,37 @@ new_unum PARM_0(void)
   }
   return(u1_ptr);
 }
+
+/*
+ * new_map - Allocate memory for a map structure
+ * new_army - Allocate memory for an army unit  
+ * new_navy - Allocate memory for a naval unit
+ * new_cvn - Allocate memory for a caravan unit
+ * new_city - Allocate memory for a city structure
+ * new_item - Allocate memory for an item/commodity
+ * new_ntn - Allocate memory for a nation structure
+ *
+ * These functions follow identical patterns for allocating game entity
+ * structures. Each allocates memory for the corresponding structure type
+ * and provides error handling via errormsg() and abrt() on failure.
+ *
+ * Parameters:
+ *   None (all functions)
+ *
+ * Returns:
+ *   Pointer to newly allocated structure of appropriate type
+ *   Functions terminate program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocate sizeof(appropriate_STRUCT) bytes
+ *   - Call errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Notes:
+ *   - Centralized allocation for all major game entities
+ *   - Consistent error handling across all allocation functions
+ *   - Caller responsible for proper initialization and cleanup
+ */
 
 /* NEW_MAP -- Allocate space for a new unit mapping structure */
 MAP_PTR
@@ -611,7 +984,33 @@ new_ntn PARM_0(void)
   return(n1_ptr);
 }
 
-/* DEST_ARMY -- Remove an army unit from the army list */
+/*
+ * dest_army - Remove and deallocate an army unit from the nation
+ *
+ * Removes an army unit from the nation's army list, handles leader/follower
+ * relationships, deallocates memory, and maintains list integrity. This is
+ * a complex operation that must handle unit leadership chains.
+ *
+ * Parameters:
+ *   idnum - ID number of the army unit to remove
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes unit from ntn_ptr->army_list linked list
+ *   - Transfers leadership to former leader if this unit was a leader
+ *   - Updates follower units to point to new leader
+ *   - Deallocates army structure memory via free()
+ *   - Calls army_sort(FALSE) to maintain list order and proximity links
+ *   - Returns silently if unit ID not found
+ *
+ * Notes:
+ *   - Handles complex leader/follower relationships automatically
+ *   - Maintains army list integrity after removal
+ *   - Essential for unit destruction during combat or disbanding
+ *   - Automatically resorts army list after removal
+ */
 void
 dest_army PARM_1(int, idnum)
 {
@@ -1311,8 +1710,36 @@ ntn_qsort PARM_2(int, left, int, right)
   ntn_qsort(last + 1, right);
 }
 
-/* NTN_SORT -- This routine places the nations in alphabetical order
-               and gets rid of any empty slots.                      */
+/*
+ * ntn_sort - Sort nations alphabetically and compact nation array
+ *
+ * Major reorganization function that sorts all nations alphabetically,
+ * removes empty slots, and updates all cross-references throughout the
+ * game world. This is one of the most complex functions in the system.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sorts world.np[] array alphabetically by nation name
+ *   - Removes empty nation slots and compacts array
+ *   - Updates MAXNTN to new nation count
+ *   - Recalculates all diplomacy status vectors between nations
+ *   - Updates sector ownership throughout the world map
+ *   - Resets unowned sectors to MAJ_NONE designation
+ *   - Prints progress messages to update log
+ *   - Calls verify_data() in debug mode
+ *
+ * Notes:
+ *   - Uses quicksort algorithm via ntn_qsort() helper function
+ *   - Critical for maintaining game data integrity
+ *   - Updates ALL references to nation IDs throughout the world
+ *   - Must be called after any nation creation/destruction
+ *   - Heavy operation that touches most game data structures
+ */
 void
 ntn_sort PARM_0(void)
 {
@@ -1405,7 +1832,35 @@ ntn_sort PARM_0(void)
 #endif /*DEBUG*/
 }
 
-/* UNUM_DEFAULTS -- Set the default values */
+/*
+ * unum_defaults - Initialize default unit numbering scheme
+ *
+ * Sets up the default unit numbering ranges for different unit types.
+ * This establishes the standard ID assignment patterns used throughout
+ * the game for consistent unit numbering.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls resetnumbers() to clear existing numbering
+ *   - Sets up default numbering slots via newslotnumber()
+ *   - Assigns standard ranges for different unit classes:
+ *     * Leaders: start at 1
+ *     * Spellcasters: start at 25/50 (depending on SAVE_SPACE)
+ *     * Monsters: start at 50/100
+ *     * Scouts/Agents: start at 200/1000
+ *   - Calls startnumber() for each unit type class
+ *
+ * Notes:
+ *   - Compilation flag SAVE_SPACE affects starting numbers
+ *   - Essential for consistent unit ID assignment
+ *   - Called during game initialization
+ *   - Establishes numbering conventions used by find_newarmynum()
+ */
 void
 unum_defaults PARM_0(void)
 {
