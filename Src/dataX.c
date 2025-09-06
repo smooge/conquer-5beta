@@ -1,4 +1,28 @@
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * dataX.c - Game Data Definitions and Global Configuration
+ *
+ * This file contains all the static game data definitions, configuration tables,
+ * and global variables for the Conquer game system. Unlike other source files,
+ * this file contains no functions - it serves as the central repository for
+ * game rules, constants, and initialization data.
+ *
+ * Key Data Structures:
+ *   - Raw materials information (talons, jewels, metals, food, wood)
+ *   - Nation attributes and economic parameters
+ *   - Race-specific attraction tables for terrain and vegetation
+ *   - Elevation and vegetation type definitions with movement costs
+ *   - Major and minor sector designations with build costs
+ *   - Nation class definitions (kingdoms, empires, etc.)
+ *   - Complete race information including abilities and restrictions
+ *   - Tradegood definitions and economic values
+ *   - String tables for UI elements and game constants
+ *   - Global configuration variables and file paths
+ *
+ * This file is critical for game balance and defines the core game mechanics
+ * through data rather than code. Modifications to these tables directly
+ * affect gameplay, economics, and strategic balance.
+ *
+ * conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
  * code and it is our hope that you respect this.  We give permission
@@ -27,7 +51,22 @@
 #include "displayX.h"
 #include "optionsX.h"
 
-/* raw materials description */
+/*
+ * mtrls_info - Raw Materials Information Table
+ *
+ * Defines the five basic raw materials in the game economy.
+ * Each entry contains: name, plural_name, base_value, weight
+ *
+ * Materials:
+ *   - Talons: Basic currency/trade medium (value 1, weight 1)
+ *   - Jewels: Precious stones for wealth (value 4, weight 10) 
+ *   - Metals: Industrial materials (value 5, weight 5)
+ *   - Food: Sustenance for populations (value 10, weight 1)
+ *   - Wood: Construction material (value 8, weight 3)
+ *
+ * These values affect trade economics, transportation costs,
+ * and resource management throughout the game.
+ */
 MTRLS_STRUCT mtrls_info[MTRLS_NUMBER] = {
   { "Talons", "talons", 1, 1 },
   { "Jewels", "jewels", 4, 10 },
@@ -36,7 +75,23 @@ MTRLS_STRUCT mtrls_info[MTRLS_NUMBER] = {
   { "Wood", "wood", 8, 3 }
 };
 
-/* nation attribute information */
+/*
+ * bute_info - Nation Attributes Information Table
+ *
+ * Defines all nation attributes that determine how countries function
+ * economically, militarily, and socially. Each attribute includes:
+ *   - Name and description
+ *   - Default, minimum, and maximum values
+ *   - Increment and direction (positive/negative benefits)
+ *   - Whether the attribute can be modified by players
+ *
+ * Key attributes include economic factors (charity, currency, inflation),
+ * military factors (morale, reputation), resource abilities (jewelcraft,
+ * metalcraft, mine ability), and social factors (health, popularity, terror).
+ *
+ * These attributes form the core of nation customization and strategy,
+ * affecting everything from resource production to military effectiveness.
+ */
 BUTE_STRUCT bute_info[BUTE_NUMBER] = {
   { "Charity",
       "The percentage of net income given to support the population",
@@ -97,7 +152,22 @@ BUTE_STRUCT bute_info[BUTE_NUMBER] = {
       1, 1, 100, 1, 1, TRUE }
 };
 
-/* attraction settings */
+/*
+ * veg_attract - Vegetation Attraction Table by Race
+ *
+ * Defines how attractive different vegetation types are to each race.
+ * Higher values indicate stronger preference for that terrain type.
+ * Values are used as percentage modifiers for settlement and movement.
+ *
+ * Organized as [race][vegetation_type] with values 0-100:
+ *   - 0: Completely unsuitable/avoided
+ *   - 100: Highly preferred terrain
+ *   - Some races (God, Lizard, Pirate, etc.) have all zeros indicating
+ *     they don't follow normal terrain preferences
+ *
+ * Major races (Orc, Elf, Dwarf, Human) have distinct preferences
+ * that affect AI behavior and optimal nation positioning.
+ */
 unsigned char veg_attract[RACE_NUMBER][VEG_NUMBER] = {
   /* God */
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -121,7 +191,23 @@ unsigned char veg_attract[RACE_NUMBER][VEG_NUMBER] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
-/* elevation attraction (acts as percentage multiplier) */
+/*
+ * ele_attract - Elevation Attraction Table by Race
+ *
+ * Similar to vegetation attraction, but for elevation types.
+ * Acts as percentage multipliers for race preferences.
+ * Values typically range 0-130, with 100 being neutral.
+ *
+ * Organized as [race][elevation_type]:
+ *   - Values > 100: Preferred terrain (e.g., Dwarfs prefer mountains 120%)
+ *   - Values < 100: Less suitable terrain  
+ *   - 0: Completely avoided
+ *
+ * Notable patterns:
+ *   - Dwarfs and Orcs prefer higher elevations (mountains)
+ *   - Elfs moderate mountain preference, avoid peaks
+ *   - Humans prefer varied terrain (flat/hill emphasis)
+ */
 unsigned char ele_attract[RACE_NUMBER][ELE_NUMBER] = {
   /* God */
   0, 0, 0, 0, 0, 0,
@@ -145,7 +231,21 @@ unsigned char ele_attract[RACE_NUMBER][ELE_NUMBER] = {
   0, 0, 0, 0, 0, 0
 };
 
-/* elevation information */
+/*
+ * ele_info - Elevation Type Definitions
+ *
+ * Defines movement costs, production modifiers, and characteristics
+ * for each elevation type. Each entry contains:
+ *   - Name and display character
+ *   - Ship/army movement costs
+ *   - Movement cost multiplier and defensive bonus
+ *   - Raw material production rates for all 5 materials
+ *   - Tax generation, visibility, and combat modifiers
+ *   - Attraction values for different races
+ *
+ * Critical for tactical movement, economic planning, and combat positioning.
+ * Higher elevations typically provide defensive bonuses but restrict movement.
+ */
 ELEVEG_STRUCT ele_info[ELE_NUMBER] = {
   { "Water", '~', 0, 0, 1,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -173,7 +273,21 @@ ELEVEG_STRUCT ele_info[ELE_NUMBER] = {
       5, 10, 0, 5, 5, 5, 5, 5, 5, 5 }
 };
 
-/* vegetation information */
+/*
+ * veg_info - Vegetation Type Definitions
+ *
+ * Similar structure to elevation info but for vegetation types.
+ * Determines resource production, movement characteristics, and
+ * strategic value of different terrain vegetation.
+ *
+ * Key vegetation types:
+ *   - Good: Optimal for most purposes (100% attraction for major races)
+ *   - Forest/Wood: Provides wood resources, moderate movement costs
+ *   - Desert/Tundra: Harsh environments with penalties
+ *   - Jungle/Swamp: Difficult terrain with specialized benefits
+ *
+ * Production values directly affect resource gathering and economic potential.
+ */
 ELEVEG_STRUCT veg_info[VEG_NUMBER] = {
   { "Volcano", '!', 0, 0, 4,
       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -225,7 +339,27 @@ ELEVEG_STRUCT veg_info[VEG_NUMBER] = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 };
 
-/* major designation descriptions */
+/*
+ * maj_dinfo - Major Sector Designation Definitions  
+ *
+ * Defines all major improvement types that can be built in sectors.
+ * Each designation has extensive properties including:
+ *   - Name, display character, defense values
+ *   - Population support and economic modifiers
+ *   - Raw material production adjustments (all 5 materials)
+ *   - Tax generation and special properties
+ *   - Building restrictions and prerequisites
+ *   - Construction costs in all materials
+ *   - Upkeep costs for maintenance
+ *
+ * Major designations fundamentally change sector capabilities:
+ *   - Farms: Food production
+ *   - Mines: Metal/jewel extraction  
+ *   - Cities: Population and trade centers
+ *   - Walls/Bridges: Military and logistics infrastructure
+ *
+ * Construction costs are substantial and represent major strategic investments.
+ */
 DESG_STRUCT maj_dinfo[MAJ_NUMBER] = {
   { "None", '-', 0, 0, 1, 1,
       15, 15, 15, 15, 15, 15, 15, 15, 15, 15,
@@ -432,7 +566,30 @@ NCLASS_STRUCT nclass_list[] = {
       0x0L, 0x0L, MW_VAMPIRE }
 };
 
-/* The racial information */
+/*
+ * race_info - Complete Racial Information Table
+ *
+ * The most complex data structure defining all race characteristics.
+ * Each race entry contains comprehensive information including:
+ *   - Name and description
+ *   - Monster type allowances and restrictions
+ *   - Civilization and wizard class capabilities  
+ *   - Nation attribute modifiers (all 19 attributes)
+ *   - Economic and military bonuses/penalties
+ *   - Special racial traits and flags
+ *   - Economic costs (talons, jewels, metals for maintenance)
+ *   - Unit statistics and production costs
+ *
+ * This table defines the core gameplay differences between races:
+ *   - God: Admin/testing race with no restrictions
+ *   - Orc: Strong military, good mining, mountain dwellers
+ *   - Elf: Magical affinity, forest preference, anti-military traits
+ *   - Dwarf: Expert miners/metalworkers, mountain specialists, anti-magic
+ *   - Human: Balanced race with no major strengths or weaknesses
+ *   - Others: Specialized or placeholder races
+ *
+ * Race selection fundamentally affects all aspects of gameplay strategy.
+ */
 RACE_STRUCT race_info[RACE_NUMBER] = {
   { "God", "The omnipotent, omniscient, omnieverything Conquer Deity",
       0x0L, 0x0L, 0x0L,
@@ -875,7 +1032,25 @@ int tgclass_number = (sizeof(tgclass_info)/sizeof(TGCLASS_STRUCT));
 int nclass_number = (sizeof(nclass_list)/sizeof(NCLASS_STRUCT));
 int dstatus_number = (sizeof(dipname)/sizeof(char *));
 
-/* miscellaneous declarations */
+/*
+ * Global Variables and State Information
+ *
+ * The following section contains all global variables used throughout
+ * the game system. These are organized into several categories:
+ *
+ * 1. File Handles: Open file pointers for various game operations
+ * 2. String Buffers: Working buffers for text manipulation
+ * 3. Directory Paths: System and user directory locations  
+ * 4. Game State: Current country, mode flags, and runtime status
+ * 5. UI State: Cursor positions, display offsets, screen mode
+ * 6. Data Pointers: Linked list heads and temporary pointers
+ * 7. Game World: Main world structure and sector grid
+ *
+ * Many of these variables maintain critical game state and should be
+ * accessed carefully to avoid corruption of game data.
+ */
+
+/* File handle declarations for various game operations */
 FILE *fexe, *fnews = NULL, *fm, *fupdate = NULL;
 DMODE_PTR dmode_list = NULL, dmode_tptr;
 char string[BIGLTH], nationname[BIGLTH], datadirname[BIGLTH];
