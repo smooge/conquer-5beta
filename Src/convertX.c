@@ -1,3 +1,24 @@
+/*
+ * convertX.c - Data Conversion and String Manipulation Utilities
+ *
+ * This module provides essential utility functions for data conversion, 
+ * string manipulation, and formatting throughout the Conquer game system.
+ * Contains routines for:
+ * - String formatting and escaping for display and storage
+ * - Roman numeral conversion system
+ * - Character encoding/decoding for special characters and control codes
+ * - Key binding string conversion for user interface
+ * - String completion matching for command parsing
+ * - Nation name resolution and lookup
+ * - Coordinate transformation for relative mapping
+ * - Population-to-workers economic calculations
+ * - Magic power list formatting for spell systems
+ *
+ * These utilities are used extensively throughout the game for data
+ * presentation, user input processing, and internal data transformation.
+ * Many functions handle edge cases and provide safety checking for
+ * robust operation in the multi-user environment.
+ */
 /* various routines to change one thing into another */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
@@ -18,7 +39,35 @@
 #include "magicX.h"
 #include "keyvalsX.h"
 
-/* FORM_STR -- Create a string of characters for later use */
+/*
+ * form_str - Create formatted string representation with escaping and quoting
+ *
+ * Converts an input string into a properly formatted output string with
+ * appropriate escaping, quoting, and control character handling. Used for
+ * displaying strings safely in the user interface and for debugging output.
+ * Handles both compact and full formatting modes.
+ *
+ * Parameters:
+ *   out_str - Output buffer to store formatted string (must be pre-allocated)
+ *   in_str  - Input string to format (null-terminated)
+ *   full    - Flag for formatting mode: TRUE=full mode with char separators, FALSE=compact
+ *
+ * Returns:
+ *   void (results stored in out_str)
+ *
+ * Side Effects:
+ *   - Modifies out_str buffer with formatted string
+ *   - Buffer overrun possible if out_str insufficient size
+ *   - No bounds checking performed on output buffer
+ *
+ * Notes:
+ *   - Control characters converted to ^X notation (e.g., ^A for ASCII 1)
+ *   - Special characters '^', '\'', '"', '\' are escaped with backslash
+ *   - Full mode adds quotes around each character and separates with dashes
+ *   - Empty string becomes "'^@'" (null character representation)
+ *   - Single character gets single quotes, multiple chars get double quotes
+ *   - Used for key binding display and string debugging
+ */
 void
 form_str PARM_3(char *, out_str, char *, in_str, int, full)
 {
@@ -62,7 +111,33 @@ form_str PARM_3(char *, out_str, char *, in_str, int, full)
   }
 }
 
-/* LIST_MAGICS -- List any magic powers encountered into a string */
+/*
+ * list_magics - Format magic power list into comma-separated string
+ *
+ * Converts a bitmask of magic powers into a human-readable string listing
+ * the names of all active powers for a given magic class. Used for displaying
+ * spell information, unit capabilities, and magic system status.
+ *
+ * Parameters:
+ *   out_str - Output buffer for formatted power names (must be pre-allocated)
+ *   mcls    - Magic class index (0 to MAG_NUMBER-1)
+ *   powlist - Bitmask representing active powers (bit positions correspond to powers)
+ *
+ * Returns:
+ *   Number of powers found and added to the string (0 if none or error)
+ *
+ * Side Effects:
+ *   - Modifies out_str with comma-separated list of power names
+ *   - Sets out_str to empty string if no powers or invalid input
+ *   - No bounds checking on output buffer size
+ *
+ * Notes:
+ *   - Powers separated by ", " for readable display
+ *   - Validates magic class bounds before processing
+ *   - Returns early with 0 if powlist is empty (0L)
+ *   - Uses mclass_list global structure for power name lookup
+ *   - Thread-safe if mclass_list is read-only during execution
+ */
 int
 list_magics PARM_3(char *, out_str, int, mcls, long, powlist)
 {
@@ -96,7 +171,30 @@ list_magics PARM_3(char *, out_str, int, mcls, long, powlist)
   return(num);
 }
 
-/* ROMAN_VALUE -- Integer value of the given base */
+/*
+ * roman_value - Calculate decimal value for roman numeral base position
+ *
+ * Internal helper function that computes the decimal value corresponding
+ * to a specific position in the roman numeral system. Uses alternating
+ * multiplication by 5 and 2 to generate the sequence: 1, 5, 10, 50, 100, 500...
+ * This corresponds to roman numerals I, V, X, L, C, D, M...
+ *
+ * Parameters:
+ *   value - Base position in roman numeral system (0=I, 1=V, 2=X, etc.)
+ *
+ * Returns:
+ *   Decimal value for the specified roman numeral base position
+ *
+ * Side Effects:
+ *   None (pure calculation function)
+ *
+ * Notes:
+ *   - Static function, only used internally by roman numeral functions
+ *   - Algorithm: start with 1, alternate multiply by 5 then 2
+ *   - Position 0=1(I), 1=5(V), 2=10(X), 3=50(L), 4=100(C), 5=500(D), 6=1000(M)
+ *   - No overflow checking for large values
+ *   - Thread-safe (no global state)
+ */
 static long
 roman_value PARM_1 (int, value)
 {
@@ -117,8 +215,30 @@ roman_value PARM_1 (int, value)
   return(hold);
 }
 
-/* ROMAN_BASE -- Return the nearest base value I,V,X,... etc.
-                 note that 4 => 5, 9 => 10, 40 => 50, etc.    */
+/*
+ * roman_base - Find appropriate roman numeral base for given decimal value
+ *
+ * Determines the correct roman numeral base position to use when converting
+ * a decimal number to roman numerals. Handles special cases like 4=>5, 9=>10,
+ * 40=>50 where subtractive notation is used (IV, IX, XL).
+ *
+ * Parameters:
+ *   value - Decimal number to find roman base for
+ *
+ * Returns:
+ *   Base position index for roman numeral conversion (0=I, 1=V, 2=X, etc.)
+ *
+ * Side Effects:
+ *   None (pure calculation function)
+ *
+ * Notes:
+ *   - Algorithm finds largest roman base that doesn't exceed input value
+ *   - Handles subtractive cases (4->5, 9->10, 40->50, 90->100, etc.)
+ *   - Uses alternating pattern: base values are 4,5 then 9,10 then 40,50, etc.
+ *   - Works with roman_value() to implement complete roman numeral system
+ *   - Thread-safe (no global state)
+ *   - No bounds checking for extremely large values
+ */
 int
 roman_base PARM_1 (int, value)
 {
@@ -143,8 +263,34 @@ roman_base PARM_1 (int, value)
   return(count);
 }
 
-/* ROMAN_NUMBER -- This routine places a string containing the roman
-                   numeral representation of a number.               */
+/*
+ * roman_number - Convert decimal integer to roman numeral string
+ *
+ * Converts a decimal integer into its roman numeral representation using
+ * standard roman numeral rules including subtractive notation (IV, IX, XL, etc.).
+ * Handles negative numbers by appending " BC" suffix, and zero as "0".
+ *
+ * Parameters:
+ *   str   - Output buffer for roman numeral string (must be pre-allocated)
+ *   value - Decimal integer to convert (positive, negative, or zero)
+ *
+ * Returns:
+ *   void (result stored in str)
+ *
+ * Side Effects:
+ *   - Modifies str buffer with roman numeral representation
+ *   - No bounds checking on output buffer size
+ *   - Assumes str has sufficient space for result
+ *
+ * Notes:
+ *   - Zero becomes "0" (not a true roman numeral)
+ *   - Negative numbers get " BC" suffix (e.g., "V BC" for -5)
+ *   - Uses rnumerals global array for character mapping
+ *   - Implements subtractive notation correctly (IV not IIII)
+ *   - Algorithm repeatedly finds largest base and subtracts
+ *   - Works with roman_base() and roman_value() helper functions
+ *   - Thread-safe if rnumerals array is read-only
+ */
 void
 roman_number PARM_2 ( char *, str, int, value )
 {
@@ -187,7 +333,31 @@ roman_number PARM_2 ( char *, str, int, value )
 
 }
 
-/* CHAR_IN_STR -- function to check if a character is in a character array */
+/*
+ * char_in_str - Check if character exists in string
+ *
+ * Simple utility function that searches for a specific character within
+ * a null-terminated string. Returns TRUE if found, FALSE otherwise.
+ * Used for character validation and string parsing operations.
+ *
+ * Parameters:
+ *   ch  - Character to search for
+ *   str - Null-terminated string to search in
+ *
+ * Returns:
+ *   TRUE if character found in string, FALSE otherwise
+ *
+ * Side Effects:
+ *   None (read-only operation)
+ *
+ * Notes:
+ *   - Linear search through string characters
+ *   - Case-sensitive matching
+ *   - Performance: O(n) where n is string length
+ *   - Thread-safe (no global state modification)
+ *   - No bounds checking beyond null terminator
+ *   - Commonly used for input validation and parsing
+ */
 int
 char_in_str PARM_2( char, ch, char *, str)
 {
@@ -198,7 +368,32 @@ char_in_str PARM_2( char, ch, char *, str)
   return(FALSE);
 }
 
-/* NON_CNTRL -- return the non-control value of a control character */
+/*
+ * non_cntrl - Convert control character to printable representation
+ *
+ * Converts control characters to their printable equivalents for display
+ * purposes. Control characters (ASCII 0-31) are converted to their corresponding
+ * printable characters by adding '@' (e.g., Ctrl-A becomes 'A'). Special
+ * handling for DEL character (ASCII 127).
+ *
+ * Parameters:
+ *   ch - Character to convert (may be control or printable)
+ *
+ * Returns:
+ *   Printable character representation (original char if already printable)
+ *
+ * Side Effects:
+ *   None (pure conversion function)
+ *
+ * Notes:
+ *   - Maps control chars: 0x01->A, 0x02->B, etc. (ch + '@')
+ *   - DEL character (0x7F) becomes '?' for display
+ *   - Printable characters returned unchanged
+ *   - Uses isprint() to determine if character needs conversion
+ *   - Complementary function to to_cntrl()
+ *   - Used in key binding display and string formatting
+ *   - Thread-safe (no global state)
+ */
 int
 non_cntrl PARM_1(int, ch)
 {
@@ -216,7 +411,32 @@ non_cntrl PARM_1(int, ch)
   return(hold);
 }
 
-/* TO_CNTRL -- return the control value of a non-control character */
+/*
+ * to_cntrl - Convert printable character to control character
+ *
+ * Converts printable characters to their corresponding control character
+ * equivalents. This is the inverse operation of non_cntrl(). Used for
+ * processing key binding strings and control character input.
+ *
+ * Parameters:
+ *   ch - Printable character to convert to control character
+ *
+ * Returns:
+ *   Control character equivalent (ch - '@')
+ *
+ * Side Effects:
+ *   None (pure conversion function)
+ *
+ * Notes:
+ *   - Maps printable chars: 'A'->0x01, 'B'->0x02, etc. (ch - '@')
+ *   - '?' character specifically maps to EXT_DEL (ASCII 127)
+ *   - Assumes input is valid printable character
+ *   - No validation of input character range
+ *   - Complementary function to non_cntrl()
+ *   - Used in key binding processing and command input
+ *   - Thread-safe (no global state)
+ *   - Results may not be valid control characters for all inputs
+ */
 int
 to_cntrl PARM_1(int, ch)
 {
@@ -230,7 +450,35 @@ to_cntrl PARM_1(int, ch)
   return(hold);
 }
 
-/* CONVERT_KBIND -- Convert the textual keybinding to an actual keybinding */
+/*
+ * convert_kbind - Convert textual key binding string to actual key codes
+ *
+ * Parses and converts a textual key binding string containing escape sequences,
+ * control characters, and special notations into the actual key codes they
+ * represent. Handles C-style escape sequences, hexadecimal codes, octal codes,
+ * and control character notation. Modifies the string in-place.
+ *
+ * Parameters:
+ *   str - Key binding string to convert (modified in-place)
+ *
+ * Returns:
+ *   void (string modified in-place)
+ *
+ * Side Effects:
+ *   - Modifies input string in-place with converted key codes
+ *   - String may become shorter after escape sequence processing
+ *   - No bounds checking (safe since output <= input length)
+ *
+ * Notes:
+ *   - Escape sequences: \n (newline), \r (CR), \t (tab), \b (backspace)
+ *   - Hex sequences: \x## (two hex digits)
+ *   - Octal sequences: \### (up to three octal digits)
+ *   - Control notation: ^X becomes control character
+ *   - Direct escaping: \c becomes character c
+ *   - Used for processing user key binding configuration
+ *   - Complex parsing with multiple format support
+ *   - Thread-safe (operates only on input parameter)
+ */
 void
 convert_kbind PARM_1(char *, str)
 {
@@ -301,8 +549,32 @@ convert_kbind PARM_1(char *, str)
   } while (str[in_cnt++] != '\0');
 }
 
-/* COMPLETION -- Returns TRUE if second string is a possible
-                 completion of the first.  Aka stncmp(a,b,strlen(a)) */
+/*
+ * completion - Check if second string is valid completion of first
+ *
+ * Determines if the second string could be a completion of the first string,
+ * similar to strncmp(s1, s2, strlen(s1)) but with case-insensitive matching.
+ * Used for command completion and partial string matching in user interface.
+ *
+ * Parameters:
+ *   s1 - Partial string (prefix to match)
+ *   s2 - Complete string (potential completion)
+ *
+ * Returns:
+ *   TRUE if s2 starts with s1 (case-insensitive), FALSE otherwise
+ *
+ * Side Effects:
+ *   None (read-only comparison)
+ *
+ * Notes:
+ *   - Case-insensitive comparison using toupper()
+ *   - Returns FALSE immediately if s1 is longer than s2
+ *   - Only compares characters up to length of s1
+ *   - Used for command parsing and auto-completion features
+ *   - Equivalent to strncasecmp(s1, s2, strlen(s1)) == 0
+ *   - Thread-safe (no global state modification)
+ *   - Performance: O(n) where n is length of s1
+ */
 int
 completion PARM_2 (char *, s1, char *, s2)
 {
@@ -321,7 +593,35 @@ completion PARM_2 (char *, s1, char *, s2)
   return(hold);
 }
 
-/* NTN_REALNAME -- Find the proper name for a nation */
+/*
+ * ntn_realname - Resolve nation ID to proper nation name string
+ *
+ * Converts a nation identifier to the appropriate name string for display
+ * or file operations. Handles special cases like newspaper, unowned territories,
+ * and validates nation IDs. Provides error handling for invalid nation references.
+ *
+ * Parameters:
+ *   outstr - Output buffer for nation name (must be pre-allocated)
+ *   who    - Nation ID to resolve (or special constant like NEWSPAPER, UNOWNED)
+ *
+ * Returns:
+ *   FALSE on success, TRUE on error (invalid nation ID)
+ *
+ * Side Effects:
+ *   - Modifies outstr with resolved nation name
+ *   - May call errormsg() for invalid nation IDs
+ *   - No bounds checking on output buffer
+ *
+ * Notes:
+ *   - NEWSPAPER constant -> newsfile global variable
+ *   - UNOWNED constant -> "god" (deity/admin)
+ *   - Current player uses nationname global if not in update mode
+ *   - Validates nation ID bounds (0 to ABSMAXNTN)
+ *   - Uses world.np[] array for nation lookup
+ *   - Sets "bad-name" and returns TRUE for invalid IDs
+ *   - Thread-safe if global variables are properly protected
+ *   - Used throughout system for nation name display
+ */
 int
 ntn_realname PARM_2(char *, outstr, int, who)
 {
@@ -351,7 +651,34 @@ ntn_realname PARM_2(char *, outstr, int, who)
   return(FALSE);
 }
 
-/* TRIM_STR -- remove blank space, and comments if so desired */
+/*
+ * trim_str - Remove leading/trailing whitespace and optional comments
+ *
+ * Removes leading and trailing whitespace from a string, with optional
+ * comment removal. Comments are marked by '#' character and removed if
+ * killpound flag is set. Modifies string in-place and returns final length.
+ *
+ * Parameters:
+ *   str       - String to trim (modified in-place)
+ *   killpound - Flag: TRUE to remove '#' comments, FALSE to preserve them
+ *
+ * Returns:
+ *   Final length of trimmed string
+ *
+ * Side Effects:
+ *   - Modifies input string in-place
+ *   - String may become shorter after trimming
+ *   - Null terminates the trimmed result
+ *
+ * Notes:
+ *   - Removes leading whitespace (spaces, tabs, newlines, etc.)
+ *   - Removes trailing whitespace from end of string
+ *   - If killpound=TRUE, '#' at start (after leading spaces) terminates string
+ *   - Algorithm: skip leading spaces, shift string, track last non-space
+ *   - Used for configuration file parsing and input sanitization
+ *   - Thread-safe (operates only on input parameter)
+ *   - Efficient in-place processing with single pass
+ */
 int
 trim_str PARM_2(char *, str, int, killpound)
 {
@@ -385,7 +712,32 @@ trim_str PARM_2(char *, str, int, killpound)
   return(j);
 }
 
-/* XLOC_RELATIVE -- return X value relative to centralize location */
+/*
+ * xloc_relative - Convert absolute X coordinate to relative coordinate
+ *
+ * Transforms an absolute X coordinate to a coordinate relative to the current
+ * nation's center position. Handles world wrapping for cylindrical map topology.
+ * Used for displaying coordinates relative to player's viewpoint.
+ *
+ * Parameters:
+ *   given_xloc - Absolute X coordinate on world map
+ *
+ * Returns:
+ *   X coordinate relative to current nation's center (or absolute if relative mode off)
+ *
+ * Side Effects:
+ *   None (read-only calculation)
+ *
+ * Notes:
+ *   - Only applies transformation if world.relative_map is TRUE
+ *   - God mode (is_god=TRUE) bypasses relative transformation
+ *   - Requires valid ntn_ptr for current nation
+ *   - Handles world wrapping: if difference > MAPX/2, wraps around
+ *   - World is cylindrical in X direction (wraps at edges)
+ *   - Used for display coordinates in user interface
+ *   - Thread-safe if global variables are properly protected
+ *   - Returns unchanged coordinate if relative mode disabled
+ */
 int
 xloc_relative PARM_1(int, given_xloc)
 {
@@ -407,7 +759,33 @@ xloc_relative PARM_1(int, given_xloc)
   return(hold);
 }
 
-/* YLOC_RELATIVE -- return Y value relative to centralize location */
+/*
+ * yloc_relative - Convert absolute Y coordinate to relative coordinate
+ *
+ * Transforms an absolute Y coordinate to a coordinate relative to the current
+ * nation's center position. Unlike X coordinates, Y coordinates do not wrap
+ * since the world has finite north/south boundaries.
+ *
+ * Parameters:
+ *   given_yloc - Absolute Y coordinate on world map
+ *
+ * Returns:
+ *   Y coordinate relative to current nation's center (or absolute if relative mode off)
+ *
+ * Side Effects:
+ *   None (read-only calculation)
+ *
+ * Notes:
+ *   - Only applies transformation if world.relative_map is TRUE
+ *   - God mode (is_god=TRUE) bypasses relative transformation
+ *   - Requires valid ntn_ptr for current nation
+ *   - No wrapping logic needed for Y coordinates (finite world height)
+ *   - Simple subtraction: given_yloc - ntn_ptr->centery
+ *   - Used for display coordinates in user interface
+ *   - Companion function to xloc_relative()
+ *   - Thread-safe if global variables are properly protected
+ *   - Returns unchanged coordinate if relative mode disabled
+ */
 int
 yloc_relative PARM_1(int, given_yloc)
 {
@@ -423,7 +801,33 @@ yloc_relative PARM_1(int, given_yloc)
   return(hold);
 }
 
-/* POPTOWORKERS -- Determine the number of workers based on population */
+/*
+ * poptoworkers - Calculate effective workforce from total population
+ *
+ * Converts total population into effective workforce using diminishing returns
+ * algorithm. Large populations become less efficient due to overcrowding and
+ * resource limitations. Implements game balance mechanic to prevent runaway
+ * population growth from dominating gameplay.
+ *
+ * Parameters:
+ *   population - Total population count to convert
+ *
+ * Returns:
+ *   Effective workforce count (always <= population)
+ *
+ * Side Effects:
+ *   None (pure calculation function)
+ *
+ * Notes:
+ *   - Caps input at ABSMAXPEOPLE to prevent overflow
+ *   - Uses TOOMANYPEOPLE threshold for diminishing returns
+ *   - Algorithm: full efficiency up to TOOMANYPEOPLE, then 1/2, 1/3, 1/4, etc.
+ *   - Each successive TOOMANYPEOPLE chunk has progressively lower efficiency
+ *   - Game balance: prevents large nations from becoming overpowered
+ *   - Used in economic calculations and production systems
+ *   - Thread-safe (no global state modification)
+ *   - Performance: O(population/TOOMANYPEOPLE) complexity
+ */
 long
 poptoworkers PARM_1(long, population)
 {
