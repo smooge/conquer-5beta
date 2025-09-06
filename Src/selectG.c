@@ -1,4 +1,36 @@
-/* This file is used to allow quick retrieval of data */
+/*
+ * selectG.c - Unit Selection and Navigation System for Conquer Game Interface
+ *
+ * This module provides comprehensive unit selection and navigation capabilities
+ * for the Conquer game interface. It manages the selection cursor system that
+ * allows players to choose and navigate between different units (armies, navies,
+ * caravans) within map sectors, supporting both single-unit selection and
+ * multi-page navigation through crowded sectors.
+ *
+ * Key Components:
+ * - Interactive unit selection with keyboard navigation
+ * - Multi-page sector navigation for areas with many units
+ * - Unit type identification and retrieval (army, navy, caravan)
+ * - Programmatic unit selection by ID for automated navigation
+ * - Transport command integration for naval and caravan operations
+ * - Extended command dispatch for unit-specific actions
+ *
+ * Selection Architecture:
+ * - Two-level selection system: pager (page number) and selector (position)
+ * - SCREEN_SIDE units displayed per page with automatic pagination
+ * - Sequential ordering: armies first, then navies, then caravans
+ * - Support for both player-owned and deity (all nations) viewing
+ * - Cursor position tracking with visual feedback on map display
+ *
+ * Navigation Features:
+ * - Interactive selection mode with full keyboard control
+ * - Forward/backward navigation through units in current sector
+ * - Direct jump to specific units by ID (goto_army, goto_navy, goto_cvn)
+ * - Automatic wrapping at list boundaries
+ * - Selection state preservation and restoration
+ * - Integration with map display and movement systems
+ */
+
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -19,7 +51,31 @@
 #include "displayG.h"
 #include "keyvalsX.h"
 
-/* PICK_PREVIOUS -- Select the unit one above the current unit */
+/*
+ * pick_previous - Navigate to previous unit in selection sequence
+ *
+ * Moves the selection cursor backward to the previous unit in the current
+ * sector. Handles page boundaries by moving to previous page when necessary,
+ * and wraps to the end of the unit list when reaching the beginning.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies global selector and pager variables
+ *   - May trigger page change if moving past page boundary
+ *   - Wraps to last unit when moving past first unit
+ *   - Calculates total units in sector for proper wrapping
+ *
+ * Notes:
+ *   - Selector decremented by 2 (accounts for display formatting)
+ *   - Automatic pagination when selector goes negative
+ *   - Uses units_in_sector() to determine wrap-around point
+ *   - Maintains consistent navigation experience across all unit types
+ */
 int
 pick_previous PARM_0(void)
 {
@@ -44,7 +100,31 @@ pick_previous PARM_0(void)
   return(0);
 }
 
-/* PICK_NEXT -- Select the unit one below the current unit */
+/*
+ * pick_next - Navigate to next unit in selection sequence
+ *
+ * Moves the selection cursor forward to the next unit in the current
+ * sector. Handles page boundaries by moving to next page when necessary,
+ * and wraps to the beginning of the unit list when reaching the end.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies global selector and pager variables
+ *   - May trigger page change if moving past page boundary
+ *   - Wraps to first unit when moving past last unit
+ *   - Uses units_in_sector() to validate selection bounds
+ *
+ * Notes:
+ *   - Selector incremented by 2 (accounts for display formatting)
+ *   - Automatic pagination when selector exceeds SCREEN_SIDE
+ *   - Boundary checking prevents selection beyond available units
+ *   - Seamless navigation experience with automatic wrapping
+ */
 int
 pick_next PARM_0(void)
 {
@@ -68,7 +148,35 @@ pick_next PARM_0(void)
 int scnd_selector = -1;
 int scnd_pager = -1;
 
-/* SET_SELECT -- Allow adjustment to the selector */
+/*
+ * set_select - Interactive unit selection mode with keyboard navigation
+ *
+ * Provides a full-screen interactive selection interface allowing users to
+ * navigate through units in the current sector using keyboard commands.
+ * Displays help text, updates the sidebar, and processes navigation input
+ * until the user confirms selection or cancels the operation.
+ *
+ * Parameters:
+ *   type - Selection mode flag (TRUE for interactive mode)
+ *   desc - Description string shown in selection prompt
+ *
+ * Returns:
+ *   TRUE if selection confirmed, FALSE if cancelled or aborted
+ *
+ * Side Effects:
+ *   - Saves and potentially restores original selector position
+ *   - Updates screen display with selection interface and help text
+ *   - Processes keyboard input for navigation and selection
+ *   - Modifies global selector and pager variables
+ *   - Shows cursor position and refreshes screen display
+ *
+ * Notes:
+ *   - Interactive mode only active when type parameter is TRUE
+ *   - Supports movement type detection for proper display mode
+ *   - Keyboard commands: p/RETURN (next), o/DELETE (previous), q/SPACE (confirm), Q/ESC (cancel)
+ *   - Preserves original selection state for cancellation
+ *   - Integrates with makeside() for real-time display updates
+ */
 int
 set_select PARM_2(int, type, char *, desc)
 {
@@ -154,7 +262,31 @@ set_select PARM_2(int, type, char *, desc)
   return(FALSE);
 }
 
-/* EXT_CMD -- Perform an extend command on a selected unit */
+/*
+ * ext_cmd - Execute extended commands on currently selected unit
+ *
+ * Dispatches extended command operations to the appropriate handler based
+ * on the type of currently selected unit. Provides a unified interface
+ * for accessing unit-specific extended command menus and operations.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   MOVECOST if command executed successfully, 0 if no unit selected
+ *
+ * Side Effects:
+ *   - Calls unit-specific extended command handlers
+ *   - May modify unit state through executed commands
+ *   - Resets deity mode if active after command completion
+ *   - Displays error message if no unit is selected
+ *
+ * Notes:
+ *   - Checks selection in order: army, navy, caravan
+ *   - Uses get_*select() functions to determine current selection type
+ *   - Delegates to ext_armycmd(), ext_navycmd(), or ext_cvncmd()
+ *   - Integrated with game's action cost system (returns MOVECOST)
+ */
 int
 ext_cmd PARM_0(void)
 {
@@ -175,7 +307,30 @@ ext_cmd PARM_0(void)
   return(MOVECOST);
 }
 
-/* TRANS_CMD -- Load or unload the currently selected caravan or navy */
+/*
+ * trans_cmd - Execute transport operations on selected naval or caravan units
+ *
+ * Provides a unified interface for cargo loading and unloading operations
+ * on transport-capable units (navies and caravans). Automatically determines
+ * the selected unit type and calls the appropriate transport handler.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (transport operations handle their own return values)
+ *
+ * Side Effects:
+ *   - Initiates transport interface for cargo operations
+ *   - May modify unit cargo and sector inventory
+ *   - Displays error message if non-transport unit selected
+ *
+ * Notes:
+ *   - Only works with navy and caravan units (not armies)
+ *   - Delegates to navy_transport() or cvn_transport() as appropriate
+ *   - Transport handlers manage their own user interface and validation
+ *   - Provides clear error feedback for invalid unit types
+ */
 int
 trans_cmd PARM_0(void)
 {
@@ -192,7 +347,32 @@ trans_cmd PARM_0(void)
   return(0);
 }
 
-/* GET_ARMYSELECT -- If current selection is an army return it */
+/*
+ * get_armyselect - Retrieve currently selected army unit
+ *
+ * Searches through army units in the current sector to find the unit
+ * corresponding to the current selection position. Handles both single-nation
+ * and deity (all-nations) viewing modes, and maintains proper counting
+ * sequence for multi-type unit displays.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to selected army unit, or NULL if selection is not an army
+ *
+ * Side Effects:
+ *   - Sets global_int to nation number where army was found (if found)
+ *   - Sets global_int to total army count (if not found)
+ *   - Traverses nation army lists and sector unit chains
+ *
+ * Notes:
+ *   - Armies appear first in selection sequence
+ *   - Uses pager and selector to calculate target position
+ *   - Supports both player nation and deity (all nations) modes
+ *   - Follows army->nrby chain for units in same sector
+ *   - Critical for maintaining selection state across screen updates
+ */
 ARMY_PTR 
 get_armyselect PARM_0(void)
 {
@@ -244,7 +424,32 @@ get_armyselect PARM_0(void)
   return((ARMY_PTR) NULL);
 }
 
-/* GET_NAVYSELECT -- If current selection is a navy return it */
+/*
+ * get_navyselect - Retrieve currently selected naval unit
+ *
+ * Searches through naval units in the current sector to find the unit
+ * corresponding to the current selection position. Accounts for preceding
+ * army units in the selection sequence and handles both single-nation
+ * and deity viewing modes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to selected naval unit, or NULL if selection is not a navy
+ *
+ * Side Effects:
+ *   - Sets global_int to nation number where navy was found (if found)
+ *   - Sets global_int to cumulative unit count including armies (if not found)
+ *   - First calls get_armyselect() to account for army units
+ *
+ * Notes:
+ *   - Navies appear second in selection sequence (after armies)
+ *   - Must account for all preceding army units in position calculation
+ *   - Returns NULL immediately if current selection is an army
+ *   - Searches all nations in deity mode, single nation otherwise
+ *   - Position calculation includes army count offset from global_int
+ */
 NAVY_PTR
 get_navyselect PARM_0(void)
 {
@@ -297,7 +502,32 @@ get_navyselect PARM_0(void)
   return ((NAVY_PTR)NULL);
 }
 
-/* GET_CVNSELECT -- If current selection is a caravan return it */
+/*
+ * get_cvnselect - Retrieve currently selected caravan unit
+ *
+ * Searches through caravan units in the current sector to find the unit
+ * corresponding to the current selection position. Accounts for all preceding
+ * army and navy units in the selection sequence, representing the final
+ * unit type in the selection order.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to selected caravan unit, or NULL if selection is not a caravan
+ *
+ * Side Effects:
+ *   - Sets global_int to nation number where caravan was found (if found)
+ *   - Sets global_int to cumulative count of all units (if not found)
+ *   - Calls get_armyselect() and get_navyselect() to account for preceding units
+ *
+ * Notes:
+ *   - Caravans appear last in selection sequence (after armies and navies)
+ *   - Must account for all preceding army and navy units in position calculation
+ *   - Returns NULL immediately if current selection is army or navy
+ *   - Position calculation includes cumulative count from previous unit types
+ *   - Essential for complete unit selection coverage in mixed sectors
+ */
 CVN_PTR
 get_cvnselect PARM_0(void) 
 {
@@ -351,7 +581,31 @@ get_cvnselect PARM_0(void)
   return ((CVN_PTR)NULL);
 }
 
-/* SET_ARMYSELECT -- Set the selection indicator to the desired army */
+/*
+ * set_armyselect - Set selection cursor to specific army unit by ID
+ *
+ * Programmatically moves the selection cursor to point to a specific army
+ * unit identified by its ID number. Searches through all army units in the
+ * current sector and calculates the appropriate pager and selector values.
+ *
+ * Parameters:
+ *   idnum - Army ID number to select
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies global pager and selector variables if army found
+ *   - Searches through nation army lists to locate target unit
+ *   - Counts position relative to all units in sector
+ *
+ * Notes:
+ *   - Only affects selection if specified army ID exists in current sector
+ *   - Calculates pager (page number) and selector (position) automatically
+ *   - Supports both single-nation and deity viewing modes
+ *   - Used for programmatic navigation (goto commands, unit following)
+ *   - Selection position accounts for army-only sequence (no offset needed)
+ */
 void
 set_armyselect PARM_1 (int, idnum)
 {
@@ -399,7 +653,31 @@ set_armyselect PARM_1 (int, idnum)
   }
 }
 
-/* SET_NAVYSELECT -- Set the selection indicator to the desired navy */
+/*
+ * set_navyselect - Set selection cursor to specific naval unit by ID
+ *
+ * Programmatically moves the selection cursor to point to a specific naval
+ * unit identified by its ID number. Accounts for preceding army units in
+ * the selection sequence and calculates appropriate positioning values.
+ *
+ * Parameters:
+ *   idnum - Navy ID number to select
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies global pager and selector variables if navy found
+ *   - Searches through nation navy lists to locate target unit
+ *   - Counts armies in sector to calculate proper offset
+ *
+ * Notes:
+ *   - Selection position includes offset for all armies in sector
+ *   - Uses armies_in_sector() to calculate position offset
+ *   - Only affects selection if specified navy ID exists in current sector
+ *   - Maintains proper selection sequence (armies first, then navies)
+ *   - Essential for goto_navy() and other navigation functions
+ */
 void
 set_navyselect PARM_1 (int, idnum)
 {
@@ -443,7 +721,31 @@ set_navyselect PARM_1 (int, idnum)
   }
 }
 
-/* SET_CVNSELECT -- Set the selection indicator to the desired caravan */
+/*
+ * set_cvnselect - Set selection cursor to specific caravan unit by ID
+ *
+ * Programmatically moves the selection cursor to point to a specific caravan
+ * unit identified by its ID number. Accounts for all preceding army and navy
+ * units in the selection sequence to calculate proper positioning.
+ *
+ * Parameters:
+ *   idnum - Caravan ID number to select
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies global pager and selector variables if caravan found
+ *   - Searches through nation caravan lists to locate target unit
+ *   - Counts armies and navies in sector to calculate proper offset
+ *
+ * Notes:
+ *   - Selection position includes offset for all armies and navies in sector
+ *   - Uses armies_in_sector() and navies_in_sector() for position calculation
+ *   - Only affects selection if specified caravan ID exists in current sector
+ *   - Maintains proper selection sequence (armies, navies, then caravans)
+ *   - Critical for goto_cvn() and complete unit navigation support
+ */
 void
 set_cvnselect PARM_1 (int, idnum)
 {
@@ -489,7 +791,30 @@ set_cvnselect PARM_1 (int, idnum)
   }
 }
 
-/* GOTO_CITY -- set the current sector to the desired city */
+/*
+ * goto_city - Navigate map view to specified city location
+ *
+ * Moves the map cursor to the location of a specified city, updating
+ * the display coordinates and resetting unit selection to the first
+ * position. Provides quick navigation to city locations.
+ *
+ * Parameters:
+ *   c1_ptr - Pointer to city structure to navigate to
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Updates global xcurs and ycurs relative to map offsets
+ *   - Resets selector and pager to first unit position
+ *   - Changes current map view location (XREAL, YREAL)
+ *
+ * Notes:
+ *   - Returns immediately if city pointer is NULL
+ *   - Cursor position calculated relative to current map offsets
+ *   - Selection automatically reset to first unit in new sector
+ *   - Used by city-related navigation and information commands
+ */
 void
 goto_city PARM_1 (CITY_PTR, c1_ptr)
 {
@@ -503,7 +828,32 @@ goto_city PARM_1 (CITY_PTR, c1_ptr)
   pager = 0;
 }
 
-/* GOTO_ARMY -- set the current sector and selector to the desired army */
+/*
+ * goto_army - Navigate to specific army unit by ID
+ *
+ * Moves the map view to the location of a specified army unit and sets
+ * the selection cursor to that unit. Supports both specific ID navigation
+ * and sequential navigation through army units. Provides comprehensive
+ * army navigation with error handling.
+ *
+ * Parameters:
+ *   idnum - Army ID to navigate to, or -1 for next army in sequence
+ *
+ * Returns:
+ *   FALSE on successful navigation, TRUE on error or if deity mode
+ *
+ * Side Effects:
+ *   - Updates map cursor position if army location differs from current
+ *   - Sets selection cursor to target army unit
+ *   - May display error messages for invalid or missing armies
+ *
+ * Notes:
+ *   - Returns TRUE immediately if in deity mode (country == UNOWNED)
+ *   - ID value -1 triggers navigation to next army in nation's list
+ *   - Handles wrap-around to first army if at end of list
+ *   - Updates both map position and selection state for complete navigation
+ *   - Provides user feedback for non-existent army units
+ */
 int
 goto_army PARM_1 (int, idnum)
 {
@@ -543,7 +893,32 @@ goto_army PARM_1 (int, idnum)
   return(FALSE);
 }
 
-/* GOTO_NAVY -- set the current sector and selector to the desired navy */
+/*
+ * goto_navy - Navigate to specific naval unit by ID
+ *
+ * Moves the map view to the location of a specified naval unit and sets
+ * the selection cursor to that unit. Supports both specific ID navigation
+ * and sequential navigation through naval units. Provides comprehensive
+ * naval navigation with error handling.
+ *
+ * Parameters:
+ *   idnum - Navy ID to navigate to, or -1 for next navy in sequence
+ *
+ * Returns:
+ *   FALSE on successful navigation, TRUE on error or if deity mode
+ *
+ * Side Effects:
+ *   - Updates map cursor position if navy location differs from current
+ *   - Sets selection cursor to target naval unit
+ *   - May display error messages for invalid or missing navies
+ *
+ * Notes:
+ *   - Returns TRUE immediately if in deity mode (country == UNOWNED)
+ *   - ID value -1 triggers navigation to next navy in nation's list
+ *   - Handles wrap-around to first navy if at end of list
+ *   - Updates both map position and selection state for complete navigation
+ *   - Provides user feedback for non-existent naval units
+ */
 int
 goto_navy PARM_1 (int, idnum)
 {
@@ -583,7 +958,33 @@ goto_navy PARM_1 (int, idnum)
   return(FALSE);
 }
 
-/* GOTO_CVN -- set the current sector and selector to the desired caravan */
+/*
+ * goto_cvn - Navigate to specific caravan unit by ID
+ *
+ * Moves the map view to the location of a specified caravan unit and sets
+ * the selection cursor to that unit. Supports both specific ID navigation
+ * and sequential navigation through caravan units. Provides comprehensive
+ * caravan navigation with error handling.
+ *
+ * Parameters:
+ *   idnum - Caravan ID to navigate to, or -1 for next caravan in sequence
+ *
+ * Returns:
+ *   FALSE on successful navigation, TRUE on error or if deity mode
+ *
+ * Side Effects:
+ *   - Updates map cursor position if caravan location differs from current
+ *   - Sets selection cursor to target caravan unit
+ *   - May display error messages for invalid or missing caravans
+ *   - Contains coordinate bug: checks YREAL against xloc (should be XREAL)
+ *
+ * Notes:
+ *   - Returns TRUE immediately if in deity mode (country == UNOWNED)
+ *   - ID value -1 triggers navigation to next caravan in nation's list
+ *   - Handles wrap-around to first caravan if at end of list
+ *   - BUG: Line 611 incorrectly compares YREAL with c1_ptr->xloc
+ *   - Updates both map position and selection state for complete navigation
+ */
 int
 goto_cvn PARM_1 (int, idnum)
 {
