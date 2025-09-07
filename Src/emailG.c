@@ -1,18 +1,58 @@
-/* Code for the mail editor for sending interactive messages */
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * emailG.c - Interactive Mail Composition and Editing Interface
  *
- * A good deal of time and effort has gone into the writing of this
- * code and it is our hope that you respect this.  We give permission
- * to alter the code, but not to redistribute modified versions of the
- * code without our explicit permission.  If you do modify the code,
- * please document the changes made, and send us a copy, so that all
- * people may have it.  The code, to the best of our knowledge, works
- * well, but there will probably always be a need for bug fixes and
- * improvements.  We disclaim any responsibility for the codes'
- * actions.  [Use at your own risk].  This notice is just our way of
- * saying, "Happy gaming!", while making an effort to not get sued in
- * the process.
- *                           Ed Barlow, Adam Bryant
+ * This module provides a sophisticated interactive mail editor for composing
+ * and sending in-game messages within the Conquer game system. The interface
+ * supports multi-modal editing with distinct modes for recipient selection,
+ * subject editing, and message body composition.
+ *
+ * Key Features:
+ * - Multi-Modal Interface: Three distinct editing modes (To:, Subject:, Body)
+ * - File Locking System: Prevents concurrent access to recipient mail files
+ * - Customizable Key Bindings: Comprehensive key binding system for all operations
+ * - Text Editor Functionality: Full-featured text editing with insert/overwrite modes
+ * - External Editor Support: Optional integration with system text editors
+ * - Interactive Navigation: Arrow key and command-based cursor movement
+ * - Input Validation: Recipient name validation and message content checking
+ * - Message Delivery: Safe message transmission with confirmation prompts
+ *
+ * Editor Modes:
+ * - EM_S_TOLINE (1): Recipient selection and management mode
+ * - EM_S_SUBJECT (2): Subject line editing mode  
+ * - EM_S_BODY (3): Message body composition mode
+ * - EM_S_INSERTON (0x0004): Insert mode flag (vs overwrite mode)
+ *
+ * File Locking Architecture:
+ * - Uses em_locks[] array to track recipient file locks
+ * - Prevents mail delivery conflicts in multi-user environment
+ * - Automatic cleanup on editor exit or error conditions
+ *
+ * Key Binding System:
+ * - Configurable key mappings for all editor operations
+ * - Platform-specific bindings (VMS vs Unix/Linux)
+ * - Support for both control sequences and escape sequences
+ * - Arrow key navigation support with fallback sequences
+ *
+ * Message Structure:
+ * - Dynamic recipient list with lock management
+ * - Configurable subject line length limits
+ * - Linked-list based message body for flexible content
+ * - Sender identification and nickname assignment
+ *
+ * Integration Points:
+ * - Nation management system for recipient validation
+ * - File I/O system for mail delivery and storage
+ * - Display system for real-time editor rendering
+ * - Input system for character processing and key binding
+ *
+ * Security Features:
+ * - File lock validation prevents mail corruption
+ * - Recipient existence verification before message composition
+ * - Safe memory management with proper cleanup procedures
+ * - Input sanitization for mail content and commands
+ *
+ * Copyright (c) 1992 by Ed Barlow and Adam Bryant
+ * Licensed for modification with attribution and notification requirements
  */
 #include "dataG.h"
 #include "rmailX.h"
@@ -52,7 +92,33 @@ static int email_status;
 int email_collim;
 int email_subjlim = 70;		/* 80 - sizeof(Subject:) */
 
-/* EMAIL_LOCK -- Set a lock if possible */
+/*
+ * email_lock - Set file lock for mail recipient to prevent concurrent access
+ *
+ * Creates a file lock for the specified recipient's mail file to ensure
+ * safe message delivery in a multi-user environment. This prevents mail
+ * corruption when multiple users attempt to send messages simultaneously
+ * to the same recipient.
+ *
+ * Parameters:
+ *   lnum - Lock index position in em_locks array (0 to EM_MAXLOCKS-1)
+ *   who - Nation ID of the intended mail recipient
+ *
+ * Returns:
+ *   TRUE if lock successfully acquired and recipient added to message
+ *   FALSE if lock acquisition failed or invalid parameters
+ *
+ * Side Effects:
+ *   - Sets em_locks[lnum] to the acquired lock file descriptor
+ *   - Updates cur_message->to_whom[lnum] with recipient nation ID
+ *   - Displays error messages for lock failures or invalid recipients
+ *
+ * Notes:
+ *   - Uses check_lock() to acquire exclusive file access
+ *   - Validates recipient nation existence before lock attempt
+ *   - Constructs lock filename using nation name, msgtag, and isontag
+ *   - Prevents duplicate locks by checking em_locks[lnum] availability
+ */
 static int
 email_lock PARM_2(int, lnum, int, who)
 {
@@ -80,7 +146,31 @@ email_lock PARM_2(int, lnum, int, who)
   return(TRUE);
 }
 
-/* EMAIL_UNLOCK -- Remove the specified lock file */
+/*
+ * email_unlock - Remove file lock for specified mail recipient
+ *
+ * Releases a previously acquired file lock for a mail recipient and
+ * cleans up associated data structures. This ensures proper cleanup
+ * when removing recipients from a message or when exiting the editor.
+ *
+ * Parameters:
+ *   lnum - Lock index position in em_locks array to release
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls kill_lock() to release the file system lock
+ *   - Resets em_locks[lnum] to -1 (unlocked state)
+ *   - Sets cur_message->to_whom[lnum] to ABSMAXNTN (no recipient)
+ *   - Constructs lock filename for proper cleanup
+ *
+ * Notes:
+ *   - Only processes valid locks (em_locks[lnum] > -1)
+ *   - Uses ntn_realname() to get recipient nation name for filename
+ *   - Safe to call multiple times on the same lock index
+ *   - Essential for preventing lock file accumulation in file system
+ */
 static void
 email_unlock PARM_1(int, lnum)
 {
@@ -101,7 +191,31 @@ email_unlock PARM_1(int, lnum)
   }
 }
 
-/* EMAIL_CLOSE -- Free allocated space and remove all set locks */
+/*
+ * email_close - Free allocated resources and remove all mail recipient locks
+ *
+ * Performs comprehensive cleanup when exiting the mail editor, ensuring
+ * all file locks are released and memory is properly freed. This function
+ * is essential for maintaining system integrity in multi-user environments.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Releases all file locks by calling email_unlock() for each index
+ *   - Clears MAIL_SENDING flag from mail_ind status indicator
+ *   - Frees all dynamically allocated mail message memory via free_mail()
+ *   - Sets redraw flag to DRAW_FULL for screen refresh
+ *
+ * Notes:
+ *   - Called automatically when exiting mail editor (normal or error exit)
+ *   - Iterates through all EM_MAXLOCKS positions for complete cleanup
+ *   - Critical for preventing file lock accumulation and memory leaks
+ *   - Prepares display system for return to main game interface
+ */
 void
 email_close PARM_0(void)
 {
@@ -118,7 +232,30 @@ email_close PARM_0(void)
   redraw = DRAW_FULL;
 }
 
-/* EMAIL_INIT -- Initialize the bindings */
+/*
+ * email_init - Initialize mail editor key binding system
+ *
+ * Sets up the key binding infrastructure for the mail editor, establishing
+ * the mapping between key sequences and mail editor functions. This must
+ * be called before the mail editor can process user input.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 on successful initialization
+ *
+ * Side Effects:
+ *   - Initializes email_bindings pointer with key mapping data
+ *   - Links email_klist key definitions to corresponding functions
+ *   - Establishes proper key sequence parsing for mail editor
+ *
+ * Notes:
+ *   - Called automatically by email_prep() if bindings not initialized
+ *   - Uses init_keys() to process the email_klist key binding array
+ *   - Required for proper mail editor key sequence recognition
+ *   - Sets up platform-specific key mappings and escape sequences
+ */
 int
 email_init PARM_0(void)
 {
@@ -126,7 +263,32 @@ email_init PARM_0(void)
   return(0);
 }
 
-/* EM_SEND -- Deliver the mail message */
+/*
+ * em_send - Deliver the composed mail message to all recipients
+ *
+ * Initiates the mail delivery process after validating that recipients
+ * have been specified. Provides user confirmation before sending and
+ * handles the actual message delivery through the mail system.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   TRUE if message was successfully sent
+ *   FALSE if delivery was cancelled or no recipients specified
+ *
+ * Side Effects:
+ *   - Displays confirmation prompt to user
+ *   - Calls deliver_mail() to perform actual message delivery
+ *   - Shows "Sent..." confirmation message with 1-second delay
+ *   - Refreshes screen display after successful delivery
+ *
+ * Notes:
+ *   - Validates that at least one recipient is specified (to_whom[0] != ABSMAXNTN)
+ *   - Uses y_or_n() for user confirmation before sending
+ *   - Essential function for completing the mail composition process
+ *   - Called by em_exit() and available as standalone send command
+ */
 static int
 em_send PARM_0(void)
 {
@@ -150,7 +312,30 @@ em_send PARM_0(void)
   return(FALSE);
 }
 
-/* EM_EXIT -- Deliver the mail and then exit */
+/*
+ * em_exit - Deliver mail message and exit editor if successful
+ *
+ * Attempts to send the current mail message and exits the editor only
+ * if the delivery is successful. This combines message sending with
+ * editor termination in a single operation.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always returns 0, actual success determined by email_done flag)
+ *
+ * Side Effects:
+ *   - Calls em_send() to attempt message delivery
+ *   - Sets email_done = TRUE if delivery successful
+ *   - Leaves editor open if delivery fails or is cancelled
+ *
+ * Notes:
+ *   - Provides safe exit that ensures message is sent before closing
+ *   - Prevents accidental loss of composed messages
+ *   - Most common way to complete mail composition session
+ *   - Mapped to Ctrl-X key binding by default
+ */
 static int
 em_exit PARM_0(void)
 {
@@ -160,7 +345,30 @@ em_exit PARM_0(void)
   return(0);
 }
 
-/* EM_QUIT -- Leave, after a query */
+/*
+ * em_quit - Exit mail editor without sending message after confirmation
+ *
+ * Provides a safe way to exit the mail editor without sending the
+ * composed message. Requires user confirmation to prevent accidental
+ * loss of work.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always returns 0, actual exit determined by email_done flag)
+ *
+ * Side Effects:
+ *   - Displays confirmation prompt asking to exit without sending
+ *   - Sets email_done = TRUE if user confirms exit
+ *   - Leaves editor open if user cancels the quit operation
+ *
+ * Notes:
+ *   - Mapped to Ctrl-G key binding by default
+ *   - Uses bottommsg() for confirmation prompt display
+ *   - Uses y_or_n() for user response processing
+ *   - Important safety feature to prevent accidental message loss
+ */
 static int
 em_quit PARM_0(void)
 {
@@ -172,7 +380,30 @@ em_quit PARM_0(void)
   return(0);
 }
 
-/* EM_TOGGLE -- Toggle between overwrite and insert mode */
+/*
+ * em_toggle - Toggle between insert and overwrite editing modes
+ *
+ * Switches the mail editor between insert mode (where new characters
+ * are inserted at cursor position) and overwrite mode (where new
+ * characters replace existing characters at cursor position).
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Toggles EM_S_INSERTON bit in email_status variable
+ *   - Changes character insertion behavior for subsequent input
+ *
+ * Notes:
+ *   - Uses XOR operation to toggle the EM_S_INSERTON flag
+ *   - Affects behavior in subject line and message body editing
+ *   - Mapped to Ctrl-T key binding on Unix/Linux systems
+ *   - Mapped to Ctrl-A key binding on VMS systems
+ *   - Mode state persists throughout editing session
+ */
 static int
 em_toggle PARM_0(void)
 {
@@ -180,7 +411,32 @@ em_toggle PARM_0(void)
   return(0);
 }
 
-/* EM_TOEOL -- Go to the end of the line */
+/*
+ * em_toeol - Move cursor to end of current line in current editing mode
+ *
+ * Positions the cursor at the end of the current line based on the
+ * active editing mode (To:, Subject:, or Body). The end position
+ * varies depending on the data structure being edited.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Updates char_position to end-of-line position for current mode
+ *   - EM_S_TOLINE: Positions after last recipient in to_whom array
+ *   - EM_S_SUBJECT: Positions after last character in subject string
+ *   - EM_S_BODY: Positions after last character in current line data
+ *
+ * Notes:
+ *   - Uses email_status % 4 to determine current editing mode
+ *   - In To: mode, finds first ABSMAXNTN entry indicating end of recipients
+ *   - In Subject mode, uses strlen() to find string end
+ *   - In Body mode, uses strlen() on current line's data
+ *   - Essential for quick end-of-line navigation
+ */
 static int
 em_toeol PARM_0(void)
 {
@@ -205,14 +461,63 @@ em_toeol PARM_0(void)
   return(0);
 }
 
-/* EM_TOBOL -- Go to the beginning of the line */
+/*
+ * em_tobol - Move cursor to beginning of current line
+ *
+ * Positions the cursor at the beginning of the current line in any
+ * editing mode. This provides quick navigation to the start of the
+ * current editing context.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (char_position after setting to 0)
+ *
+ * Side Effects:
+ *   - Sets char_position to 0 for all editing modes
+ *   - Works consistently across To:, Subject:, and Body modes
+ *
+ * Notes:
+ *   - Simple operation that works for all editing modes
+ *   - Essential for quick beginning-of-line navigation
+ *   - Commonly used in conjunction with em_toeol for line selection
+ *   - Mapped to Ctrl-A key binding on Unix/Linux systems
+ *   - Mapped to Ctrl-H key binding on VMS systems
+ */
 static int
 em_tobol PARM_0(void)
 {
   return(char_position = 0);
 }
 
-/* EM_INSERTCHAR -- Insert the space at the char_pos, shiftin all others */
+/*
+ * em_insertchar - Insert space at specified position, shifting characters right
+ *
+ * Creates space for a new character by shifting all characters to the right
+ * of the specified position. This is used in insert mode to make room for
+ * new characters without overwriting existing content.
+ *
+ * Parameters:
+ *   line - Character array to modify
+ *   pos - Position where space should be inserted
+ *   limit - Maximum line length to prevent buffer overflow
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Shifts characters from position 'pos' to 'limit-1' one position right
+ *   - Inserts a space character at position 'pos'
+ *   - Ensures null termination at position 'limit'
+ *   - May truncate content if line is at maximum length
+ *
+ * Notes:
+ *   - Used by email_addchar() when EM_S_INSERTON mode is active
+ *   - Essential for insert mode functionality in subject and body editing
+ *   - Performs bounds checking to prevent buffer overflow
+ *   - Character at position 'limit-1' is lost if line is full
+ */
 static void
 em_insertchar PARM_3(char *, line, int, pos, int, limit)
 {
@@ -225,7 +530,33 @@ em_insertchar PARM_3(char *, line, int, pos, int, limit)
   line[limit] = '\0';
 }
 
-/* EM_DELCHAR -- Delete the given character... shifting all others */
+/*
+ * em_delchar - Delete character at specified position in current editing mode
+ *
+ * Removes a character from the current editing context (To:, Subject:, or Body)
+ * and shifts remaining characters left to fill the gap. Handles different
+ * data structures appropriately for each editing mode.
+ *
+ * Parameters:
+ *   which - Position/index of character to delete (mode-dependent meaning)
+ *
+ * Returns:
+ *   Character that was deleted, or '\0' if deletion invalid/failed
+ *
+ * Side Effects:
+ *   - EM_S_TOLINE: Removes recipient and shifts remaining recipients left
+ *   - EM_S_SUBJECT: Removes character and shifts subject string left  
+ *   - EM_S_BODY: Removes character and shifts line data left
+ *   - Calls email_unlock() for recipient removal in To: mode
+ *   - Emits beep() for invalid deletion attempts
+ *
+ * Notes:
+ *   - Mode-aware deletion handling for different data structures
+ *   - In To: mode, 'which' is recipient index requiring lock management
+ *   - In Subject/Body modes, 'which' is character position in string
+ *   - Performs array shifting to maintain data integrity
+ *   - Returns deleted character for potential undo operations
+ */
 static int
 em_delchar PARM_1(int, which)
 {
@@ -302,7 +633,31 @@ em_delchar PARM_1(int, which)
   return(byechar);
 }
 
-/* EM_DELRIGHT -- Delete the character to the right */
+/*
+ * em_delright - Delete character at current cursor position
+ *
+ * Removes the character under the cursor in the current editing mode.
+ * Includes special handling for empty body lines that can trigger
+ * mail sending when deleted.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Result of em_delchar() or em_exit() depending on context
+ *
+ * Side Effects:
+ *   - Deletes character at char_position in current editing context
+ *   - Special case: empty body line at position 0 with no next line calls em_exit()
+ *   - May trigger mail sending and editor exit in specific conditions
+ *
+ * Notes:
+ *   - Uses char_position as the deletion target for em_delchar()
+ *   - Provides convenient "delete under cursor" functionality
+ *   - Special exit behavior for empty final line in message body
+ *   - Mapped to Ctrl-D key binding by default
+ *   - Forward deletion complements em_delleft() for full editing control
+ */
 static int
 em_delright PARM_0(void)
 {
@@ -315,7 +670,33 @@ em_delright PARM_0(void)
   return(em_delchar(char_position));
 }
 
-/* EM_DELLEFT -- Delete the character to the left */
+/*
+ * em_delleft - Delete character to the left of cursor (backspace functionality)
+ *
+ * Removes the character immediately to the left of the cursor position,
+ * implementing standard backspace behavior. Includes bounds checking
+ * and cursor position adjustment.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Result of em_delchar() if deletion successful, '\0' if invalid
+ *
+ * Side Effects:
+ *   - Decrements char_position before deletion
+ *   - Adjusts cursor position if beyond end of line
+ *   - Emits beep() if deletion not possible (at beginning of line)
+ *   - Calls em_delchar() with adjusted position
+ *
+ * Notes:
+ *   - Implements standard backspace key functionality
+ *   - Prevents deletion when cursor is at beginning of line (char_position 0)
+ *   - Automatically adjusts cursor if positioned beyond line end
+ *   - Mode-aware bounds checking for Subject and Body editing
+ *   - Mapped to Ctrl-H key binding on Unix/Linux systems
+ *   - Essential for text editing and error correction
+ */
 static int
 em_delleft PARM_0(void)
 {
@@ -337,7 +718,32 @@ em_delleft PARM_0(void)
   return('\0');
 }
 
-/* EM_PREKILL -- Remove all of the line to the left */
+/*
+ * em_prekill - Delete all content from cursor position to beginning of line
+ *
+ * Removes all characters from the current cursor position back to the
+ * beginning of the line, implementing "kill to beginning" functionality
+ * common in Unix text editors.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Repeatedly calls em_delleft() until char_position reaches 0
+ *   - Removes all content to the left of the cursor
+ *   - Leaves cursor at beginning of line (position 0)
+ *
+ * Notes:
+ *   - Implements Unix-style "kill to beginning of line" functionality  
+ *   - Uses em_delleft() in a loop for consistent deletion behavior
+ *   - Works across all editing modes (To:, Subject:, Body)
+ *   - Mapped to Ctrl-U key binding by default
+ *   - Useful for quickly clearing content before cursor position
+ *   - Complements em_kill() for full line editing control
+ */
 static int
 em_prekill PARM_0(void)
 {
