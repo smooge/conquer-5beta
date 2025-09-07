@@ -2281,7 +2281,33 @@ ni_down PARM_0(void)
   return(0);
 }
 
-/* NI_LEFT -- move directly to the left */
+/*
+ * ni_left - Move horizontally to the left item on the same row
+ *
+ * Navigates horizontally to find the next item to the left that shares the
+ * same row (line) as the current item. Wraps around to the end of the item
+ * list when no more leftward items are found. Skips section headers and
+ * provides intuitive horizontal navigation in multi-column displays.
+ *
+ * Parameters:
+ *   void (uses global current pointer and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Changes currnum to find leftward item on same line
+ *   - Updates current pointer via ni_align()
+ *   - Wraps around to end of list if needed
+ *
+ * Notes:
+ *   - Searches for item with same line position (target = current->line)
+ *   - Uses do-while loop with wraparound to numitems-1
+ *   - Skips section headers (NI_BOLD | NI_EMPTY)
+ *   - Triggered by left arrow keys, 'h', 'H', or Ctrl-B
+ *   - Provides horizontal navigation complement to up/down movement
+ *   - Maintains row alignment while changing columns
+ */
 static int
 ni_left PARM_0(void)
 {
@@ -2306,7 +2332,34 @@ ni_left PARM_0(void)
   return(0);
 }
 
-/* NI_RIGHT -- move directly to the right */
+/*
+ * ni_right - Move horizontally to the right item on the same row
+ *
+ * Navigates horizontally to find the next item to the right that shares the
+ * same row (line) as the current item. Wraps around to the beginning of the
+ * item list when no more rightward items are found. Skips section headers and
+ * provides intuitive horizontal navigation in multi-column displays.
+ *
+ * Parameters:
+ *   void (uses global current pointer and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Changes currnum to find rightward item on same line
+ *   - Updates current pointer via ni_align()
+ *   - Wraps around to beginning of list if needed
+ *
+ * Notes:
+ *   - Searches for item with same line position (target = current->line)
+ *   - Uses do-while loop with wraparound to 0
+ *   - Skips section headers (NI_BOLD | NI_EMPTY)
+ *   - Triggered by right arrow keys, 'l', 'L', or Ctrl-F
+ *   - Provides horizontal navigation complement to up/down movement
+ *   - Maintains row alignment while changing columns
+ *   - Complements ni_left() for complete horizontal navigation
+ */
 static int
 ni_right PARM_0(void)
 {
@@ -2331,7 +2384,34 @@ ni_right PARM_0(void)
   return(0);
 }
 
-/* NI_RESET -- Reset the values to the original settings */
+/*
+ * ni_reset - Reset the values to the original settings
+ *
+ * Provides functionality to restore all nation information values back to
+ * their original state from the beginning of the session. Prompts the user
+ * for confirmation before performing the reset operation. Uses the backup
+ * copy of nation data to restore all modified fields.
+ *
+ * Parameters:
+ *   void (uses global ni_backupvals and ntn_ptr)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - May restore entire nation structure from backup
+ *   - Displays confirmation prompt to user
+ *   - Discards all unsaved changes if confirmed
+ *
+ * Notes:
+ *   - Prompts with "Reset values back to their prior settings? "
+ *   - Only resets if user confirms with y_or_n()
+ *   - Uses structure assignment: *ntn_ptr = ni_backupvals
+ *   - Triggered by 'R' or 'r' key binding
+ *   - Provides safety mechanism for undoing unwanted changes
+ *   - Backup is created at session start in ntn_info()
+ *   - Useful for canceling multiple erroneous modifications
+ */
 static int
 ni_reset PARM_0(void)
 {
@@ -2344,7 +2424,35 @@ ni_reset PARM_0(void)
   return(0);
 }
 
-/* NI_HELP -- Let the see the key binding description */
+/*
+ * ni_help - Display help screen for nation information key bindings
+ *
+ * Creates and displays a comprehensive help screen showing all available
+ * key bindings and commands for the nation information interface. Provides
+ * detailed descriptions of each command along with the keys that trigger
+ * them. Essential for user guidance and interface discovery.
+ *
+ * Parameters:
+ *   void (uses global key binding arrays and function descriptions)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Displays full-screen help interface
+ *   - Temporarily suspends current interface
+ *   - Shows all available commands and key bindings
+ *
+ * Notes:
+ *   - Creates help with title "National Information Screen Command List"
+ *   - Uses ni_bindings for current key mappings
+ *   - Uses ni_funcs for command descriptions
+ *   - Shows ninfo_keysys.num_parse number of functions
+ *   - Triggered by '?' key binding
+ *   - Provides searchable/browsable command reference
+ *   - Essential for user interface discoverability
+ *   - Returns to normal interface when help is closed
+ */
 static int
 ni_help PARM_0(void)
 {
@@ -2354,7 +2462,35 @@ ni_help PARM_0(void)
   return(0);
 }
 
-/* NI_DESCRIPT -- Give a quick bit of information about the item */
+/*
+ * ni_descript - Display detailed description of the currently selected item
+ *
+ * Shows comprehensive information about the currently selected nation
+ * information item at the bottom of the screen. Provides detailed explanations
+ * of what each field represents, its purpose, and how it affects the game.
+ * Essential for understanding complex nation attributes and their meanings.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Displays item description at bottom of screen
+ *   - Pauses for user to read description
+ *   - Returns to normal interface after key press
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Uses current->item->desc for description text
+ *   - Displays description via bottommsg()
+ *   - Waits for user key press via presskey()
+ *   - Triggered by 'I' or 'i' key binding
+ *   - Provides contextual help for each field
+ *   - Essential for understanding complex game mechanics
+ *   - Works with all visible nation information items
+ */
 static int
 ni_descript PARM_0(void)
 {
@@ -2368,7 +2504,34 @@ ni_descript PARM_0(void)
   return(0);
 }
 
-/* NI_BCHANGE -- Change the item... cycle back if possible */
+/*
+ * ni_bchange - Change the item with backward cycling direction
+ *
+ * Initiates a change operation for the currently selected item with the
+ * cycling direction set to backward. For items that support cycling (like
+ * alignment, race, aggression), this provides reverse direction movement
+ * through available values. Prevents changes during god browsing mode.
+ *
+ * Parameters:
+ *   void (uses global god_browsing flag and cycling state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Sets ni_cycle_forward to FALSE for backward cycling
+ *   - Calls ni_change() to initiate the actual change process
+ *   - May modify nation data if change is successful
+ *
+ * Notes:
+ *   - Only operates if god_browsing is FALSE
+ *   - Sets global ni_cycle_forward flag to control cycling direction
+ *   - Triggered by 'B' or 'b' key binding  
+ *   - Useful for cycling through enumerated values in reverse
+ *   - Works with items that support the ni_cycle() function
+ *   - Provides bidirectional control for value cycling
+ *   - Prevents accidental changes during browsing mode
+ */
 static int
 ni_bchange PARM_0(void)
 {
@@ -2380,7 +2543,35 @@ ni_bchange PARM_0(void)
   return(0);
 }
 
-/* NI_FCHANGE -- Change the item... cycle forward if possible */
+/*
+ * ni_fchange - Change the item with forward cycling direction
+ *
+ * Initiates a change operation for the currently selected item with the
+ * cycling direction set to forward. For items that support cycling (like
+ * alignment, race, aggression), this provides forward direction movement
+ * through available values. Prevents changes during god browsing mode.
+ *
+ * Parameters:
+ *   void (uses global god_browsing flag and cycling state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Sets ni_cycle_forward to TRUE for forward cycling
+ *   - Calls ni_change() to initiate the actual change process
+ *   - May modify nation data if change is successful
+ *
+ * Notes:
+ *   - Only operates if god_browsing is FALSE
+ *   - Sets global ni_cycle_forward flag to control cycling direction
+ *   - Triggered by 'C', 'c', 'N', or 'n' key bindings
+ *   - Useful for cycling through enumerated values forward
+ *   - Works with items that support the ni_cycle() function
+ *   - Provides bidirectional control for value cycling
+ *   - Prevents accidental changes during browsing mode
+ *   - Primary change function for most user interactions
+ */
 static int
 ni_fchange PARM_0(void)
 {
@@ -2392,7 +2583,35 @@ ni_fchange PARM_0(void)
   return(0);
 }
 
-/* NI_DESTROY -- eliminate this nation from the game */
+/*
+ * ni_destroy - Remove nation from the game (god-only function)
+ *
+ * Provides god users with the ability to eliminate a nation from the game
+ * by setting its status to INACTIVE. Includes confirmation prompt to prevent
+ * accidental deletions. This is a permanent and destructive operation that
+ * should be used with extreme caution for game administration.
+ *
+ * Parameters:
+ *   void (uses global is_god and god_browsing flags)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - May set ntn_ptr->active to INACTIVE if confirmed
+ *   - Displays confirmation prompt to god user
+ *   - Permanently removes nation from active gameplay
+ *
+ * Notes:
+ *   - Returns immediately if god_browsing is TRUE (no action during browse)
+ *   - Only operates if is_god is TRUE (god-only function)
+ *   - Prompts with "Do you wish to remove this nation from the campaign? "
+ *   - Only executes if user confirms with y_or_n() returning TRUE
+ *   - Triggered by 'D' or 'd' key binding
+ *   - Sets nation status to INACTIVE (permanent removal)
+ *   - Used for administrative cleanup of abandoned nations
+ *   - Should be used with extreme caution due to permanent nature
+ */
 static int
 ni_destroy PARM_0(void)
 {
@@ -2410,7 +2629,36 @@ ni_destroy PARM_0(void)
   return(0);
 }
 
-/* NI_PASSWD -- Change the password for the nation */
+/*
+ * ni_passwd - Change the password for the nation
+ *
+ * Handles secure password change process for nation accounts. For non-god
+ * users, requires verification of the current password before allowing change.
+ * God users can change passwords without verification. Includes password
+ * confirmation and optional encryption based on compile-time settings.
+ *
+ * Parameters:
+ *   void (uses global is_god flag and nation password storage)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - May modify ntn_ptr->passwd if password change is successful
+ *   - Displays password prompts and error messages
+ *   - Uses secure password input functions
+ *
+ * Notes:
+ *   - Non-god users must verify current password first
+ *   - Prompts: "What is the old passwd?", "Enter a new passwd?", "Verify the new passwd?"
+ *   - Minimum password length of 2 characters required
+ *   - Uses crypt() for encryption if CRYPT is defined, otherwise stores plaintext
+ *   - Password verification prevents typos in new password
+ *   - Returns early if verification fails at any step
+ *   - Triggered by 'X' or 'x' key binding
+ *   - Essential security function for account protection
+ *   - Password takes effect after next game update
+ */
 static int
 ni_passwd PARM_0(void)
 {
@@ -2475,7 +2723,39 @@ ni_passwd PARM_0(void)
   return(0);
 }
     
-/* NTN_INFO - this is the nation information screen routine */
+/*
+ * ntn_info - Main nation information screen interface function
+ *
+ * Primary entry point for the nation information screen interface. Handles
+ * complete setup, initialization, user interaction loop, and cleanup for
+ * viewing and modifying nation data. Supports both player and god modes
+ * with appropriate permission checking and data management.
+ *
+ * Parameters:
+ *   void (operates on global nation and user state)
+ *
+ * Returns:
+ *   MOVECOST / 2 - Standard movement cost for interface usage
+ *   0 - If setup fails or user lacks permissions
+ *
+ * Side Effects:
+ *   - May modify nation data through user interactions
+ *   - Records all changes made during session
+ *   - Handles god mode setup and cleanup
+ *   - Calculates and displays nation totals
+ *   - Sets up complete screen interface and key bindings
+ *
+ * Notes:
+ *   - God users must select a nation via get_god() before proceeding
+ *   - Creates backup of nation data for change tracking and reset functionality
+ *   - Returns early if screen setup fails (screen too small)
+ *   - Initializes starting position at nation name field if available
+ *   - Main interaction loop continues until ni_doneflag is set
+ *   - Handles unknown key bindings with error display
+ *   - Records all changes via ni_record() before exit
+ *   - Performs proper cleanup of god mode if applicable
+ *   - Essential interface function for nation data management
+ */
 int
 ntn_info PARM_0(void)
 {
@@ -2548,7 +2828,34 @@ ntn_info PARM_0(void)
   return(MOVECOST / 2);
 }
 
-/* NI_OPTIONS -- Quickie command to allow the setting of options */
+/*
+ * ni_options - Configure nation information interface options and key bindings
+ *
+ * Provides access to the options configuration system from within the nation
+ * information interface. Allows users to customize key bindings, interface
+ * settings, and other environmental options without leaving the current screen.
+ * Essential for personalizing the user interface experience.
+ *
+ * Parameters:
+ *   void (uses global key system and bindings)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - May modify key bindings and interface options
+ *   - Temporarily suspends current interface for options screen
+ *   - Updates ni_bindings based on user configuration changes
+ *
+ * Notes:
+ *   - Uses ninfo_keysys for the nation information key system
+ *   - Passes &ni_bindings to allow direct binding modification
+ *   - Triggered by 'O' or 'o' key binding
+ *   - Provides access to complete conquer options system
+ *   - Returns to nation information interface after options screen
+ *   - Essential for interface customization and accessibility
+ *   - Allows real-time configuration without session restart
+ */
 static int
 ni_options PARM_0(void)
 {
@@ -2648,7 +2955,35 @@ KBIND_STRUCT ni_klist[] = {
   { "x", ni_passwd }
 };
 
-/* ALIGN_NINFO_KEYS -- Align all of the nation information mode keys */
+/*
+ * align_ninfo_keys - Initialize nation information key binding system
+ *
+ * Sets up the complete key binding system for the nation information interface.
+ * Calculates array sizes, initializes the key system structure, and creates
+ * the binding table. This function must be called before the nation information
+ * interface can respond to user input. Part of the global initialization process.
+ *
+ * Parameters:
+ *   void (operates on global key binding arrays and structures)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Initializes ni_bindings key binding table
+ *   - Sets up ninfo_keysys structure with calculated array sizes
+ *   - Allocates memory for key binding management
+ *
+ * Notes:
+ *   - Only initializes if ni_bindings is NULL (prevents re-initialization)
+ *   - Calculates num_binds from ni_klist array size
+ *   - Calculates num_parse from ni_funcs array size
+ *   - Uses init_keys() to create binding table from ni_klist
+ *   - Called during system startup to prepare nation info interface
+ *   - Essential for key binding system functionality
+ *   - Must be called before ntn_info() can process user input
+ *   - Part of the global game interface initialization sequence
+ */
 void
 align_ninfo_keys PARM_0(void)
 {
