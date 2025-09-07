@@ -34,7 +34,25 @@
 #include "cityX.h"
 #include "worldX.h"
 
-/* DO_UNIMPLEMENTED -- Just indicate that this function is not yet done */
+/*
+ * do_unimplemented - Display message for unimplemented game commands
+ *
+ * Provides a standardized error message for game functions that have been
+ * declared but not yet implemented. Used as a placeholder during development
+ * to maintain consistent user feedback for incomplete features.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Displays error message to user via errormsg()
+ *   - No game state changes
+ *
+ * Notes:
+ *   - Development placeholder function
+ *   - Prevents crashes when unimplemented commands are accessed
+ *   - Should be replaced with actual implementation when feature is ready
+ */
 int
 do_unimplemented PARM_0(void)
 {
@@ -42,7 +60,27 @@ do_unimplemented PARM_0(void)
   return(0);
 }
 
-/* DO_QUIT -- goodbye cruel world! */
+/*
+ * do_quit - Handle player request to exit the game
+ *
+ * Prompts the user for confirmation before setting the global exit flag.
+ * Provides a safety mechanism to prevent accidental game termination and
+ * ensures the player truly intends to quit the current session.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Displays confirmation prompt on bottom line of screen
+ *   - Sets global conquer_done flag to TRUE if user confirms
+ *   - Clears bottom line and refreshes display
+ *   - Game will terminate on next main loop iteration if confirmed
+ *
+ * Notes:
+ *   - Uses y_or_n() for user input (accepts y/Y or Enter for yes)
+ *   - Does not perform cleanup - handled by main game loop
+ *   - Safe to call multiple times (user can cancel)
+ */
 int
 do_quit PARM_0(void)
 {
@@ -58,7 +96,34 @@ do_quit PARM_0(void)
   return(0);
 }
 
-/* DO_MOVEPEOP -- Relocate people from the current sector */
+/*
+ * do_movepeop - Relocate civilian population from current sector
+ *
+ * Allows players to move civilian population from the current sector to another
+ * sector using the movement interface. Validates ownership, calculates costs,
+ * handles resource transactions, and updates both sector and city population
+ * records. Supports god mode operation with unlimited movement capability.
+ *
+ * Returns:
+ *   0 - If sector validation fails or operation is cancelled
+ *   MOVECOST - Normal completion or insufficient resources
+ *
+ * Side Effects:
+ *   - Modifies population in source and destination sectors
+ *   - Deducts movement costs (talons) from source sector resources
+ *   - Updates city population records if source is a city
+ *   - Adjusts distribution weights for economic calculations
+ *   - Records resource usage for reporting purposes
+ *   - Uses move_parse() to get destination sector from user
+ *
+ * Notes:
+ *   - Requires sector ownership (unless god mode)
+ *   - Prevents movement from sectors under siege
+ *   - Movement cost: PEOPLE_MCOST talons per person moved
+ *   - God mode bypasses all costs and ownership restrictions
+ *   - Handles city population distribution adjustments automatically
+ *   - Uses global variables: XREAL, YREAL, sct_ptr, city_ptr
+ */
 int
 do_movepeop PARM_0(void)
 {
@@ -191,7 +256,27 @@ do_movepeop PARM_0(void)
   return(MOVECOST);
 }
 
-/* JMP_SITE -- If the sector is a possible jumping location */
+/*
+ * jmp_site - Check if a sector is visible for map jumping
+ *
+ * Helper function used by map_loop() during jump destination validation.
+ * Tests if a specific coordinate is visible to the current nation and sets
+ * global_int flag to indicate whether the jump destination is valid.
+ *
+ * Parameters:
+ *   x - X coordinate to check for visibility
+ *   y - Y coordinate to check for visibility
+ *
+ * Side Effects:
+ *   - Sets global_int to TRUE if sector is visible
+ *   - Used by jump_to() function via map_loop() for visibility scanning
+ *
+ * Notes:
+ *   - Static helper function for jump validation
+ *   - Uses VIS_CHECK macro for visibility determination
+ *   - Part of jump destination validation system
+ *   - Called within VISRANGE radius during jump operations
+ */
 static void
 jmp_site PARM_2(int, x, int, y)
 {
@@ -200,7 +285,35 @@ jmp_site PARM_2(int, x, int, y)
   }
 }
 
-/* JUMP_TO -- Go to a chosen location */
+/*
+ * jump_to - Navigate map cursor to specific locations
+ *
+ * Handles three types of map navigation: jumping to nation capitals,
+ * jumping to user-specified coordinates, and jumping to saved/marked
+ * locations. Validates destination visibility and handles coordinate
+ * transformations for relative map mode.
+ *
+ * Parameters:
+ *   jtype - Type of jump operation:
+ *           JUMP_CAP: Jump to nation capital (interactive selection)
+ *           JUMP_PICK: Jump to user-specified X,Y coordinates
+ *           JUMP_SAVE: Jump to previously marked location
+ *
+ * Side Effects:
+ *   - Modifies global cursor position (xcurs, ycurs)
+ *   - Resets map offset (xoffset, yoffset) to 0
+ *   - Centers map display around new position if jump succeeds
+ *   - Prompts user for input depending on jump type
+ *   - Validates destination visibility for non-god players
+ *
+ * Notes:
+ *   - JUMP_CAP: Cycles through available nation capitals, prompts for selection
+ *   - JUMP_PICK: Prompts for X,Y coordinates, handles relative map conversion
+ *   - JUMP_SAVE: Uses marked position or falls back to capital jump
+ *   - Visibility validation prevents jumping to unknown sectors
+ *   - God mode bypasses visibility restrictions
+ *   - Static helper function for map navigation commands
+ */
 static void
 jump_to PARM_1(int, jtype)
 {
@@ -338,7 +451,28 @@ jump_to PARM_1(int, jtype)
   }
 }
 
-/* DO_OPTIONS -- Select and adjust the global options */
+/*
+ * do_options - Launch the game options configuration interface
+ *
+ * Entry point for the comprehensive options configuration system.
+ * Delegates to option_cmd() which handles the actual option selection
+ * and modification interface using the global key binding system.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Launches interactive options configuration interface
+ *   - May modify various global game configuration settings
+ *   - May modify key bindings and customization settings
+ *   - Interface handled by option_cmd() function
+ *
+ * Notes:
+ *   - Uses global_keysys for key binding management
+ *   - Operates on cq_bindings (main game key bindings)
+ *   - Provides access to all configurable game options
+ *   - User can save/load configuration files through this interface
+ */
 int
 do_options PARM_0(void)
 {
@@ -347,7 +481,35 @@ do_options PARM_0(void)
   return(0);
 }
 
-/* OPTION_CMD -- Adjust some options */
+/*
+ * option_cmd - Interactive options configuration and key binding management
+ *
+ * Comprehensive options configuration interface that handles all game settings,
+ * key binding management, and customization file operations. Presents menu of
+ * available options, processes user selection, and delegates to appropriate
+ * configuration handlers for each option type.
+ *
+ * Parameters:
+ *   key_info - Key binding system structure with function mappings
+ *   list_of_keys - Pointer to current key binding list for modification
+ *
+ * Side Effects:
+ *   - Displays interactive options menu interface
+ *   - Modifies game configuration settings based on user choices
+ *   - Handles key binding add/remove/modify operations
+ *   - Manages configuration file read/write operations
+ *   - Updates display settings and game behavior flags
+ *   - Validates and applies pager and interface settings
+ *
+ * Notes:
+ *   - Large switch statement handles 20+ different option types
+ *   - Key binding operations: rebind, bind new, unbind, reset all
+ *   - Boolean options: expert mode, gaudy display, mail headers, etc.
+ *   - Numeric options: supply level, pager settings, page offsets
+ *   - File operations: save/load custom configuration files
+ *   - Special operations: center map, check key bindings
+ *   - Uses global option arrays: opt_list[], options_number
+ */
 void
 option_cmd PARM_2(KEYSYS_STRUCT, key_info, KLIST_PTR *, list_of_keys)
 {
@@ -687,7 +849,27 @@ option_cmd PARM_2(KEYSYS_STRUCT, key_info, KLIST_PTR *, list_of_keys)
   }
 }
 
-/* DO_REFRESH -- Refresh the screen */
+/*
+ * do_refresh - Force complete screen redraw
+ *
+ * Sets the global redraw flag to force a complete screen refresh on the
+ * next display update. Used when the screen may have been corrupted or
+ * when a full redraw is needed after certain operations.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Sets global redraw flag to DRAW_FULL
+ *   - Next display update will completely refresh the screen
+ *   - Clears any display artifacts or corruption
+ *
+ * Notes:
+ *   - Essential for recovering from screen corruption
+ *   - Used after terminal resize or display issues
+ *   - Simple flag setting - actual redraw handled by display system
+ *   - No immediate screen update - deferred to main display loop
+ */
 int
 do_refresh PARM_0(void)
 {
@@ -696,7 +878,27 @@ do_refresh PARM_0(void)
   return(0);
 }
 
-/* ARMY_REPORT -- Show the army information for the nation */
+/*
+ * army_report - Display comprehensive army information for the nation
+ *
+ * Shows detailed information about all armies owned by the current nation
+ * including unit composition, locations, status, and capabilities. Uses
+ * the standard information display system to present army data.
+ *
+ * Returns:
+ *   MOVECOST - Standard movement cost for information display
+ *
+ * Side Effects:
+ *   - Displays army information interface via show_info()
+ *   - May launch interactive army browsing interface
+ *   - Shows error message if no armies exist
+ *
+ * Notes:
+ *   - Uses INFO_ARMY mode for information display
+ *   - Covers all armies regardless of location
+ *   - Returns TRUE from show_info() indicates no armies found
+ *   - Part of nation-wide reporting system
+ */
 int
 army_report PARM_0(void)
 {
@@ -707,7 +909,27 @@ army_report PARM_0(void)
   return(MOVECOST);
 }
 
-/* DO_NARMY -- Go to the next army in the nation */
+/*
+ * do_narmy - Navigate to the next army in the nation
+ *
+ * Automatically finds and jumps to the next army in the nation's
+ * army list. Provides convenient way to cycle through all armies
+ * without manual navigation or army identification.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Changes map cursor position to next army location
+ *   - May center map display around new army position
+ *   - Updates current army selection context
+ *
+ * Notes:
+ *   - Uses goto_army(-1) to find next army automatically
+ *   - Cycles through armies in order of army list
+ *   - No cost for army navigation
+ *   - Part of army navigation command set
+ */
 int
 do_narmy PARM_0(void)
 {
@@ -715,7 +937,29 @@ do_narmy PARM_0(void)
   return(0);
 }
 
-/* DO_SARMY -- Go to a specified army */
+/*
+ * do_sarmy - Navigate to a specific army by unit ID
+ *
+ * Prompts user for an army unit ID and jumps directly to that army's
+ * location. Supports god mode operation for accessing any nation's armies.
+ * Provides direct navigation alternative to sequential army browsing.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Prompts user for army unit ID input
+ *   - Changes map cursor position to specified army location
+ *   - May center map display around target army
+ *   - God mode allows access to any nation's armies
+ *
+ * Notes:
+ *   - Uses goto_army(unit_id) for direct army navigation
+ *   - God mode requires nation selection before army selection
+ *   - Validates army ID and shows error for invalid units
+ *   - No movement cost for army navigation
+ *   - User can cancel with empty input
+ */
 int
 do_sarmy PARM_0(void)
 {
@@ -735,7 +979,27 @@ do_sarmy PARM_0(void)
   return(0);
 }
 
-/* GROUP_REPORT -- Show the army information for a particular sector */
+/*
+ * group_report - Display army information for the current sector
+ *
+ * Shows detailed information about all armies located in the current
+ * sector including unit composition, status, and capabilities. Provides
+ * sector-specific army view rather than nation-wide army reporting.
+ *
+ * Returns:
+ *   MOVECOST - Standard movement cost for information display
+ *
+ * Side Effects:
+ *   - Displays sector army information interface via show_info()
+ *   - May launch interactive army browsing for sector armies
+ *   - Shows error message if no armies exist in current sector
+ *
+ * Notes:
+ *   - Uses INFO_GRPARM mode for sector-specific army display
+ *   - Limited to armies in current map cursor position
+ *   - Returns TRUE from show_info() indicates no armies in sector
+ *   - Complements nation-wide army_report() function
+ */
 int
 group_report PARM_0(void)
 {
@@ -746,7 +1010,27 @@ group_report PARM_0(void)
   return(MOVECOST);
 }
 
-/* NAVY_REPORT -- Show the navy information for the nation */
+/*
+ * navy_report - Display comprehensive navy information for the nation
+ *
+ * Shows detailed information about all naval fleets owned by the current
+ * nation including ship composition, locations, status, and capabilities.
+ * Uses the standard information display system to present fleet data.
+ *
+ * Returns:
+ *   MOVECOST - Standard movement cost for information display
+ *
+ * Side Effects:
+ *   - Displays navy information interface via show_info()
+ *   - May launch interactive fleet browsing interface
+ *   - Shows error message if no fleets exist
+ *
+ * Notes:
+ *   - Uses INFO_NAVY mode for information display
+ *   - Covers all fleets regardless of location
+ *   - Returns TRUE from show_info() indicates no fleets found
+ *   - Part of nation-wide reporting system for naval forces
+ */
 int
 navy_report PARM_0(void)
 {
@@ -757,7 +1041,27 @@ navy_report PARM_0(void)
   return(MOVECOST);
 }
 
-/* DO_NNAVY -- Go to the next fleet in the nation */
+/*
+ * do_nnavy - Navigate to the next fleet in the nation
+ *
+ * Automatically finds and jumps to the next naval fleet in the nation's
+ * fleet list. Provides convenient way to cycle through all fleets
+ * without manual navigation or fleet identification.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Changes map cursor position to next fleet location
+ *   - May center map display around new fleet position
+ *   - Updates current fleet selection context
+ *
+ * Notes:
+ *   - Uses goto_navy(-1) to find next fleet automatically
+ *   - Cycles through fleets in order of fleet list
+ *   - No cost for fleet navigation
+ *   - Part of naval navigation command set
+ */
 int
 do_nnavy PARM_0(void)
 {
@@ -765,7 +1069,29 @@ do_nnavy PARM_0(void)
   return(0);
 }
 
-/* DO_SNAVY -- Go to a specified naval unit */
+/*
+ * do_snavy - Navigate to a specific naval fleet by unit ID
+ *
+ * Prompts user for a naval unit ID and jumps directly to that fleet's
+ * location. Supports god mode operation for accessing any nation's fleets.
+ * Provides direct navigation alternative to sequential fleet browsing.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Prompts user for naval unit ID input
+ *   - Changes map cursor position to specified fleet location
+ *   - May center map display around target fleet
+ *   - God mode allows access to any nation's fleets
+ *
+ * Notes:
+ *   - Uses goto_navy(unit_id) for direct fleet navigation
+ *   - God mode requires nation selection before fleet selection
+ *   - Validates fleet ID and shows error for invalid units
+ *   - No movement cost for fleet navigation
+ *   - User can cancel with empty input
+ */
 int
 do_snavy PARM_0(void)
 {
@@ -785,7 +1111,27 @@ do_snavy PARM_0(void)
   return(0);
 }
 
-/* CVN_REPORT -- Show the caravan information for the nation */
+/*
+ * cvn_report - Display comprehensive caravan information for the nation
+ *
+ * Shows detailed information about all caravans owned by the current nation
+ * including cargo composition, locations, status, and trade capabilities.
+ * Uses the standard information display system to present caravan data.
+ *
+ * Returns:
+ *   MOVECOST - Standard movement cost for information display
+ *
+ * Side Effects:
+ *   - Displays caravan information interface via show_info()
+ *   - May launch interactive caravan browsing interface
+ *   - Shows error message if no caravans exist
+ *
+ * Notes:
+ *   - Uses INFO_CVN mode for information display
+ *   - Covers all caravans regardless of location
+ *   - Returns TRUE from show_info() indicates no caravans found
+ *   - Part of nation-wide reporting system for trade units
+ */
 int
 cvn_report PARM_0(void)
 {
@@ -796,7 +1142,27 @@ cvn_report PARM_0(void)
   return(MOVECOST);
 }
 
-/* DO_NCVN -- Go to the next caravan in the nation */
+/*
+ * do_ncvn - Navigate to the next caravan in the nation
+ *
+ * Automatically finds and jumps to the next caravan in the nation's
+ * caravan list. Provides convenient way to cycle through all caravans
+ * without manual navigation or caravan identification.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Changes map cursor position to next caravan location
+ *   - May center map display around new caravan position
+ *   - Updates current caravan selection context
+ *
+ * Notes:
+ *   - Uses goto_cvn(-1) to find next caravan automatically
+ *   - Cycles through caravans in order of caravan list
+ *   - No cost for caravan navigation
+ *   - Part of caravan navigation command set
+ */
 int
 do_ncvn PARM_0(void)
 {
@@ -804,7 +1170,29 @@ do_ncvn PARM_0(void)
   return(0);
 }
 
-/* DO_SCVN -- Go to the specified caravan */
+/*
+ * do_scvn - Navigate to a specific caravan by unit ID
+ *
+ * Prompts user for a caravan unit ID and jumps directly to that caravan's
+ * location. Supports god mode operation for accessing any nation's caravans.
+ * Provides direct navigation alternative to sequential caravan browsing.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Prompts user for caravan unit ID input
+ *   - Changes map cursor position to specified caravan location
+ *   - May center map display around target caravan
+ *   - God mode allows access to any nation's caravans
+ *
+ * Notes:
+ *   - Uses goto_cvn(unit_id) for direct caravan navigation
+ *   - God mode requires nation selection before caravan selection
+ *   - Validates caravan ID and shows error for invalid units
+ *   - No movement cost for caravan navigation
+ *   - User can cancel with empty input
+ */
 int
 do_scvn PARM_0(void)
 {
@@ -824,7 +1212,29 @@ do_scvn PARM_0(void)
   return(0);
 }
 
-/* DO_MOTDEDIT -- Try to edit the motd file */
+/*
+ * do_motdedit - Edit the message of the day file (god mode only)
+ *
+ * Allows god-level users to edit the MOTD file that is displayed to
+ * players when they log in. Uses external editor via fork_edit_on_file()
+ * when ALLOW_EDIT_FORK is enabled. Provides administrative control over
+ * login messages and announcements.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Launches external editor for MOTD file (god mode only)
+ *   - Sets redraw flag to refresh screen after editor exit
+ *   - Modifies motdfile on disk if changes are saved
+ *   - No action if not in god mode or ALLOW_EDIT_FORK disabled
+ *
+ * Notes:
+ *   - Only first MOTDLINES lines are used from the file
+ *   - Requires god privileges and compile-time editor support
+ *   - Screen redraw needed after external editor session
+ *   - Administrative function for game management
+ */
 int
 do_motdedit PARM_0(void)
 {
@@ -841,7 +1251,32 @@ do_motdedit PARM_0(void)
   return(0);
 }
 
-/* DO_SCITY -- Go to the specified city */
+/*
+ * do_scity - Navigate to a specific city by name or sequence
+ *
+ * Prompts user for city name and jumps to that city's location. Supports
+ * god mode operation, direct city name input, and special navigation
+ * commands (+ for next, - for previous) to cycle through cities.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Prompts user for city name or navigation command
+ *   - Changes map cursor position to specified city location
+ *   - May center map display around target city
+ *   - God mode allows access to any nation's cities
+ *   - Shows error for invalid city names
+ *
+ * Notes:
+ *   - Uses goto_city() for direct city navigation
+ *   - Special commands: "+" (next city), "-" (previous city)
+ *   - City cycling based on current map cursor position
+ *   - God mode requires nation selection before city selection
+ *   - No movement cost for city navigation
+ *   - Validates city existence and nation ownership
+ *   - User can cancel with empty input
+ */
 int
 do_scity PARM_0(void)
 {
@@ -903,7 +1338,31 @@ do_scity PARM_0(void)
   return(0);
 }
 
-/* DO_PAPER -- Select a newspaper for reading */
+/*
+ * do_paper - Interactive newspaper reading interface
+ *
+ * Displays menu of available historical newspapers and allows player to
+ * select and read them. Newspapers are organized by game turns and use
+ * calendar-based naming. Provides access to historical game events and
+ * announcements through the paging system.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Displays newspaper selection menu interface
+ *   - Launches paging system for selected newspaper
+ *   - Updates news status when current newspaper is read
+ *   - Shows error if no newspapers are available
+ *
+ * Notes:
+ *   - Scans MAXNEWS worth of historical newspapers
+ *   - Uses calendar formatting (month/year) for newspaper titles
+ *   - Turn 0 newspaper is titled "The Epoch"
+ *   - Menu selection via letter keys (A, B, C, etc.)
+ *   - Clears news notification when current turn paper is read
+ *   - File naming: newsfile.XXX where XXX is turn number
+ */
 int
 do_paper PARM_0(void)
 {
@@ -980,7 +1439,28 @@ do_paper PARM_0(void)
   return(0);
 }
 
-/* DO_SCORE -- Show the score of the nations in the world */
+/*
+ * do_score - Display nation scoring and ranking information
+ *
+ * Shows comprehensive scoring information for all nations in the world
+ * including rankings, population, territory, military strength, and
+ * economic indicators. Uses the nation information display system.
+ *
+ * Returns:
+ *   MOVECOST * 2 - Double movement cost for comprehensive information
+ *
+ * Side Effects:
+ *   - Displays nation scoring interface via show_info()
+ *   - May launch interactive nation browsing interface
+ *   - Shows error message if no nations exist (should never happen)
+ *
+ * Notes:
+ *   - Uses INFO_NTN mode for nation information display
+ *   - Covers all active nations in the world
+ *   - Double movement cost reflects comprehensive nature
+ *   - Essential for strategic planning and diplomacy
+ *   - Error case should be impossible in normal gameplay
+ */
 int
 do_score PARM_0(void)
 {
@@ -991,7 +1471,28 @@ do_score PARM_0(void)
   return(MOVECOST * 2);
 }
 
-/* DO_DIPLOMACY -- Show the nation diplomacy screens */
+/*
+ * do_diplomacy - Display diplomatic relations interface
+ *
+ * Shows comprehensive diplomatic status between all nations including
+ * alliance relationships, trade agreements, war declarations, and
+ * diplomatic history. Essential for strategic planning and negotiation.
+ *
+ * Returns:
+ *   MOVECOST - Standard movement cost for information display
+ *
+ * Side Effects:
+ *   - Displays diplomacy information interface via show_info()
+ *   - May launch interactive diplomatic status browsing
+ *   - Shows error message if no nations exist (should never happen)
+ *
+ * Notes:
+ *   - Uses INFO_DIP mode for diplomatic information display
+ *   - Covers all active nations and their relationships
+ *   - Critical for understanding political landscape
+ *   - Used for alliance management and war planning
+ *   - Error case should be impossible in normal gameplay
+ */
 int
 do_diplomacy PARM_0(void)
 {
@@ -1002,7 +1503,28 @@ do_diplomacy PARM_0(void)
   return(MOVECOST);
 }
 
-/* DO_CJUMP -- Go to the capital of the nation */
+/*
+ * do_cjump - Jump to nation capital location
+ *
+ * Resets display modes and jumps map cursor to the current nation's
+ * capital city. Provides quick navigation to the most important location
+ * for the player's nation. Clears pager and selector modes before jumping.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Resets pager mode to 0 (normal display)
+ *   - Resets selector mode to 0 (normal selection)
+ *   - Changes map cursor position to nation capital
+ *   - Centers map display around capital location
+ *
+ * Notes:
+ *   - Uses jump_to(JUMP_CAP) for capital navigation
+ *   - No movement cost for capital jumps
+ *   - Essential for quick return to home base
+ *   - Clears special display modes for clean navigation
+ */
 int
 do_cjump PARM_0(void)
 {
@@ -1013,7 +1535,29 @@ do_cjump PARM_0(void)
   return(0);
 }
 
-/* DO_MJUMP -- Go to the marked sector */
+/*
+ * do_mjump - Jump to previously marked sector location
+ *
+ * Resets display modes and jumps map cursor to a previously marked
+ * sector location. Provides quick navigation to saved locations of
+ * interest. Falls back to capital jump if no location is marked.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Resets pager mode to 0 (normal display)
+ *   - Resets selector mode to 0 (normal selection)
+ *   - Changes map cursor position to marked location
+ *   - Centers map display around marked location
+ *   - Falls back to capital if no mark exists
+ *
+ * Notes:
+ *   - Uses jump_to(JUMP_SAVE) for marked location navigation
+ *   - No movement cost for marked location jumps
+ *   - Requires previous use of mark/save location command
+ *   - Clears special display modes for clean navigation
+ */
 int
 do_mjump PARM_0(void)
 {
@@ -1024,7 +1568,31 @@ do_mjump PARM_0(void)
   return(0);
 }
 
-/* DO_SJUMP -- Go to the specified sector */
+/*
+ * do_sjump - Jump to user-specified sector coordinates
+ *
+ * Resets display modes and prompts user for X,Y coordinates to jump to.
+ * Provides direct navigation to any known sector location. Validates
+ * destination visibility before allowing the jump.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - Resets pager mode to 0 (normal display)
+ *   - Resets selector mode to 0 (normal selection)
+ *   - Prompts user for X,Y coordinate input
+ *   - Changes map cursor position to specified coordinates
+ *   - Centers map display around target location
+ *   - Shows error if destination is not visible
+ *
+ * Notes:
+ *   - Uses jump_to(JUMP_PICK) for coordinate-based navigation
+ *   - No movement cost for coordinate jumps
+ *   - Requires knowledge of destination coordinates
+ *   - Visibility validation prevents jumping to unknown sectors
+ *   - Clears special display modes for clean navigation
+ */
 int
 do_sjump PARM_0(void)
 {
@@ -1035,7 +1603,35 @@ do_sjump PARM_0(void)
   return(0);
 }
 
-/* DO_RELOGIN -- Attempt to login as another nation */
+/*
+ * do_relogin - Switch to playing as a different nation
+ *
+ * Allows authorized users to change nations during gameplay. Handles
+ * authentication, file locking, data reloading, and complete session
+ * transfer. Restricted by security settings and requires proper passwords.
+ * Performs complete cleanup of old session and initialization of new one.
+ *
+ * Returns:
+ *   0 - Always returns 0 (operation complete or failed)
+ *
+ * Side Effects:
+ *   - Prompts for new nation selection and password
+ *   - Validates authentication and access permissions
+ *   - Closes current nation session (files, locks, data)
+ *   - Reloads all game data for new nation context
+ *   - Reinitializes display, visibility, and positioning
+ *   - Moves map cursor to new nation's capital
+ *   - Updates all global nation context variables
+ *
+ * Notes:
+ *   - Security restricted: requires god/demigod privileges
+ *   - Validates nation passwords and login permissions
+ *   - Prevents concurrent logins via file locking
+ *   - Complete session transfer with data reload
+ *   - Supports both encryption and plain-text passwords
+ *   - Falls back to map center for god mode or monsters
+ *   - Critical for administrative access and testing
+ */
 int
 do_relogin PARM_0(void)
 {
@@ -1159,7 +1755,30 @@ do_relogin PARM_0(void)
   return(0);
 }
 
-/* AINFO_HELP -- Provide help on the army unit types */
+/*
+ * ainfo_help - Display comprehensive army unit type information
+ *
+ * Provides detailed help information about army unit types including
+ * combat statistics, costs, special properties, and magic requirements.
+ * Supports both single unit queries and comprehensive unit reports.
+ * Creates temporary files for complete unit type documentation.
+ *
+ * Side Effects:
+ *   - Displays interactive unit type selection interface
+ *   - May create temporary help file for comprehensive reports
+ *   - Shows detailed unit statistics and capabilities
+ *   - Uses paging system for large reports
+ *   - Cleans up temporary files after display
+ *
+ * Notes:
+ *   - Static helper function for do_help() army type option
+ *   - Supports "*" input for all unit types report
+ *   - Single unit display shows in-place help
+ *   - Comprehensive report uses temporary file and pager
+ *   - Includes combat stats, costs, traits, and magic requirements
+ *   - Validates unit availability for current nation class
+ *   - Shows special properties like leadership and monster status
+ */
 static void
 ainfo_help PARM_0(void)
 {
@@ -1398,7 +2017,35 @@ ainfo_help PARM_0(void)
 
 }
 
-/* DO_HELP -- Provide the player with some documentation */
+/*
+ * do_help - Interactive help system for game documentation
+ *
+ * Comprehensive help interface providing access to army types, key bindings,
+ * command lists, trade goods, help files, and version information. Uses
+ * menu-driven selection to provide context-sensitive documentation and
+ * reference materials for all game systems.
+ *
+ * Returns:
+ *   TRUE - User requested quick exit (space/enter)
+ *   FALSE - Help session completed normally
+ *
+ * Side Effects:
+ *   - Displays interactive help topic selection menu
+ *   - May launch various help subsystems (army types, key binds, etc.)
+ *   - May display help files via paging system
+ *   - May create temporary help files for complex topics
+ *   - Forces screen redraw for some help topics
+ *
+ * Notes:
+ *   - Central help system entry point
+ *   - Supports multiple help categories and file types
+ *   - Key binding help shows function mappings and descriptions
+ *   - Army type help provides detailed unit information
+ *   - Trade goods help shows economic system details
+ *   - Command list creates comprehensive function reference
+ *   - File-based help uses external documentation files
+ *   - Menu navigation via single character selection
+ */
 int
 do_help PARM_0(void)
 {
@@ -1605,7 +2252,25 @@ do_help PARM_0(void)
   return(FALSE);
 }
 
-/* DO_IGNORE -- Ignore the keystrokes */
+/*
+ * do_ignore - No-operation function for disabled key bindings
+ *
+ * Placeholder function that performs no action when called. Used for
+ * key bindings that should be disabled or ignored without removing
+ * the binding entirely. Provides safe null operation capability.
+ *
+ * Returns:
+ *   0 - Always returns 0 (no movement cost)
+ *
+ * Side Effects:
+ *   - None - intentionally performs no actions
+ *
+ * Notes:
+ *   - Used for temporarily disabling key functions
+ *   - Prevents accidental command execution
+ *   - Maintains key binding structure while nullifying effect
+ *   - Useful for conditional command availability
+ */
 int
 do_ignore PARM_0(void)
 {
@@ -1613,7 +2278,32 @@ do_ignore PARM_0(void)
   return(0);
 }
 
-/* CAMP_INFO -- display information about current data file */
+/*
+ * camp_info - Display comprehensive campaign configuration information
+ *
+ * Shows detailed information about the current game world configuration
+ * including map parameters, combat settings, economic factors, and
+ * administrative settings. Provides two-column display of world data
+ * essential for understanding game mechanics and balance.
+ *
+ * Returns:
+ *   0 - Always returns 0 after user acknowledgment
+ *
+ * Side Effects:
+ *   - Clears screen and displays comprehensive campaign data
+ *   - Forces full screen redraw for information display
+ *   - Waits for user keypress before returning
+ *   - Shows different information levels based on god status
+ *
+ * Notes:
+ *   - Essential reference for game configuration
+ *   - Two-column layout maximizes information density
+ *   - Includes world generation parameters, combat settings
+ *   - Shows economic factors, population mechanics
+ *   - Displays current turn and administrative settings
+ *   - God mode shows additional technical parameters
+ *   - Critical for understanding game balance and mechanics
+ */
 int
 camp_info PARM_0(void)
 {
