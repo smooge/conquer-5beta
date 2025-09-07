@@ -4,7 +4,7 @@
 **Current Phase**: Priority 4 (Game Content) - IN PROGRESS
 
 ## Session Summary
-Successfully completed npcA.c documentation with all 6 functions comprehensively documented, including NPC AI routing system, intelligent army movement algorithms, and sophisticated sector evaluation for strategic positioning.
+Successfully completed sectorA.c documentation with all 19 functions comprehensively documented, including sector ownership calculations, siege mechanics, reachability pathfinding, population fleeing dynamics, and the comprehensive two-pass warfare resolution algorithm.
 
 ## Current Progress
 
@@ -13,9 +13,10 @@ Successfully completed npcA.c documentation with all 6 functions comprehensively
 - **Priority 2**: I/O and Data Management (9/9 files) ✅
 - **Priority 3**: User Interface (8/8 files) ✅ **COMPLETE!**
 
-### Priority 4: Game Content (2/8 files completed) 🚧
+### Priority 4: Game Content (3/8 files completed) 🚧
 1. ✅ **monsterA.c** - Monster/NPC behavior system (9 functions) - COMPLETED!
 2. ✅ **npcA.c** - NPC management and AI system (6 functions) - COMPLETED!
+3. ✅ **sectorA.c** - Sector ownership and siege system (19 functions) - COMPLETED!
 
 ### Priority 3: User Interface (8/8 files completed) ✅
 1. ✅ **mainG.c** - Main game interface and command processing (3 functions)
@@ -28,44 +29,50 @@ Successfully completed npcA.c documentation with all 6 functions comprehensively
 8. ✅ **magicG.c** - Magic system interface (25 functions) - COMPLETED!
 
 ## Key Accomplishments Last Session
-- Completed ALL 6 functions in npcA.c with comprehensive documentation
-- Analyzed magicA.c (found minimal - only 17 lines with copyright header)
-- Documented complete NPC AI routing and management system:
-  * cpu_update(): Computer nation AI framework (placeholder for full strategy)
-  * move_for_ntn(): Main entry point routing nations to appropriate AI behaviors
-  * rover_value(): Sector valuation system for intelligent army movement
-  * build_rove(): Neighborhood value accumulator for strategic positioning
-  * rove_loopfunc(): Dual-optimization sector evaluation algorithm
-  * rove_army(): Three-tier intelligent army movement system
-- Analyzed sophisticated AI routing system for monster vs normal nations
-- Covered dual optimization strategy: individual sector value vs neighborhood potential
-- Documented three-tier army movement: stay put, strategic movement, random fallback
-- Explained data structures: NPCINFO_STRUCT, TARGET_STRUCT for military statistics
-- Analyzed probabilistic decision making and movement mode handling
-- Created clean git commit: Complete comprehensive documentation for npcA.c
+- Completed ALL 19 functions in sectorA.c with comprehensive documentation
+- Documented complete sector ownership and siege calculation system:
+  * Military summary structures: MILSUM_STRUCT and SCTSUM_STRUCT for warfare aggregation
+  * Memory management: crt_milsum(), crt_sctsum(), sctsum_free() with comprehensive cleanup
+  * Search functions: sctsum_byloc(), milsum_byowner() for efficient data retrieval
+  * Sorting system: sort_milsum() with insertion sort for military strength prioritization
+  * Capture mechanics: men_to_capture(), capture_land() with population effects and city transfers
+  * Reachability system: align_xdiff(), next_checkp(), set_reach(), get_reach(), change_reach()
+  * Population dynamics: flee_people(), flee_find(), flee_run() for civilian displacement
+  * Relocation system: set_relocation(), adj_reloc() for population movement validation
+  * Master warfare: upd_capture() implementing two-pass algorithm for turn-based combat resolution
+- Analyzed sophisticated two-pass algorithm: military aggregation → ownership resolution
+- Covered diplomatic considerations in capture/siege calculations (Allied/Treaty vs Belligerent)
+- Documented reachability pathfinding with 11x11 local coordinate system and map wrapping
+- Explained population fleeing mechanics with casualty rates and friendly destination selection
+- Analyzed city transfer mechanics, capital capture bonuses, and devastation effects
+- Documented capture ratios, siege requirements, and population resistance calculations
+- Created clean git commit: Complete comprehensive documentation for sectorA.c
 
 ## Next Session Preparation
-- **PRIORITY 4 PROGRESS!** 🚧 2/8 Priority 4 files completed
+- **PRIORITY 4 PROGRESS!** 🚧 3/8 Priority 4 files completed
 - **Target**: Continue with remaining Priority 4 (Game Content) files
 - **Strategy**: Continue one-file-per-session approach for Priority 4
-- **Focus**: Next files: sectorA.c (Sector management), adduserA.c (User registration), jointA.c (Multi-player)
-- **Achievement**: 27 files documented, 324+ functions analyzed
+- **Focus**: Next files: adduserA.c (User registration), jointA.c (Multi-player), mailA.c (In-game messaging)
+- **Achievement**: 28 files documented, 343+ functions analyzed
 
 ## Technical Notes
-npcA.c represents the complete NPC management and AI system with:
-- 6 functions: 1 main entry point + 1 AI framework + 4 rover movement functions
-- Sophisticated AI routing system dispatching nations to appropriate behavior handlers
-- Dual-optimization army movement algorithm (individual vs neighborhood value)
-- Three-tier movement decision system: stay put, strategic, random fallback
-- Data structures for military statistics (NPCINFO_STRUCT) and targeting (TARGET_STRUCT)
-- Intelligent sector valuation using attract_val() with ownership filtering
-- Probabilistic decision making between individual and neighborhood optimization
-- Movement mode handling for flying vs ground units with safety validations
-- Framework for comprehensive AI strategy (currently placeholder via #ifdef NOT_DONE)
-- Integration with monster AI functions (upd_lizards, upd_savages, upd_nomads, upd_pirates)
+sectorA.c represents the complete sector ownership and siege system with:
+- 19 functions: 6 static helpers + 13 public functions for comprehensive warfare resolution
+- Military summary data structures: MILSUM_STRUCT (nation strength) and SCTSUM_STRUCT (sector aggregation)
+- Two-pass algorithm: 1) Traverse armies aggregating military data, 2) Process summaries for resolution
+- Sophisticated capture mechanics: TAKE_RATIO strength requirements + men_to_capture() population thresholds
+- Comprehensive siege system: 2:1 ratio requirement for cities with diplomatic considerations
+- Advanced reachability pathfinding: 11x11 local coordinate system with recursive flood-fill algorithm
+- Population dynamics: fleeing civilians with allied/neutral destination prioritization and casualty rates
+- City transfer mechanics: inventory preservation, name conflict resolution, capital capture bonuses
+- Diplomatic integration: Allied/Treaty assistance vs Belligerent+ opposition in capture calculations
+- Map topology handling: cylindrical world wrapping via align_xdiff() for accurate distance calculations
+- Memory management: comprehensive cleanup via sctsum_free() preventing leaks in turn processing
+- Devastation effects: >50% casualties trigger farm destruction and MIN_DEVASTATED flags
+- News generation: detailed battle reports for captures, sieges, and resistance outcomes
 
-Previous session: monsterA.c (9 functions) - Monster behavior with terrain preferences and growth
+Previous sessions: monsterA.c (9 functions), npcA.c (6 functions) - Monster behavior and NPC AI systems
 
-## Files Documented: 27 total, 324+ functions
+## Files Documented: 28 total, 343+ functions
 **PRIORITY 4 GAME CONTENT PROGRESS!** 🚧
-2/8 Priority 4 files complete. Next: sectorA.c, adduserA.c, or jointA.c.
+3/8 Priority 4 files complete. Next: adduserA.c, jointA.c, or mailA.c.
