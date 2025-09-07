@@ -17,7 +17,36 @@
 #include "dataG.h"
 #include "keyvalsX.h"
 
-/* PARSE -- interpret pending or upcoming keyboard input */
+/*
+ * parse - Interpret pending or upcoming keyboard input
+ *
+ * Main entry point for processing keyboard input in the global interface.
+ * Reads keyboard input, looks up the associated function in the key binding
+ * system, and executes the bound function. If no valid key binding is found,
+ * displays an error message and waits for user acknowledgment.
+ *
+ * This function serves as the primary keyboard event dispatcher for the
+ * main game interface, routing all keyboard input through the customizable
+ * key binding system.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Reads keyboard input through parse_keys()
+ *   - Executes bound functions via function pointer calls
+ *   - Displays error messages for unknown key bindings
+ *   - May modify screen display (error messages, function execution effects)
+ *
+ * Notes:
+ *   - Uses global cq_bindings for key binding lookups
+ *   - Error messages displayed on bottom line of screen
+ *   - Blocks until user acknowledges unknown key binding errors
+ *   - Function pointer execution may have wide-ranging side effects
+ */
 void
 parse PARM_0(void)
 {
@@ -297,7 +326,32 @@ KEYSYS_STRUCT global_keysys = {
 /* pointer to the list of key bindings */
 KLIST_PTR cq_bindings = NULL;
 
-/* NUM_BINDINGS -- Report the the number of keys bound to a function */
+/*
+ * num_bindings - Report the number of keys bound to a function
+ *
+ * Counts how many different key combinations are bound to the specified
+ * function pointer. This is useful for determining if a function has
+ * multiple key bindings or if it's unbound entirely.
+ *
+ * Iterates through the entire key binding list and counts all entries
+ * that point to the specified function. This provides a measure of
+ * redundancy in the key binding system.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to the head of the key binding list to search
+ *   f_ptr - Function pointer to count bindings for
+ *
+ * Returns:
+ *   Integer count of key bindings for the specified function (0 if none)
+ *
+ * Side Effects:
+ *   None - read-only operation
+ *
+ * Notes:
+ *   - Linear search through entire key binding list
+ *   - Returns 0 if function has no key bindings
+ *   - Used for validation and key binding management interfaces
+ */
 int
 num_bindings PARM_2(KLIST_PTR, klist_ptr, FNCI, f_ptr)
 {
@@ -313,7 +367,35 @@ num_bindings PARM_2(KLIST_PTR, klist_ptr, FNCI, f_ptr)
   return(count);
 }
 
-/* SORT_KEYS -- Re-sort the entire key binding list */
+/*
+ * sort_keys - Re-sort the entire key binding list
+ *
+ * Sorts the key binding linked list in lexicographic order by key sequence
+ * strings. Uses a bubble sort algorithm to repeatedly scan through the list
+ * and swap adjacent elements that are out of order.
+ *
+ * The sorting ensures that key bindings are stored in a predictable order,
+ * which is essential for proper key clash detection and consistent key
+ * binding validation. Sorted order also improves lookup performance and
+ * provides consistent display ordering in configuration interfaces.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to pointer to the head of the key binding list
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies the order of elements in the key binding linked list
+ *   - May update the head pointer if the first element changes position
+ *
+ * Notes:
+ *   - Uses bubble sort algorithm (O(n²) complexity)
+ *   - Handles empty lists and single-element lists efficiently
+ *   - Preserves all key binding data, only reorders nodes
+ *   - Essential for key clash detection algorithm to work correctly
+ *   - Head pointer may be modified if first element moves
+ */
 void
 sort_keys PARM_1(KLIST_PTR *, klist_ptr)
 {
@@ -356,7 +438,37 @@ sort_keys PARM_1(KLIST_PTR *, klist_ptr)
   }
 }
 
-/* KEYS_CLASH -- Does a key binding clash? */
+/*
+ * keys_clash - Does a key binding clash? (STATIC FUNCTION)
+ *
+ * Determines if two key binding strings would conflict with each other.
+ * A clash occurs when one key sequence is a prefix of another, which would
+ * create ambiguity in the key parsing system.
+ *
+ * For example, "a" and "ab" would clash because when the user types "a",
+ * the system wouldn't know whether to execute the "a" command immediately
+ * or wait for more characters to see if it's "ab".
+ *
+ * The function compares two key strings character by character and detects
+ * prefix relationships in either direction.
+ *
+ * Parameters:
+ *   s1 - First key binding string to compare
+ *   s2 - Second key binding string to compare
+ *
+ * Returns:
+ *   TRUE if the key bindings clash (one is prefix of other)
+ *   FALSE if the key bindings are distinct and non-conflicting
+ *
+ * Side Effects:
+ *   None - read-only comparison operation
+ *
+ * Notes:
+ *   - Static function, internal to this module
+ *   - Essential for key binding validation system
+ *   - Prevents ambiguous key binding configurations
+ *   - Used by check_keys() for comprehensive validation
+ */
 static int
 keys_clash PARM_2(char *, s1, char *, s2)
 {
@@ -388,7 +500,38 @@ keys_clash PARM_2(char *, s1, char *, s2)
   return(FALSE);
 }
 
-/* CHECK_KEYS -- Verify that the key bindings are set properly */
+/*
+ * check_keys - Verify that the key bindings are set properly
+ *
+ * Comprehensive validation function for key binding configurations.
+ * Performs multiple checks to ensure the key binding system is consistent,
+ * complete, and free of conflicts. This is essential for maintaining a
+ * stable and predictable user interface.
+ *
+ * The function performs three main validation checks:
+ * 1. Key clash detection - ensures no key sequences conflict with each other
+ * 2. Function validation - verifies all bound functions exist in the parse table
+ * 3. Completeness check - ensures all required functions have key bindings
+ *
+ * Parameters:
+ *   l_of_keys - Pointer to pointer to the key binding list to validate
+ *   key_info - Key system information structure containing parse table and counts
+ *
+ * Returns:
+ *   Number of errors found (0 indicates valid configuration)
+ *
+ * Side Effects:
+ *   - Sorts the key binding list for consistent validation order
+ *   - Displays error messages for any validation failures found
+ *   - May modify key binding list order due to sorting
+ *
+ * Notes:
+ *   - Critical validation function for key binding system integrity
+ *   - Must be called after any key binding modifications
+ *   - Error messages provide specific details for troubleshooting
+ *   - Allows functions to have multiple key bindings (not an error)
+ *   - Used during configuration loading and interactive key binding
+ */
 int
 check_keys PARM_2(KLIST_PTR *, l_of_keys, KEYSYS_STRUCT, key_info)
 {
@@ -469,7 +612,35 @@ check_keys PARM_2(KLIST_PTR *, l_of_keys, KEYSYS_STRUCT, key_info)
   return(num_bad);
 }
 
-/* FIND_FUNC -- Return the pointer to the function information */
+/*
+ * find_func - Return the pointer to the function information
+ *
+ * Searches through a parse table to find the function information structure
+ * that corresponds to a given function pointer. This is used to look up
+ * function names, descriptions, and other metadata associated with a
+ * function pointer.
+ *
+ * The function performs a linear search through the parse table array,
+ * comparing function pointers until a match is found or the entire table
+ * has been searched.
+ *
+ * Parameters:
+ *   f_ptr - Function pointer to search for in the parse table
+ *   p_list - Array of parse structures to search through
+ *   maxnum - Maximum number of entries in the parse table array
+ *
+ * Returns:
+ *   Pointer to matching PARSE_STRUCT if found, NULL if not found
+ *
+ * Side Effects:
+ *   None - read-only search operation
+ *
+ * Notes:
+ *   - Linear search algorithm (O(n) complexity)
+ *   - Used for reverse lookup of function metadata
+ *   - Essential for key binding configuration interfaces
+ *   - Returns pointer to actual parse table entry, not a copy
+ */
 PARSE_PTR
 find_func PARM_3(FNCI, f_ptr, PARSE_PTR, p_list, int, maxnum)
 {
@@ -484,7 +655,34 @@ find_func PARM_3(FNCI, f_ptr, PARSE_PTR, p_list, int, maxnum)
   return((PARSE_PTR) NULL);
 }
 
-/* FIND_KEYS -- Locate a key binding from within the list */
+/*
+ * find_keys - Locate a key binding from within the list
+ *
+ * Searches through the key binding linked list to find a specific key
+ * binding by its key sequence string. This is used to check if a particular
+ * key sequence is already bound to a function or to retrieve an existing
+ * binding for modification.
+ *
+ * The function performs a linear search through the linked list, comparing
+ * the key sequence strings until an exact match is found or the end of
+ * the list is reached.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to the head of the key binding list to search
+ *   kstr - Key sequence string to search for (null-terminated)
+ *
+ * Returns:
+ *   Pointer to matching key binding node if found, NULL if not found
+ *
+ * Side Effects:
+ *   None - read-only search operation
+ *
+ * Notes:
+ *   - Linear search through linked list (O(n) complexity)
+ *   - Uses exact string matching (case-sensitive)
+ *   - Returns pointer to actual list node, not a copy
+ *   - Used for key binding lookup and modification operations
+ */
 KLIST_PTR
 find_keys PARM_2(KLIST_PTR, klist_ptr, char *, kstr)
 {
@@ -499,7 +697,37 @@ find_keys PARM_2(KLIST_PTR, klist_ptr, char *, kstr)
   return(tmp_ptr);
 }
 
-/* BIND_KEYS -- Attach a key binding to the list */
+/*
+ * bind_keys - Attach a key binding to the list
+ *
+ * Creates a new key binding node and adds it to the front of the key binding
+ * linked list. Allocates memory for the new binding, copies the key sequence
+ * string, stores the function pointer, and links it into the list.
+ *
+ * The new binding is added at the head of the list for efficiency. The list
+ * can be sorted later if needed for validation or display purposes.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to pointer to the head of the key binding list
+ *   kstr - Key sequence string to bind (copied into new node)
+ *   f_ptr - Function pointer to associate with the key sequence
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Allocates memory for new key binding node
+ *   - Modifies the key binding list by adding new node at head
+ *   - Updates head pointer to point to new node
+ *   - Program terminates on memory allocation failure
+ *
+ * Notes:
+ *   - Memory allocation failure causes program termination
+ *   - New binding is added at list head (O(1) insertion)
+ *   - Key string is copied, not referenced
+ *   - No validation of duplicate bindings performed here
+ *   - Head pointer is modified to point to new node
+ */
 void
 bind_keys PARM_3(KLIST_PTR *, klist_ptr, char *, kstr, FNCI, f_ptr)
 {
@@ -520,7 +748,38 @@ bind_keys PARM_3(KLIST_PTR *, klist_ptr, char *, kstr, FNCI, f_ptr)
   (*klist_ptr) = tmp_kptr;
 }
 
-/* GET_KEYS -- Read in a list of keys to be bound */
+/*
+ * get_keys - Read in a list of keys to be bound
+ *
+ * Interactive function that prompts the user to enter a key sequence for
+ * binding purposes. Provides a full-featured key entry interface with
+ * editing capabilities including backspace, restart, and escape quoting.
+ *
+ * The function displays help text and prompts, then reads keys one by one
+ * until the user presses Enter to finish. Special editing keys are handled
+ * for user convenience, and a backslash can be used to quote special
+ * characters.
+ *
+ * Parameters:
+ *   pr_str - Prompt string to display to user (e.g., "Bind", "Unbind")
+ *   out_str - Output buffer to store the entered key sequence
+ *
+ * Returns:
+ *   Number of characters in the entered key sequence (0 if empty)
+ *
+ * Side Effects:
+ *   - Displays prompt and help text on screen
+ *   - Reads from keyboard and displays entered characters
+ *   - Modifies screen display during key entry process
+ *   - Stores result in provided output buffer
+ *
+ * Notes:
+ *   - Interactive function requiring user input
+ *   - Supports editing operations (backspace, restart, quote)
+ *   - Maximum key sequence length limited by MAXKEYS
+ *   - Backslash (\) can quote any character including special keys
+ *   - Enter or Return terminates key sequence entry
+ */
 int
 get_keys PARM_2(char *, pr_str, char *, out_str)
 {
@@ -581,7 +840,38 @@ get_keys PARM_2(char *, pr_str, char *, out_str)
   return(count);
 }
 
-/* RM_KEYS -- Remove a key from the list */
+/*
+ * rm_keys - Remove a key from the list
+ *
+ * Searches for a specific key binding in the linked list and removes it
+ * if found. Handles proper linked list node deletion including updating
+ * pointers and freeing memory. The function safely handles removal from
+ * any position in the list.
+ *
+ * The function performs a linear search to find the matching key binding,
+ * then unlinks the node from the list and frees its memory. Special care
+ * is taken to handle removal of the head node.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to pointer to the head of the key binding list
+ *   kstr - Key sequence string to remove from the list
+ *
+ * Returns:
+ *   1 if key binding was found and removed, 0 if not found
+ *
+ * Side Effects:
+ *   - Removes matching node from the linked list
+ *   - Frees memory allocated to the removed node
+ *   - May update head pointer if first node is removed
+ *   - Updates link pointers to maintain list integrity
+ *
+ * Notes:
+ *   - Safe removal from any position in linked list
+ *   - Properly handles head node removal
+ *   - Memory is freed to prevent leaks
+ *   - Returns success/failure indicator
+ *   - Used for unbinding key sequences
+ */
 int
 rm_keys PARM_2(KLIST_PTR *, klist_ptr, char *, kstr)
 {
@@ -609,7 +899,40 @@ rm_keys PARM_2(KLIST_PTR *, klist_ptr, char *, kstr)
   return(1);
 }
 
-/* INIT_KEYS -- Initialize all of the key bindings */
+/*
+ * init_keys - Initialize all of the key bindings
+ *
+ * Initializes a key binding list from a static array of default bindings.
+ * Clears any existing bindings first, then creates new bindings from the
+ * provided array. The resulting list is sorted for proper validation and
+ * lookup operations.
+ *
+ * This function is typically used during program startup to establish
+ * default key bindings or when resetting key bindings to defaults.
+ * It ensures a clean slate by freeing existing bindings before creating
+ * new ones.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to pointer to the key binding list head
+ *   kbind_list - Array of default key binding structures to copy
+ *   numbind - Number of bindings in the default array
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Frees existing key binding list if present
+ *   - Allocates memory for new key binding nodes
+ *   - Creates new linked list from array data
+ *   - Sorts the resulting key binding list
+ *
+ * Notes:
+ *   - Always clears existing bindings first
+ *   - Creates fresh list from static array data
+ *   - Automatically sorts list after creation
+ *   - Used for establishing default key bindings
+ *   - Memory allocation failures cause program termination
+ */
 void
 init_keys PARM_3(KLIST_PTR *, klist_ptr, KBIND_PTR, kbind_list, int, numbind)
 {
@@ -632,7 +955,36 @@ init_keys PARM_3(KLIST_PTR *, klist_ptr, KBIND_PTR, kbind_list, int, numbind)
   sort_keys(klist_ptr);
 }
 
-/* FREE_KEYS -- Free up the memory of the key bindings */
+/*
+ * free_keys - Free up the memory of the key bindings
+ *
+ * Deallocates all memory used by a key binding linked list. Traverses the
+ * entire list and frees each node, setting the head pointer to NULL when
+ * complete. This prevents memory leaks when key binding lists are no
+ * longer needed.
+ *
+ * The function safely handles empty lists and ensures all nodes are
+ * properly freed. After completion, the list head pointer is NULL and
+ * the list is ready for reuse or program termination.
+ *
+ * Parameters:
+ *   klist_ptr - Pointer to pointer to the head of the key binding list
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Frees all memory allocated to key binding nodes
+ *   - Sets head pointer to NULL
+ *   - Destroys the entire linked list structure
+ *
+ * Notes:
+ *   - Safe to call on empty lists (NULL head pointer)
+ *   - Sets head pointer to NULL when complete
+ *   - Used during cleanup and reinitialization
+ *   - Essential for preventing memory leaks
+ *   - List is unusable after this function completes
+ */
 void
 free_keys PARM_1(KLIST_PTR *, klist_ptr)
 {
@@ -649,7 +1001,39 @@ free_keys PARM_1(KLIST_PTR *, klist_ptr)
   }
 }
 
-/* PARSE_KEYS -- Find a function from the given key list */
+/*
+ * parse_keys - Find a function from the given key list (COMPLEX FUNCTION)
+ *
+ * Core key parsing engine that reads keyboard input and matches it against
+ * the key binding list to find the associated function. Handles multi-key
+ * sequences by continuing to read input until a complete match is found
+ * or no possible matches remain.
+ *
+ * The algorithm uses a stateful approach to handle prefix matching. If the
+ * current input is a prefix of one or more key bindings, it continues
+ * reading more keys. If an exact match is found, it returns the associated
+ * function pointer. If no matches are possible, it returns NULL.
+ *
+ * Parameters:
+ *   klist_ptr - Head of the key binding list to search
+ *   echo_key - Whether to echo typed keys to the screen (TRUE/FALSE)
+ *
+ * Returns:
+ *   Function pointer if matching key binding found, NULL if no match
+ *
+ * Side Effects:
+ *   - Reads keyboard input character by character
+ *   - May echo keystrokes to screen if echo_key is TRUE
+ *   - Updates global 'string' variable with the key sequence
+ *   - Blocks until complete key sequence is determined
+ *
+ * Notes:
+ *   - Core parsing engine for the entire key binding system
+ *   - Handles multi-character key sequences intelligently
+ *   - Uses goto for state management (prefix detection)
+ *   - Critical for main input processing loop
+ *   - Global 'string' contains the final key sequence
+ */
 FNCI
 parse_keys PARM_2(KLIST_PTR, klist_ptr, int, echo_key)
 {
@@ -710,7 +1094,35 @@ parse_keys PARM_2(KLIST_PTR, klist_ptr, int, echo_key)
   return((FNCI) NULL);
 }
 
-/* FUNC_MATCH -- Return the matching function given the string name */
+/*
+ * func_match - Return the matching function given the string name
+ *
+ * Searches through a parse table to find a function by its string name.
+ * This is used to convert function names (as they appear in configuration
+ * files or user input) back to function pointers for key binding operations.
+ *
+ * The function performs a linear search through the parse table array,
+ * comparing the realname field of each entry until an exact match is found
+ * or the entire table has been searched.
+ *
+ * Parameters:
+ *   namestr - Function name string to search for (null-terminated)
+ *   p_list - Array of parse structures to search through
+ *   maxnum - Maximum number of entries in the parse table array
+ *
+ * Returns:
+ *   Function pointer if matching function name found, NULL if not found
+ *
+ * Side Effects:
+ *   None - read-only search operation
+ *
+ * Notes:
+ *   - Linear search algorithm (O(n) complexity)
+ *   - Used for configuration file parsing and interactive key binding
+ *   - Enables function name to function pointer conversion
+ *   - Case-sensitive string matching
+ *   - Essential for text-based configuration systems
+ */
 FNCI
 func_match PARM_3(char *, namestr, PARSE_PTR, p_list, int, maxnum)
 {
@@ -725,7 +1137,38 @@ func_match PARM_3(char *, namestr, PARSE_PTR, p_list, int, maxnum)
   return((FNCI) NULL);
 }
 
-/* ALIGN_GLOBAL_KEYS -- Align all of the global keys */
+/*
+ * align_global_keys - Align all of the global keys
+ *
+ * Initializes the global key binding system if it hasn't been set up yet.
+ * This function sets up the global key binding structures, calculates array
+ * sizes, and creates the initial key binding list from the default bindings.
+ *
+ * The function is idempotent - it only initializes the system if the global
+ * key binding list is NULL. This ensures the key binding system is ready
+ * for use but doesn't reinitialize if already set up.
+ *
+ * This is typically called during program startup to ensure the global
+ * key binding system is properly initialized before any key parsing begins.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Initializes global_keysys structure with array sizes
+ *   - Creates global cq_bindings list from default bindings
+ *   - Sets up the entire global key binding system
+ *
+ * Notes:
+ *   - Idempotent function - safe to call multiple times
+ *   - Only initializes if cq_bindings is NULL
+ *   - Calculates array sizes using sizeof operations
+ *   - Essential setup function for the key binding system
+ *   - Must be called before any key parsing operations
+ */
 void
 align_global_keys PARM_0(void)
 {
