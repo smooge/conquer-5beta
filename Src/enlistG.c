@@ -1,3 +1,46 @@
+/*
+ * enlistG.c - Unit Enlistment and Creation Interface
+ *
+ * This module provides comprehensive functionality for creating and managing
+ * military units, naval fleets, and trade caravans through an interactive
+ * interface system. It handles all aspects of unit creation including resource
+ * validation, cost calculation, crew recruitment, and unit initialization.
+ *
+ * Core Functionality:
+ * - Army unit enlistment with type selection and size determination
+ * - Naval fleet construction with ship type and size configuration
+ * - Caravan creation for trade and transportation operations
+ * - Unit upgrading capabilities for existing military forces
+ * - Remote agent recruitment for espionage operations
+ * - Resource cost calculation and validation systems
+ *
+ * Unit Creation Features:
+ * - Interactive unit type selection with availability checking
+ * - Intelligent crew recruitment with population constraints
+ * - Material cost calculation with sector and magic adjustments
+ * - Unit merging capabilities for combining existing forces
+ * - Starting status and efficiency assignment based on conditions
+ * - Supply level initialization and crew allocation
+ *
+ * Economic Integration:
+ * - Material cost validation against available resources
+ * - Population recruitment from cities and sectors
+ * - Mercenary hiring with global availability tracking
+ * - Supply cost calculation for operational readiness
+ * - Resource deduction and inventory management
+ *
+ * Validation and Security:
+ * - Ownership verification for recruitment locations
+ * - Sector designation requirements for different unit types
+ * - Population availability checking for crew recruitment
+ * - Material availability validation before unit creation
+ * - Unit limit enforcement to prevent resource overflow
+ *
+ * The module integrates with the city management, resource systems,
+ * and unit management subsystems to provide a complete unit creation
+ * experience while maintaining game balance and preventing exploitation.
+ */
+
 /* routines to create armies, navies, and caravans */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
@@ -35,7 +78,42 @@
 static int crew_limit;
 static int food_limit;
 
-/* UPGRADE_ARMY -- Upgrade the army unit */
+/*
+ * upgrade_army - Upgrade existing army unit to higher technology level
+ *
+ * Transforms an existing army unit to a more advanced type through
+ * retraining and equipment upgrades. Handles material cost calculation,
+ * population adjustment for training losses, and unit type transition.
+ *
+ * Process:
+ * - Validates selected army unit exists and is accessible
+ * - Presents available upgrade options based on city capabilities
+ * - Calculates material costs using upgrade cost formulas
+ * - Handles partial recruitment for certain unit types
+ * - Deducts materials from city inventory and immediate stores
+ * - Updates unit type and resets movement points
+ *
+ * Parameters:
+ *   None (uses global army_ptr for selected unit)
+ *
+ * Returns:
+ *   None (void function with early returns on validation failure)
+ *
+ * Side Effects:
+ *   - Modifies selected army unit type and characteristics
+ *   - Deducts materials from city stores (CITY_MTRLS, CITY_IMTRLS)
+ *   - May reduce unit size for units with half-recruitment penalty
+ *   - Returns excess personnel to sector population
+ *   - Resets unit movement points to zero
+ *   - Triggers display updates for material and unit changes
+ *
+ * Notes:
+ *   - Requires expert mode confirmation for cost display
+ *   - Half-recruitment warning for applicable unit types
+ *   - God mode bypasses all cost and recruitment restrictions
+ *   - Uses set_upgcosts() for upgrade cost calculation
+ *   - Integrates with city material adjustment macros
+ */
 static void
 upgrade_army PARM_0(void)
 {
@@ -125,7 +203,48 @@ upgrade_army PARM_0(void)
   }
 }
 
-/* REMOTE_ENLIST -- Enlist a spy class unit from another population */
+/*
+ * remote_enlist - Create espionage unit from foreign population
+ *
+ * Recruits a single spy or intelligence unit from another nation's
+ * population using available materials near the target location.
+ * Handles special recruitment mechanics for covert operations.
+ *
+ * Process:
+ * - Presents spy unit type selection menu (type 3 recruitment)
+ * - Calculates material costs for single-unit recruitment
+ * - Validates material availability in player inventory
+ * - Creates new army unit with spy characteristics
+ * - Initializes unit with defensive status and minimal efficiency
+ *
+ * Unit Initialization:
+ * - Creates single-man unit (size = 1)
+ * - Sets high efficiency (95%) for professional agents
+ * - Assigns defensive status and normal speed
+ * - Places at current map coordinates
+ * - Provides full supply level and zero movement points
+ * - Sets maximum efficiency to 100%
+ *
+ * Parameters:
+ *   None (operates on global game state)
+ *
+ * Returns:
+ *   None (void function with early returns on failure)
+ *
+ * Side Effects:
+ *   - Creates new army unit in nation's army list
+ *   - Deducts recruitment costs from player materials
+ *   - Displays unit creation confirmation message
+ *   - Updates army creation statistics and triggers recalculation
+ *   - Sets army_ptr to newly created unit
+ *
+ * Notes:
+ *   - Used for recruiting agents in foreign territories
+ *   - God mode bypasses all cost and validation checks
+ *   - Single unit only - no quantity selection available
+ *   - High starting efficiency reflects professional training
+ *   - Requires available materials near recruitment location
+ */
 static void
 remote_enlist PARM_0(void)
 {
@@ -215,7 +334,62 @@ remote_enlist PARM_0(void)
   AADJSTAT;
 }
 
-/* ENLIST_ARMY -- Enlist an army unit in the current sector */
+/*
+ * enlist_army - Create new army unit or expand existing forces
+ *
+ * Comprehensive army recruitment system that handles unit type selection,
+ * size determination, cost calculation, and unit creation or expansion.
+ * Supports normal recruitment, mercenary hiring, and unit combination.
+ *
+ * Recruitment Process:
+ * - Interactive unit type selection with availability validation
+ * - Quantity determination with population and resource constraints
+ * - Material cost calculation with sector and magic adjustments
+ * - Optional unit combining with existing compatible forces
+ * - Unit initialization with appropriate status and characteristics
+ *
+ * Unit Type Handling:
+ * - Scout units: Fixed single-man size with high efficiency (95%)
+ * - Mercenary units: Minimum 10-man groups with siege restrictions
+ * - Undead units: Maximum efficiency (100%) supernatural forces
+ * - Regular units: Variable size with moderate efficiency (75%)
+ * - Half-recruitment penalty for certain unit types
+ *
+ * Cost and Resource Management:
+ * - Material cost validation against city inventory
+ * - Population recruitment from city and sector pools
+ * - Mercenary hiring from global mercenary availability
+ * - Supply level calculation based on unit composition
+ * - Efficiency blending for combined units
+ *
+ * Unit Initialization:
+ * - Location assignment to current coordinates
+ * - Status assignment based on sector conditions (siege, garrison)
+ * - Speed and movement point initialization
+ * - Supply and efficiency level calculation
+ * - Group coordination for grouped units
+ *
+ * Parameters:
+ *   None (operates on global game state and user input)
+ *
+ * Returns:
+ *   None (void function with early returns on validation failure)
+ *
+ * Side Effects:
+ *   - Creates new army unit or expands existing unit
+ *   - Deducts materials and population from city/sector
+ *   - Updates global mercenary usage counter
+ *   - Triggers army sorting and hex recalculation
+ *   - Sets army_ptr to created or modified unit
+ *   - Updates all relevant display elements
+ *
+ * Notes:
+ *   - Most complex recruitment function with extensive validation
+ *   - Supports both new unit creation and existing unit expansion
+ *   - Handles special cases for scouts, mercenaries, and undead
+ *   - Integrates with siege mechanics and group coordination
+ *   - Expert mode controls cost confirmation display
+ */
 static void
 enlist_army PARM_0(void)
 {
@@ -488,7 +662,68 @@ enlist_army PARM_0(void)
   hex_recalc();
 }
 
-/* ENLIST_NAVY -- Enlist a navy unit in the current sector */
+/*
+ * enlist_navy - Construct naval fleet with ships and crew
+ *
+ * Comprehensive naval construction system that builds ships of specified
+ * types and sizes, recruits crews, and manages fleet creation or expansion.
+ * Handles complex resource calculations and fleet composition management.
+ *
+ * Ship Construction Process:
+ * - Interactive ship type selection from available naval units
+ * - Size determination based on port capabilities (light/medium/heavy)
+ * - Quantity specification with fleet size limitations
+ * - Material and crew cost calculation with adjustments
+ * - Optional fleet combination with existing naval units
+ *
+ * Port Requirements:
+ * - Stockade: Light ships only (coastal vessels)
+ * - Town: Medium ships maximum (river and coastal ports)
+ * - City+: Heavy ships allowed (major naval shipyards)
+ * - God mode: All sizes available regardless of location
+ *
+ * Resource Management:
+ * - Wood and talon costs based on ship type and size
+ * - Crew recruitment from local population pools
+ * - Food supply calculation for operational readiness
+ * - Supply maintenance cost integration
+ * - Sector and magic cost adjustments
+ *
+ * Fleet Composition:
+ * - Ship count limits per type and size (N_MASK maximum)
+ * - Crew level averaging for fleet composition
+ * - Supply level blending for mixed fleets
+ * - Galley passenger capacity management
+ * - Fleet status and movement coordination
+ *
+ * Construction Validation:
+ * - Port designation requirements for ship construction
+ * - Population availability for crew recruitment
+ * - Material availability with food supply alternatives
+ * - Fleet unit limits and composition restrictions
+ * - Combat status compatibility for fleet merging
+ *
+ * Parameters:
+ *   None (operates on global game state and user input)
+ *
+ * Returns:
+ *   None (void function with early returns on validation failure)
+ *
+ * Side Effects:
+ *   - Creates new naval fleet or expands existing fleet
+ *   - Deducts materials, crew, and supplies from city/sector
+ *   - Updates fleet ship composition and characteristics
+ *   - Resets fleet movement points and adjusts status
+ *   - Triggers hex recalculation for map updates
+ *   - Sets navy_ptr to created or modified fleet
+ *
+ * Notes:
+ *   - Most resource-intensive unit creation function
+ *   - Complex ship size and type interaction system
+ *   - Supports both new fleet creation and existing fleet expansion
+ *   - Handles multiple ship types within single fleet
+ *   - Expert mode controls detailed cost confirmation
+ */
 static void
 enlist_navy PARM_0(void)
 {
@@ -812,7 +1047,67 @@ enlist_navy PARM_0(void)
   hex_recalc();
 }
 
-/* ENLIST_CVN -- Enlist a carvan in the current sector */
+/*
+ * enlist_cvn - Create trade caravan for transportation and commerce
+ *
+ * Constructs wagon-based caravans for trade operations, resource transport,
+ * and civilian movement. Handles wagon construction, crew recruitment,
+ * and caravan initialization with supply management.
+ *
+ * Caravan Construction Process:
+ * - Quantity selection for wagon sets (WAGONS_IN_CVN per set)
+ * - Crew recruitment with population availability checking
+ * - Material cost calculation for construction and supplies
+ * - Optional caravan combination with existing units
+ * - Unit initialization with appropriate status and characteristics
+ *
+ * Resource Requirements:
+ * - Fixed talon cost per wagon set (CARAVANCOST)
+ * - Wood requirements for wagon construction (CARAVANWOOD)
+ * - Crew recruitment from local population (MAXCVNCREW per set)
+ * - Food supplies for operational readiness
+ * - Maintenance cost calculation for supply sustainability
+ *
+ * Cost Adjustments:
+ * - Sector-based construction cost modifications
+ * - Magic system cost adjustments for enhanced construction
+ * - Food supply alternatives when resources are limited
+ * - Supply maintenance integration for operational costs
+ *
+ * Caravan Characteristics:
+ * - Crew level averaging for combined caravans
+ * - Passenger capacity management for civilian transport
+ * - Supply level calculation based on crew and wagon ratios
+ * - Status assignment based on sector conditions (siege/supply)
+ * - Movement limitation during construction phase
+ *
+ * Unit Management:
+ * - Size tracking in wagon sets for capacity calculation
+ * - Crew and supply level blending for merged caravans
+ * - Status coordination with sector siege conditions
+ * - Population deduction from both city and sector pools
+ *
+ * Parameters:
+ *   None (operates on global game state and user input)
+ *
+ * Returns:
+ *   None (void function with early returns on validation failure)
+ *
+ * Side Effects:
+ *   - Creates new caravan or expands existing caravan
+ *   - Deducts materials, crew, and supplies from city/sector
+ *   - Updates caravan size and crew characteristics
+ *   - Resets movement points and sets appropriate status
+ *   - Triggers hex recalculation for map updates
+ *   - Sets cvn_ptr to created or modified caravan
+ *
+ * Notes:
+ *   - Civilian-focused unit creation with trade emphasis
+ *   - Supports both new caravan creation and expansion
+ *   - Lower supply requirements compared to military units
+ *   - God mode allows arbitrary caravan assignment
+ *   - Expert mode controls cost confirmation display
+ */
 static void
 enlist_cvn PARM_0(void)
 {
@@ -1031,7 +1326,73 @@ enlist_cvn PARM_0(void)
   hex_recalc();
 }
 
-/* ENLIST -- Select whether to enlist armies, navies or caravans */
+/*
+ * enlist - Main unit creation interface and coordination function
+ *
+ * Primary entry point for all unit creation activities. Provides interactive
+ * menu system for selecting unit types and coordinates the creation process
+ * across armies, navies, and caravans. Handles location validation,
+ * upgrade opportunities, and post-creation unit selection.
+ *
+ * Interface Flow:
+ * - Location and ownership validation for recruitment
+ * - City designation requirement checking
+ * - Upgrade opportunity assessment for existing units
+ * - Interactive unit type selection menu
+ * - Delegation to appropriate creation functions
+ * - Automatic unit selection after successful creation
+ *
+ * Location Requirements:
+ * - On-map coordinates for recruitment location
+ * - Sector ownership by player nation (except god mode)
+ * - City designation required for normal recruitment
+ * - Visibility requirements for sector access
+ * - Harbor designation required for naval construction
+ *
+ * Unit Type Options:
+ * - Army units: Available in all cities and recruitment centers
+ * - Caravans: Available in all cities for trade operations
+ * - Naval units: Available only in harbors and with god privileges
+ * - Remote recruitment: Available in foreign cities with resources
+ *
+ * Upgrade System:
+ * - Automatic upgrade opportunity detection
+ * - Interactive upgrade confirmation for existing units
+ * - Material requirement validation for upgrades
+ * - Alternative to new unit creation when applicable
+ *
+ * God Mode Capabilities:
+ * - Bypass location and ownership restrictions
+ * - Nation selection interface for administrative operations
+ * - Enhanced unit creation options and limitations removal
+ * - Automatic god mode reset after operations
+ *
+ * Post-Creation Management:
+ * - Automatic unit selection for immediate interaction
+ * - Movement cost assessment for recruitment actions
+ * - Display updates and map recalculation
+ * - Unit list sorting and organization
+ *
+ * Parameters:
+ *   None (operates on global game state and user input)
+ *
+ * Returns:
+ *   int - Movement cost for recruitment action (MOVECOST) or 0 for no action
+ *
+ * Side Effects:
+ *   - May create new military, naval, or caravan units
+ *   - Updates current unit selection to newly created unit
+ *   - Triggers hex recalculation and display updates
+ *   - Modifies nation resources and population levels
+ *   - May enter god mode temporarily for administrative operations
+ *
+ * Notes:
+ *   - Central coordination point for all unit creation
+ *   - Integrates with upgrade, recruitment, and selection systems
+ *   - Handles both normal and remote recruitment scenarios
+ *   - Provides consistent interface across all unit types
+ *   - Returns movement cost to maintain turn-based mechanics
+ */
 int
 enlist PARM_0(void)
 {
