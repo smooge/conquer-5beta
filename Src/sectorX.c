@@ -1,4 +1,58 @@
-/* Routines concerning sector adjustment and reading are in this file */
+/*
+ * sectorX.c - Sector Management and Resource System
+ *
+ * This file contains the core sector management system for the Conquer game,
+ * handling sector designations, resource calculations, production/consumption,
+ * validation, and economic modeling. It provides the foundation for the
+ * game's economic and construction systems.
+ *
+ * KEY FUNCTIONAL AREAS:
+ *
+ * 1. DESIGNATION VALIDATION:
+ *    - majdesg_costs() / desg_ok() - Major designation validation and costing
+ *    - mindesg_costs() / mindesg_ok() - Minor designation validation and costing
+ *    - Complex validation rules for terrain, ownership, resources, special cases
+ *
+ * 2. RESOURCE MANAGEMENT:
+ *    - find_resources() - Collect available resources from cities/navies/caravans
+ *    - take_resources() / send_resources() - Resource redistribution system
+ *    - fr_accume() / tr_consume() - Resource accumulation and consumption helpers
+ *
+ * 3. ECONOMIC PRODUCTION:
+ *    - sector_produce() - Calculate sector production output (food, metals, jewels, wood, taxes)
+ *    - sector_consume() - Calculate sector consumption needs (food, materials, support)
+ *    - Seasonal production variations, population effects, minor designation bonuses
+ *
+ * 4. TERRAIN EVALUATION:
+ *    - tofood() / towood() - Calculate food/wood production potential by nation
+ *    - tg_ok() - Trade good visibility and exploitation validation
+ *    - Nation-specific bonuses (racial traits, magical powers, trade goods)
+ *
+ * 5. DEFENSIVE CALCULATIONS:
+ *    - fort_val() - Fortification defensive value calculation
+ *    - defense_val() - Terrain-based defensive bonuses
+ *    - exposure_value() - Environmental exposure calculations for troops
+ *
+ * 6. RESOURCE VALUE EXTRACTION:
+ *    - metal_value() / jewel_value() / magic_value() - Extract resource values
+ *    - getmetal() / getjewel() / getspell() - Assign resource types to sectors
+ *    - s_uselevel() - Calculate sector usage efficiency
+ *
+ * 7. SPECIAL UTILITIES:
+ *    - is_habitable() - Determine if sector can support population
+ *    - sct_cost_adjust() - Apply sector-specific cost modifications
+ *    - distort_vision() - Apply magical vision distortion effects
+ *    - rand_sector() - Generate random sector within range
+ *
+ * TECHNICAL NOTES:
+ * - Extensive use of global variables for current nation, turn, and game state
+ * - Heavy integration with data tables (maj_dinfo, min_dinfo, veg_info, ele_info)
+ * - Complex magical system integration for bonuses and special abilities
+ * - Sophisticated resource supply chain modeling with range calculations
+ * - Seasonal and environmental effects on production and consumption
+ * - Multi-layered validation system preventing invalid constructions
+ * - Dynamic cost adjustment based on location, ownership, and magical effects
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -29,7 +83,35 @@
 #include "statusX.h"
 #include "tgoodsX.h"
 
-/* MAJDESG_COSTS -- Calculate the resource price to build a selection */
+/*
+ * majdesg_costs - Calculate resource costs for major sector designation
+ *
+ * Computes the material costs required to build or change a sector's major
+ * designation (e.g., farm, city, mine). Costs depend on the current and
+ * target designations, existing minor designations, and magical cost
+ * adjustments. Returns an item structure containing the required materials.
+ *
+ * Parameters:
+ *   which - Target major designation index (0 to MAJ_NUMBER-1)
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector
+ *   verbal - Unused parameter (marked ARGSUSED)
+ *
+ * Returns:
+ *   ITEM_PTR - Allocated item structure with cost breakdown by material type
+ *   NULL - If invalid parameters provided
+ *
+ * Side Effects:
+ *   - Allocates memory via new_item() that caller must free
+ *   - Applies magical cost adjustments via mgk_cost_adjust()
+ *   - Uses global designation info arrays (maj_dinfo, min_dinfo)
+ *
+ * Notes:
+ *   - Cost calculation includes existing minor designations that remain
+ *   - Multiplier difference between old and new designation affects cost
+ *   - Magic powers can reduce material costs
+ *   - Returned item has coordinates set to sector location
+ */
 ITEM_PTR
 majdesg_costs PARM_4(int, which, int, x, int, y, int, verbal)
 {
@@ -77,7 +159,31 @@ majdesg_costs PARM_4(int, which, int, x, int, y, int, verbal)
   return(cost_ptr);
 }
 
-/* DGOK_OWNCHECK -- Looks for unowned land */
+/*
+ * dgok_owncheck - Check sector ownership for bridge construction validation
+ *
+ * Static helper function used during bridge construction validation to
+ * check if neighboring sectors are owned by the current nation. Counts
+ * non-water sectors and sets global flag if unowned land is found.
+ * Used by map_loop() to validate bridge placement requirements.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to check
+ *   y - Y coordinate of sector to check
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Increments global_long for each non-water sector
+ *   - Sets global_int to TRUE if sector not owned by current nation
+ *   - Uses global 'country' variable for ownership comparison
+ *
+ * Notes:
+ *   - Only counts land sectors (altitude != ELE_WATER)
+ *   - Called by map_loop() during bridge construction validation
+ *   - Bridge requires ownership of all neighboring land sectors
+ */
 static
 void dgok_owncheck PARM_2(int, x, int, y)
 {
@@ -89,7 +195,37 @@ void dgok_owncheck PARM_2(int, x, int, y)
   }
 }
 
-/* DESG_OK -- Determine if the major designation is valid for the sector */
+/*
+ * desg_ok - Validate major sector designation change request
+ *
+ * Comprehensive validation function that checks if a major designation change
+ * is legal and feasible for a given sector. Validates terrain compatibility,
+ * resource requirements, ownership constraints, special building rules, and
+ * material costs. This is the primary gatekeeper for sector development.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector  
+ *   dtype - Target major designation type (MAJ_* constant)
+ *   verbal - TRUE to display error messages, FALSE for silent validation
+ *
+ * Returns:
+ *   TRUE - Designation change is valid and can proceed
+ *   FALSE - Designation change is invalid or not affordable
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - Calls majdesg_costs() and find_resources() to check affordability
+ *   - Uses map_loop() for bridge construction validation
+ *   - May perform complex validation logic for specific designations
+ *
+ * Notes:
+ *   - God players (is_god) bypass most restrictions
+ *   - Bridge construction requires ownership of neighboring land
+ *   - Cities must be devastated before changing to resource extraction
+ *   - Validates food support, population requirements, and terrain limits
+ *   - Checks material costs and resource availability within range
+ */
 int
 desg_ok PARM_4(int, x, int, y, int, dtype, int, verbal)
 {
@@ -345,7 +481,29 @@ desg_ok PARM_4(int, x, int, y, int, dtype, int, verbal)
   return(TRUE);
 }
 
-/* WATER_NEARBY -- Determine if water is in a sector */
+/*
+ * water_nearby - Check for water in neighboring sector (helper function)
+ *
+ * Static helper function used by map_loop() to detect water sectors in
+ * the vicinity. Sets global_int to TRUE if the specified sector contains
+ * water. Used primarily for harbor construction validation.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to check
+ *   y - Y coordinate of sector to check
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global_int to TRUE if sector altitude is ELE_WATER
+ *   - Called by map_loop() during harbor placement validation
+ *
+ * Notes:
+ *   - Simple water detection for proximity checks
+ *   - Used to ensure harbors have access to water
+ *   - Part of the map traversal validation system
+ */
 static void
 water_nearby PARM_2(int, x, int, y)
 {
@@ -354,7 +512,31 @@ water_nearby PARM_2(int, x, int, y)
   }
 }
 
-/* CANAL_NEARBY -- Determine if a canal is in a nearby sector */
+/*
+ * canal_nearby - Check for owned canal in neighboring sector (helper function)
+ *
+ * Static helper function used by map_loop() to detect canals owned by the
+ * current nation in neighboring sectors. Sets global_int to TRUE if an
+ * owned canal is found. Used for harbor construction validation when
+ * direct water access is not available.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to check
+ *   y - Y coordinate of sector to check
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global_int to TRUE if owned canal found
+ *   - Uses global 'country' variable for ownership comparison
+ *   - Called by map_loop() during harbor placement validation
+ *
+ * Notes:
+ *   - Canals can provide water access for harbors in landlocked areas
+ *   - Only canals owned by the current nation are considered valid
+ *   - Part of the complex harbor placement validation system
+ */
 static void
 canal_nearby PARM_2(int, x, int, y)
 {
@@ -364,7 +546,37 @@ canal_nearby PARM_2(int, x, int, y)
   }
 }
 
-/* MINDESG_COSTS -- Compute the cost for the minor designation */
+/*
+ * mindesg_costs - Calculate resource costs for minor sector designation
+ *
+ * Computes material costs required to add minor designations to a sector
+ * (e.g., fortifications, harbors, trading posts). Costs vary based on
+ * the major designation's multiplier, special location factors, and
+ * magical adjustments. Handles special pricing for harbors without
+ * water access and fortification level costs.
+ *
+ * Parameters:
+ *   which - Minor designation index (0 to MIN_NUMBER-1)
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector
+ *   verbal - TRUE to display error messages for validation failures
+ *
+ * Returns:
+ *   ITEM_PTR - Allocated item structure with cost breakdown
+ *   NULL - If invalid parameters or validation failures
+ *
+ * Side Effects:
+ *   - Allocates memory via new_item() that caller must free
+ *   - May use map_loop() to check water proximity for harbors
+ *   - Applies sector and magical cost adjustments
+ *   - May display error messages if verbal is TRUE
+ *
+ * Notes:
+ *   - Harbor costs quadruple if no water access available
+ *   - Fortification costs scale with current fortress level
+ *   - Devastation rebuilding costs are halved
+ *   - Uses citybyloc() for city-specific validations
+ */
 ITEM_PTR
 mindesg_costs PARM_4(int, which, int, x, int, y, int, verbal)
 {
@@ -467,7 +679,38 @@ mindesg_costs PARM_4(int, which, int, x, int, y, int, verbal)
   return(cost_ptr);
 }
 
-/* MINDESG_OK -- Check if a minor designation is valid for a sector */
+/*
+ * mindesg_ok - Validate minor sector designation change request
+ *
+ * Validates whether a minor designation can be added to a sector. Checks
+ * compatibility with major designation, resource requirements, special
+ * constraints (e.g., harbor water access), and affordability. Handles
+ * special cases like devastation, fortification levels, and seasonal
+ * restrictions for granaries.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector
+ *   mdtype - Minor designation type index (0 to MIN_NUMBER-1)
+ *   verbal - TRUE to display error messages, FALSE for silent validation
+ *
+ * Returns:
+ *   TRUE - Minor designation change is valid and can proceed
+ *   FALSE - Minor designation change is invalid or not affordable
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - Calls mindesg_costs() and find_resources() for cost validation
+ *   - May use map_loop() for harbor water access validation
+ *   - Checks current game turn for seasonal restrictions
+ *
+ * Notes:
+ *   - God players bypass most restrictions except parameter validation
+ *   - Harbors require water access or canal connectivity
+ *   - Granaries must be built before harvest season (month 8)
+ *   - Fortifications have maximum level limits (MAXFORTVAL)
+ *   - Some constructions are restricted by major designation type
+ */
 int
 mindesg_ok PARM_4(int, x, int, y, int, mdtype, int, verbal)
 {
@@ -612,7 +855,35 @@ mindesg_ok PARM_4(int, x, int, y, int, mdtype, int, verbal)
   return(TRUE);
 }
 
-/* FR_ACCUME -- accumulation routine */
+/*
+ * fr_accume - Accumulate resources from supply centers (helper function)
+ *
+ * Static helper function that accumulates resources from various supply
+ * sources (cities, navies, caravans) into a single item structure. Creates
+ * a new item structure if needed, or adds to an existing one. Handles
+ * special talon/jewel conversion for monetary calculations.
+ *
+ * Parameters:
+ *   i_ptr - Existing item pointer to accumulate into (NULL to create new)
+ *   stash_ptr - Array of material quantities to add
+ *   xloc - X coordinate for the accumulated item location
+ *   yloc - Y coordinate for the accumulated item location
+ *
+ * Returns:
+ *   ITEM_PTR - Updated or newly created item with accumulated resources
+ *   Original i_ptr if stash_ptr is NULL
+ *
+ * Side Effects:
+ *   - May allocate new item via new_item() if i_ptr is NULL
+ *   - Increments itemid counter for tracking number of sources
+ *   - Converts jewels to talons (10:1 ratio) for monetary calculations
+ *
+ * Notes:
+ *   - Used by find_resources() to combine multiple supply sources
+ *   - Special handling for talons includes jewel value conversion
+ *   - Item coordinates set to specified location
+ *   - Counter (itemid) tracks number of contributing sources
+ */
 static ITEM_PTR
 fr_accume PARM_4(ITEM_PTR, i_ptr, itemtype *, stash_ptr, int, xloc, int, yloc)
 {
@@ -647,7 +918,37 @@ fr_accume PARM_4(ITEM_PTR, i_ptr, itemtype *, stash_ptr, int, xloc, int, yloc)
   return(i_ptr);
 }
 
-/* FIND_RESOURCES -- Build an item_struct holding all nearby resources */
+/*
+ * find_resources - Collect all available resources within range of location
+ *
+ * Searches all cities, navies, and caravans within supply range of the
+ * specified location and accumulates their available resources into a
+ * single item structure. Used for construction cost validation and
+ * resource availability calculations. Range calculations consider unit
+ * types and supply status.
+ *
+ * Parameters:
+ *   xloc - X coordinate of location needing resources
+ *   yloc - Y coordinate of location needing resources
+ *   insect_only - TRUE to limit range to zero (same sector only)
+ *
+ * Returns:
+ *   ITEM_PTR - Allocated item with total available resources
+ *   NULL - If no resources found within range
+ *
+ * Side Effects:
+ *   - Allocates memory via fr_accume() that caller must free
+ *   - Uses global ntn_ptr to access current nation's units
+ *   - Checks supply status of navies and caravans
+ *   - Uses map_within() for distance calculations
+ *
+ * Notes:
+ *   - City range based on r10_region() calculation
+ *   - Navy/caravan range uses NVSPLYDIST or COMM_I_RANGE
+ *   - Only counts units in supply status
+ *   - Naval units must match water/land terrain of target location
+ *   - Used extensively for construction validation
+ */
 ITEM_PTR
 find_resources PARM_3(int, xloc, int, yloc, int, insect_only)
 {
@@ -997,7 +1298,34 @@ send_resources PARM_4(int, xloc, int, yloc, ITEM_PTR, give_ptr, int, insect)
   return(FALSE);
 }
 
-/* FORT_VAL -- Compute the fortification value of a sector */
+/*
+ * fort_val - Calculate defensive fortification value of sector
+ *
+ * Computes the total fortification value of a sector based on city
+ * fortress levels, fortification minor designations, and walls. Used
+ * for combat calculations to determine defensive bonuses. Different
+ * sector types provide different base defensive values.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector
+ *
+ * Returns:
+ *   int - Total fortification value (0 or positive integer)
+ *
+ * Side Effects:
+ *   - Uses global sct_tptr for sector access
+ *   - Accesses global world.np array for nation data
+ *   - Calls citybyloc() to find city structures
+ *
+ * Notes:
+ *   - City fortress value multiplied by 10 for base defense
+ *   - Fortified cities get doubled value plus 10 bonus
+ *   - Walls provide base 20 defense, doubled if fortified
+ *   - All fortified sectors get additional 10 defense bonus
+ *   - Returns 0 for unowned or invalid sectors
+ *   - Critical for combat system defensive calculations
+ */
 int
 fort_val PARM_2(int, x, int, y)
 {
@@ -1224,7 +1552,35 @@ tg_ok PARM_2( SCT_PTR, sptr, int, nation )
   return(TRUE);
 }
 
-/* TOFOOD -- Compute the food value of a sector */
+/*
+ * tofood - Calculate food production value of sector for specific nation
+ *
+ * Computes the food production potential of a sector based on vegetation,
+ * elevation, nation-specific racial bonuses, magical powers, and trade
+ * goods. This is a fundamental function for economic calculations and
+ * habitability assessment. Different races and magical powers provide
+ * bonuses in specific terrain types.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to evaluate
+ *   cntry - Nation index for racial and magical bonuses
+ *
+ * Returns:
+ *   int - Food production value (0 or positive integer)
+ *
+ * Side Effects:
+ *   - Read-only operation, no modifications made
+ *   - Accesses global world.np array for nation data
+ *
+ * Notes:
+ *   - Base value from vegetation and elevation tables
+ *   - Dervish/Destroyer magic enables desert/ice cultivation
+ *   - Amphibian magic provides jungle/swamp bonuses
+ *   - Botany magic increases all food production
+ *   - Elves (woodwinter races) get forest bonuses and barren penalties
+ *   - Fishing and farming trade goods add production bonuses
+ *   - Returns 0 for sectors that cannot support life
+ */
 int
 tofood PARM_2(SCT_PTR, sptr, int, cntry)
 {
@@ -1276,7 +1632,33 @@ tofood PARM_2(SCT_PTR, sptr, int, cntry)
   return( foodvalue );
 }
 
-/* TOWOOD -- Compute the lumber value of a sector */
+/*
+ * towood - Calculate wood production value of sector for specific nation
+ *
+ * Computes the wood/lumber production potential of a sector based on
+ * vegetation, elevation, magical bonuses, and trade goods. Used for
+ * lumberyard production calculations and construction material sourcing.
+ * Simpler than food calculation with fewer nation-specific modifiers.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to evaluate
+ *   cntry - Nation index for magical bonuses
+ *
+ * Returns:
+ *   int - Wood production value (0 or positive integer)
+ *
+ * Side Effects:
+ *   - Read-only operation, no modifications made
+ *   - Accesses global world.np array for nation data
+ *
+ * Notes:
+ *   - Base value from vegetation and elevation tables
+ *   - Botany magic increases wood production
+ *   - Lumber trade goods provide significant bonuses
+ *   - Negative base values are clamped to 0 for safety
+ *   - Less complex than food calculation (no racial modifiers)
+ *   - Used primarily for lumberyard designation validation and production
+ */
 int
 towood PARM_2(SCT_PTR, sptr, int, cntry)
 {
@@ -1385,7 +1767,37 @@ metal_value PARM_1(SCT_PTR, sptr)
   return(hold);
 }
 
-/* SECTOR_PRODUCE -- Calculate all of the production ability */
+/*
+ * sector_produce - Calculate sector production output for current turn
+ *
+ * Computes all production output for a sector based on its designation,
+ * population, seasonal factors, minor designations, and magical bonuses.
+ * Handles different production types (food, metals, jewels, wood) and
+ * calculates taxable income. Updates mineral depletion for extraction
+ * sectors. Core function of the economic simulation.
+ *
+ * Parameters:
+ *   xloc - X coordinate of the sector
+ *   yloc - Y coordinate of the sector
+ *   out_ptr - Output structure to fill with production data
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Fills out_ptr with calculated production values
+ *   - May decrement sector mineral reserves for mines
+ *   - Uses global variables for turn, country, and adjustment tracking
+ *   - May set global adjustment flags for mineral depletion
+ *
+ * Notes:
+ *   - Production varies by season using maj_dinfo production tables
+ *   - Working population calculated via poptoworkers()
+ *   - Minor designations provide multiplier bonuses (mills, blacksmiths)
+ *   - Natural production bonuses for populous sectors (>100 people)
+ *   - Tax value calculated based on designation and production amount
+ *   - Mineral depletion probability based on population excess
+ */
 void
 sector_produce PARM_3(int, xloc, int, yloc, SHEET_PTR, out_ptr)
 {
@@ -1504,7 +1916,37 @@ sector_produce PARM_3(int, xloc, int, yloc, SHEET_PTR, out_ptr)
   }
 }
 
-/* SECTOR_CONSUME -- Calculate all of the sector needs */
+/*
+ * sector_consume - Calculate sector resource consumption for current turn
+ *
+ * Computes all resource consumption needs for a sector based on its
+ * designation, population, minor designations, and seasonal factors.
+ * Handles food consumption, maintenance costs, and support costs for
+ * various constructions. Applies cost adjustments for devastated sectors
+ * and magical effects.
+ *
+ * Parameters:
+ *   xloc - X coordinate of the sector
+ *   yloc - Y coordinate of the sector
+ *   out_ptr - Output structure to fill with consumption data
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Fills out_ptr with calculated consumption values
+ *   - Applies sector and magical cost adjustments
+ *   - Uses global variables for turn, country, and nation eat rate
+ *
+ * Notes:
+ *   - Food consumption based on population and NTN_D_EATRATE
+ *   - Farms with granaries are self-sufficient in winter
+ *   - Major designation determines base maintenance costs
+ *   - Minor designations add support costs scaled by multiplier
+ *   - Devastated sectors have reduced costs (1/4) except food and jewels
+ *   - Seasonal factors affect food requirements for certain designations
+ *   - Applies sector-specific cost adjustments via sct_cost_adjust()
+ */
 void
 sector_consume PARM_3(int, xloc, int, yloc, SHEET_PTR, out_ptr)
 {
