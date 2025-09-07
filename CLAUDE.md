@@ -88,16 +88,71 @@ Before changing a single line of code, establishing a modern, strict, and contro
    - Identify buffer overflows, unsafe string operations, memory leaks
    - Save security issues and remediation plans to `_modernization/claude/reports/SECURITY_FIXES.md`
 
-4. **Testing Infrastructure Analysis**:
+4. **Documentation Assessment**:
+   - Analyze current state of code documentation across all source files
+   - Evaluate documentation quality, coverage, and consistency
+   - Identify files with missing, incomplete, or poor-quality documentation
+   - Assess documentation standards compliance and gaps
+   - Create file prioritization strategy based on complexity and importance
+   - Plan documentation workflow including checkpoint strategy for large files
+   - Save comprehensive findings and strategy to `_modernization/claude/reports/DOCUMENTATION_ASSESSMENT.md`
+
+5. **Testing Infrastructure Analysis**:
    - Analyze existing tests and testing frameworks in the codebase
    - Identify test coverage gaps and recommend appropriate testing infrastructure
    - Design test directory structure to keep tests separate from source code
    - Save detailed findings and testing strategy to `_modernization/claude/reports/TESTING_INFRASTRUCTURE.md`
 
-5. **Project Planning**:
+6. **Project Planning**:
    - Create a comprehensive modernization plan with estimated time to complete
    - Prioritize tasks based on risk and complexity
    - Save plan to `_modernization/claude/reports/MODERNIZATION_PLAN.md`
+
+#### Documentation Assessment Report Template
+
+The `DOCUMENTATION_ASSESSMENT.md` report should include comprehensive analysis of current documentation state and provide actionable improvement strategy. Required sections:
+
+**1. Executive Summary**
+- Overall documentation coverage percentage
+- Quality assessment (Poor/Fair/Good/Excellent)
+- Critical gaps requiring immediate attention
+- Estimated effort to bring to modernization standards
+
+**2. Current Documentation Analysis**
+- **File-by-File Analysis**: Function count, current documentation state, quality rating
+- **Documentation Coverage**: Functions documented vs undocumented per file
+- **Quality Assessment**: Rating documentation completeness, clarity, and usefulness
+- **Standards Compliance**: Adherence to modern C documentation conventions
+- **Common Issues**: Recurring documentation problems across files
+
+**3. Documentation Standards Assessment**
+- **Missing Elements**: Function purpose, parameters, return values, side effects
+- **Legacy Issues**: Outdated comments, unclear descriptions, missing context
+- **Consistency Problems**: Inconsistent formatting, style variations
+- **Technical Debt**: Comments that don't match implementation
+
+**4. File Prioritization Strategy**
+- **Priority Classifications**: Critical, High, Medium, Low based on:
+  - System importance (core engine vs utilities)
+  - Function complexity and count
+  - Current documentation state
+  - Dependencies and call frequency
+- **Session Planning**: Recommended order and checkpoint strategy
+- **Large File Handling**: Files requiring 15-function checkpoint approach
+
+**5. Implementation Strategy**
+- **Documentation Workflow**: Step-by-step process for each file
+- **Quality Standards**: Target documentation format and requirements
+- **Checkpoint Strategy**: When and how to implement 15-function breaks
+- **Progress Tracking**: Metrics and milestones for tracking improvement
+- **Resource Estimation**: Time and effort required per priority group
+
+**6. Risk Assessment**
+- **Knowledge Loss Risk**: Functions with unclear or missing logic documentation
+- **Maintenance Risk**: Poorly documented complex algorithms
+- **Integration Risk**: Undocumented interfaces and dependencies
+
+This assessment becomes the foundation for Phase 4 documentation work and ensures systematic improvement of code documentation quality.
 
 ### Phase 3: Testing Infrastructure Setup 🧪
 
@@ -644,6 +699,7 @@ At the beginning of each project, Claude must create a `_modernization/` directo
    - `_modernization/claude/reports/SYSTEM_ANALYSIS.md`
    - `_modernization/claude/reports/C2023_MODERNIZATION.md`
    - `_modernization/claude/reports/SECURITY_FIXES.md`
+   - `_modernization/claude/reports/DOCUMENTATION_ASSESSMENT.md`
    - `_modernization/claude/reports/TESTING_INFRASTRUCTURE.md`
    - `_modernization/claude/reports/MODERNIZATION_PLAN.md`
 
@@ -758,6 +814,7 @@ Session Export Date: [YYYY-MM-DD HH:MM:SS]
   - `_modernization/claude/reports/SYSTEM_ANALYSIS.md` - Complete system architecture and functionality
   - `_modernization/claude/reports/C2023_MODERNIZATION.md` - Detailed modernization tasks and priorities
   - `_modernization/claude/reports/SECURITY_FIXES.md` - Critical security vulnerabilities and fixes
-  - `_modernization/claude/reports/MODERNIZATION_PLAN.md` - Complete implementation plan
+  - `_modernization/claude/reports/DOCUMENTATION_ASSESSMENT.md` - Current documentation state and improvement strategy
   - `_modernization/claude/reports/TESTING_INFRASTRUCTURE.md` - Comprehensive testing framework and strategy
+  - `_modernization/claude/reports/MODERNIZATION_PLAN.md` - Complete implementation plan
   - `_modernization/claude/reports/FUTURE_DEVELOPMENT.md` - Long-term development roadmap beyond modernization

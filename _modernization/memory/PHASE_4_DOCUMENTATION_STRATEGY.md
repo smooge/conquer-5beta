@@ -125,25 +125,57 @@ Platform-specific and legacy code:
 
 5. **Priority 5E (System/Legacy)** - Platform-specific and standard library code that should be documented last.
 
-## Session Workflow per File
+## Session Workflow per File (15-Function Checkpoint System)
 
 ### 1. Session Start
 - Load this strategy file
 - Check current progress (which file to work on next)
 - Read the target file to understand its functions
+- **Count total functions in file to plan checkpoint strategy**
 
-### 2. Documentation Work
+### 2. Documentation Work (15-Function Checkpoints)
+- **If file has ≤15 functions**: Document all functions in single session
+- **If file has >15 functions**: Implement checkpoint system:
+  - Document functions 1-15
+  - Save partial progress with checkpoint marker
+  - Commit partial work with clear checkpoint message
+  - Update strategy file with checkpoint status
+  - End session and start fresh for next 15 functions
 - Use `document_functions.py` script for initial analysis
 - Manually review and improve all function documentation
-- Focus on quality over speed - one file at a time
+- Focus on quality over speed - maintain documentation quality
 
-### 3. Session End
-- Git commit the documented file
+### 3. Session End Options
+
+#### 3A. Complete File (≤15 functions total)
+- Git commit the fully documented file
 - Update progress in this strategy file
 - Save session memory with next file to work on
 - End session cleanly
 
+#### 3B. Checkpoint Save (>15 functions, partial work)
+- Git commit with checkpoint message: "Checkpoint: [filename] functions 1-15 documented"
+- Update strategy file with checkpoint progress
+- Save session memory with resume instructions
+- End session to preserve context and quality
+
+#### 3C. Resume from Checkpoint
+- Load previous checkpoint from strategy file
+- Continue documentation from where left off
+- Follow same 15-function checkpoint rule if more functions remain
+
 ## Progress Tracking
+
+### Checkpoint System Status 📍
+
+**Active Checkpoints**: None currently
+**Resume Instructions**: N/A
+
+**Checkpoint Format for Large Files**:
+- **unitsX.c**: Expected to be >15 functions - will need checkpoint system
+- Format: `[filename] - Checkpoint [X]: Functions [start-end] documented`
+- Example: `unitsX.c - Checkpoint 1: Functions 1-15 documented`
+- Example: `unitsX.c - Checkpoint 2: Functions 16-30 documented`
 
 ### Completed Files ✅
 
@@ -216,20 +248,25 @@ Platform-specific and legacy code:
 **Priority 5 Progress**: 6/32 files complete (miscX.c, moveX.c already documented; hexmapX.c, magicX.c, selectX.c, sectorX.c completed)
 **Strategy**: Continue with high-impact utility files that support already-documented systems
 
-### Session Metrics Goal
-- Target: 1 file per session
-- Expected: 5-15 functions per file
-- Commit: Immediately after completing file documentation
-- Context preservation: Always maintain clean session boundaries
+### Session Metrics Goal (Updated for Checkpoint System)
+- **Target**: 1 file per session (if ≤15 functions) OR 15 functions per session (if >15 functions)
+- **Expected**: 5-15 functions per session maximum
+- **Quality Focus**: Maintain high documentation quality by preventing context overload
+- **Commit Strategy**: 
+  - Complete files: Immediate commit after full documentation
+  - Large files: Checkpoint commits every 15 functions
+- **Context Preservation**: Always maintain clean session boundaries for optimal quality
 
-## Benefits of This Approach
+## Benefits of This Approach (With 15-Function Checkpoints)
 
-1. **Context Efficiency**: Each session focuses on understanding one file deeply
-2. **Quality Control**: Thorough documentation review without context pressure
-3. **Progress Tracking**: Clear milestones with git commits per file
-4. **Maintainable**: Easy to resume work in any future session
-5. **Risk Mitigation**: No loss of work due to context limits
-6. **Debugging**: Each file can be tested individually if needed
+1. **Context Efficiency**: Each session focuses on understanding functions deeply without overload
+2. **Quality Control**: Thorough documentation review without context pressure - quality maintained throughout
+3. **Progress Tracking**: Clear milestones with git commits per file or checkpoint
+4. **Maintainable**: Easy to resume work in any future session from exact checkpoint
+5. **Risk Mitigation**: No loss of work due to context limits - regular saves preserve progress
+6. **Documentation Quality**: Prevents degradation that occurs when sessions become too long
+7. **Sustainable Workflow**: Consistent high-quality output across all functions regardless of file size
+8. **Debugging**: Each checkpoint can be tested individually if needed
 
 ## Implementation Notes
 
