@@ -1,4 +1,44 @@
-/* File to allow the writing of configuration files */
+/*
+ * customG.c - Configuration File Management and Serialization
+ *
+ * This module provides comprehensive configuration file generation and
+ * management capabilities for the Conquer game system. It handles the
+ * serialization of user preferences, key bindings, display modes, and
+ * game settings to persistent configuration files that can be loaded
+ * on subsequent program runs.
+ *
+ * Key Functionality:
+ * - Configuration file generation with version headers and timestamps
+ * - Key binding serialization for all game subsystems
+ * - Display mode configuration management
+ * - Boolean and numeric option serialization
+ * - Symbol mapping for terrain, vegetation, and designations
+ * - Platform-specific security and permission handling
+ *
+ * The module uses a differential approach, writing only settings that
+ * differ from defaults to keep configuration files minimal and readable.
+ * It supports complex nested configurations like display modes with
+ * focus, style, highlighting, and target specifications.
+ *
+ * Security Considerations:
+ * - Proper file permission management with umask control
+ * - User ID switching on SWITCHID-enabled systems
+ * - Secure file creation with restricted permissions
+ *
+ * Configuration File Structure:
+ * - Header with version and creation information
+ * - Boolean options (with ! prefix for false values)
+ * - Numeric parameters (supply levels, pager settings, zoom)
+ * - Symbol mappings (contour, vegetation, designation)
+ * - Key binding modifications
+ * - Display mode configurations
+ *
+ * Integration Points:
+ * - Works with all key binding subsystems (global, move, email, etc.)
+ * - Interfaces with display system for mode management
+ * - Uses symbol definition arrays for terrain rendering
+ * - Coordinates with options system for preference storage
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -24,7 +64,33 @@
 #include "optionsX.h"
 #include "patchlevel.h"
 
-/* SEND_KEYS -- Send to FILE* keybindings that differ, with identifier */
+/*
+ * send_keys - Write modified key bindings to configuration file
+ *
+ * Compares current key bindings with default bindings and outputs only
+ * the differences to the configuration file. This includes new bindings,
+ * rebound functions, and deleted bindings. The function tracks which
+ * default bindings are found to identify deletions.
+ *
+ * Parameters:
+ *   fp - Open file pointer to write configuration data
+ *   key_info - Key system structure containing default bindings and metadata
+ *   klist_p - Linked list of current key bindings to compare against defaults
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes key binding configuration commands to file
+ *   - Uses global opt_list array for command names
+ *   - Calls form_str() and find_func() utility functions
+ *
+ * Notes:
+ *   - Uses temporary array fnd_kb[] to track which default bindings are found
+ *   - Outputs OPT_BINDKEY for new bindings, OPT_REBIND for changed functions
+ *   - Outputs OPT_UNBIND for deleted default bindings
+ *   - Silently skips bindings if function lookup fails
+ */
 static void
 send_keys PARM_3(FILE *, fp, KEYSYS_STRUCT, key_info, KLIST_PTR, klist_p)
 {
@@ -95,7 +161,32 @@ send_keys PARM_3(FILE *, fp, KEYSYS_STRUCT, key_info, KLIST_PTR, klist_p)
   }
 }
 
-/* TARGET_STR -- Conversion routine to send string from target */
+/*
+ * target_str - Convert target values to configuration-friendly strings
+ *
+ * Converts numeric target values into string representations for writing
+ * to configuration files. Handles different highlight target types including
+ * designations, ownership, and trade goods. Returns static string buffer
+ * that gets overwritten on each call.
+ *
+ * Parameters:
+ *   hstyle - Highlight style type (HI_MINDESG, HI_MAJDESG, HI_OWN, HI_TGOODS)
+ *   value - Numeric value to convert to string representation
+ *
+ * Returns:
+ *   Pointer to static string buffer containing converted value
+ *   Empty string for unknown highlight styles
+ *
+ * Side Effects:
+ *   - Overwrites static output_str buffer on each call
+ *   - Bounds-checks values and defaults to safe values if out of range
+ *
+ * Notes:
+ *   - Uses strcpy() to populate static buffer (legacy string handling)
+ *   - Returns "*" for unowned sectors and no trade goods
+ *   - Accesses global arrays: min_dinfo, maj_dinfo, world.np, tgclass_info
+ *   - Thread-unsafe due to static buffer reuse
+ */
 static char *
 target_str PARM_2(int, hstyle, int, value)
 {
@@ -152,7 +243,33 @@ target_str PARM_2(int, hstyle, int, value)
   return(&(output_str[0]));
 }
 
-/* SEND_DISPLAY -- Create the output of all of the display settings */
+/*
+ * send_display - Write display mode configurations to file
+ *
+ * Serializes all display mode settings by comparing current modes against
+ * default base modes and writing only the differences. Handles both modified
+ * existing modes and completely new modes. Also outputs deleted modes and
+ * the current default display settings.
+ *
+ * Parameters:
+ *   fp - Open file pointer to write display configuration data
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes display mode configuration commands to file
+ *   - Uses temporary array fnd_mode[] to track processed base modes
+ *   - Accesses global arrays: base_modes, hex_list, display_list, highl_list
+ *
+ * Notes:
+ *   - Compares against DMODE_NUMBER base modes for differences
+ *   - Outputs complete configuration for new modes
+ *   - Only outputs changed settings for existing modes
+ *   - Calls target_str() for highlight target values
+ *   - Uses hl_targets() to determine if target output is needed
+ *   - Writes section headers with # comments for organization
+ */
 static void
 send_display PARM_1(FILE *, fp)
 {
@@ -276,7 +393,30 @@ send_display PARM_1(FILE *, fp)
   }
 }
 
-/* ALLKEYS_INIT -- Initialize all of the key bindings at once */
+/*
+ * allkeys_init - Initialize all key binding systems
+ *
+ * Calls alignment functions for all key binding subsystems to ensure
+ * that dynamic key bindings are properly synchronized with their
+ * default configurations. This is typically called during program
+ * startup or when resetting configurations.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Calls align functions for all key binding subsystems
+ *   - May modify global key binding lists
+ *
+ * Notes:
+ *   - Initializes: global, move, xfer, email, reader, magic, ninfo systems
+ *   - Each align function synchronizes that subsystem's key bindings
+ *   - Must be called before key binding systems are used
+ *   - Part of the configuration management initialization sequence
+ */
 void
 allkeys_init PARM_0(void)
 {
@@ -289,7 +429,29 @@ allkeys_init PARM_0(void)
   align_ninfo_keys();
 }
 
-/* ALLKEYS_CHECK -- Check all of the key bindings at once */
+/*
+ * allkeys_check - Validate all key binding systems
+ *
+ * Performs validation checks on all key binding subsystems to detect
+ * conflicts, invalid bindings, or other problems. Returns the total
+ * number of errors found across all subsystems.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Total number of key binding errors found across all subsystems
+ *   0 if all key bindings are valid
+ *
+ * Side Effects:
+ *   - None (read-only validation)
+ *
+ * Notes:
+ *   - Checks: global, move, email, reader, xfer, magic, ninfo systems
+ *   - Each check_keys() call returns error count for that subsystem
+ *   - Should be called after configuration changes to verify validity
+ *   - Part of the configuration validation workflow
+ */
 int
 allkeys_check PARM_0(void)
 {
@@ -307,7 +469,29 @@ allkeys_check PARM_0(void)
   return(hold);
 }
 
-/* WRITE_KEYBINDS -- Write out the keybindings to the customization file */
+/*
+ * write_keybinds - Write all key binding configurations to file
+ *
+ * Outputs configuration data for all key binding subsystems by calling
+ * send_keys() for each system. Writes a section header and then serializes
+ * all modified key bindings for the seven main subsystems.
+ *
+ * Parameters:
+ *   fp - Open file pointer to write key binding configuration data
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes key binding section header and data to file
+ *   - Calls send_keys() for each subsystem
+ *
+ * Notes:
+ *   - Processes: global, email, reader, xfer, magic, mparse, ninfo systems
+ *   - Each send_keys() call handles one subsystem's bindings
+ *   - Part of the complete configuration file generation process
+ *   - Outputs only changed bindings, not complete binding sets
+ */
 static void
 write_keybinds PARM_1(FILE *, fp)
 {
@@ -322,7 +506,36 @@ write_keybinds PARM_1(FILE *, fp)
   send_keys(fp, ninfo_keysys, ni_bindings);
 }
 
-/* WRITE_CUSTOM -- This function writes out the list of currently options */
+/*
+ * write_custom - Generate complete configuration file with current settings
+ *
+ * Creates a comprehensive configuration file containing all current game
+ * settings, including boolean options, numeric parameters, symbol mappings,
+ * key bindings, and display modes. Handles platform-specific security
+ * considerations for file creation and permission management.
+ *
+ * Parameters:
+ *   fname - Filename/path where configuration file should be written
+ *
+ * Returns:
+ *   0 on successful file creation and writing
+ *   -1 on file creation failure
+ *
+ * Side Effects:
+ *   - Creates/overwrites configuration file at specified path
+ *   - Temporarily changes umask for file permissions (non-VMS)
+ *   - May switch user IDs for security on SWITCHID systems
+ *   - Writes comprehensive configuration data
+ *
+ * Notes:
+ *   - Includes version header with creation timestamp
+ *   - Writes boolean options with ! prefix for false values
+ *   - Outputs contour, vegetation, and designation symbol mappings
+ *   - Calls write_keybinds() and send_display() for complex configurations
+ *   - Platform-specific code for VMS, SWITCHID, and SYSV4 systems
+ *   - Uses CUSTOM_UMASK for restrictive file permissions
+ *   - Restores original umask and user ID on completion
+ */
 int
 write_custom PARM_1(char *, fname)
 {
