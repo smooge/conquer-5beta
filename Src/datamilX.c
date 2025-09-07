@@ -1,5 +1,32 @@
-/* Data definitions for military units in the conquer world */
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * datamilX.c - Military Unit Data Management System
+ *
+ * This file defines the complete military unit system for the Conquer game,
+ * including army units, naval vessels, unit traits, combat statuses, and
+ * military class classifications. All military unit balance, capabilities,
+ * and game mechanics are configured through the data structures in this file.
+ *
+ * The military system encompasses:
+ * - Leader units (rulers and special commanders)
+ * - Combat units (infantry, cavalry, archers, siege equipment)
+ * - Special units (scouts, spies, agents, monsters)
+ * - Naval vessels (warships, merchants, galleys, barges)
+ * - Unit traits and special abilities
+ * - Combat and deployment statuses
+ *
+ * Data Structure Organization:
+ * - ainfo_list[]: Complete army unit definitions with stats and abilities
+ * - ninfo_list[]: Naval vessel specifications and capabilities
+ * - stat_info[]: Army status definitions affecting behavior and combat
+ * - traits_list[]: Human-readable descriptions of unit special abilities
+ * - ainfo_clist[]: Military classification categories
+ * - Array sizing variables for dynamic memory management
+ *
+ * Game Balance: All unit costs, combat values, movement rates, and special
+ * abilities are carefully balanced through the numeric parameters in these
+ * data structures. Modifications to this file directly affect game balance.
+ *
+ * conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
  * code and it is our hope that you respect this.  We give permission
@@ -22,11 +49,66 @@
 #include "magicX.h"
 #include "statusX.h"
 
-/* Army Unit Descriptions */
-/* If adding or deleting any types, change DEFAULT_ settings in armyX.h */
+/*
+ * ainfo_list[] - Complete Army Unit Definitions
+ *
+ * This array contains the complete specification for every military unit type
+ * available in the game, organized by military role and power level. Each entry
+ * defines a unit's combat capabilities, costs, special abilities, and game balance.
+ *
+ * Structure: AINFO_STRUCT entries containing:
+ * - Unit names (full, short, display forms)
+ * - Descriptive text explaining the unit's role and characteristics
+ * - Special abilities flags (UP_* constants defining unique capabilities)
+ * - Unit classification (AC_* constants for organizational grouping)
+ * - Combat statistics (hit points, attack, defense, movement)
+ * - Economic costs (recruit cost, upkeep cost, buy cost)
+ * - Unit size and capacity limits
+ * - Monster/magic compatibility flags for summoning and control
+ *
+ * Organization:
+ * 1. Leader Units (18 types): Rulers and commanders with special abilities
+ * 2. Spell Casters (2 types): Magical units with spellcasting capabilities
+ * 3. Monster Units (17 types): Conjurable creatures and fantastic beasts
+ * 4. Normal Army Units (46+ types): Standard military forces and specialists
+ * 5. Scout/Agent Units (8 types): Information gathering and espionage
+ *
+ * Game Balance Notes:
+ * - Unit costs scale with power level and special abilities
+ * - Leaders provide free supply and unique national characteristics
+ * - Monsters offer powerful abilities but high costs
+ * - Normal units form the backbone of military forces
+ * - Scouts and agents provide essential intelligence capabilities
+ *
+ * If adding or deleting any types, change DEFAULT_ settings in armyX.h
+ */
 AINFO_STRUCT ainfo_list[] = {
 
-  /* The list of leader types */
+  /*
+   * Leader Units (18 types) - Rulers and Special Commanders
+   *
+   * Leaders are unique units that define the character and capabilities of
+   * a nation. Most leaders have UP_RULER status, allowing them to control
+   * territory and provide free supply (UP_FREESUPPLY) to other units.
+   * Different leader types represent various governmental and power structures:
+   *
+   * - Feudal: King/Baron (hereditary nobility)
+   * - Imperial: Emperor/Prince (imperial hierarchy)
+   * - Magical: Wizard/Mage (arcane power structure)
+   * - Religious: Pope/Cardinal (theocratic system)
+   * - Naval: Admiral/Captain (maritime power)
+   * - Military: Warlord/Lord (military dictatorship)
+   * - Evil: Demon/Devil, Dragyn/Wyrm, Shadow/Nazgul (monstrous rulers)
+   *
+   * Special Abilities:
+   * - UP_RULER: Can control territory and establish capitals
+   * - UP_FREESUPPLY: Provides free supply to nearby units
+   * - UP_SPELLCAST/UP_FULLCASTER: Magical abilities (Wizard/Mage types)
+   * - UP_UNDEAD: Immunity to certain magical effects (Shadow/Nazgul)
+   *
+   * Game Balance: Leaders have high hit points and moderate combat ability,
+   * but their primary value is strategic rather than tactical.
+   */
   {"King", "King", "King",
      "A noble ruler, whose population follows his hereditary decisions",
      UP_RULER | UP_FREESUPPLY,
@@ -136,7 +218,22 @@ AINFO_STRUCT ainfo_list[] = {
      125, 40, 40, 20, 0L, 0L, 5L, 1, 1,
      0x0L, 0x0L, 0x0L },
 
-  /* The special spell casters */
+  /*
+   * Spell Caster Units (2 types) - Dedicated Magical Support
+   *
+   * These units are specialized magic users that provide spellcasting support
+   * to military forces without the territorial control abilities of Wizard leaders.
+   * They serve as dedicated magical assets for armies.
+   *
+   * - Sorcerer: UP_FULLCASTER allows casting of all spell types with maximum power
+   * - Magician: UP_SPELLCAST provides basic magical support with limited abilities
+   *
+   * Both units have UP_FREESUPPLY, making them valuable force multipliers that
+   * can support other units while providing magical capabilities. Their low
+   * combat statistics make them vulnerable in direct combat.
+   *
+   * Classification: AC_SPELLCASTER separates them from leaders and normal troops.
+   */
   {"Sorcerer", "Sorc", "Sorcerer",
      "An extremely skilled spell caster, a master of the arts",
      UP_FREESUPPLY | UP_FULLCASTER | UP_SPELLCAST,
@@ -150,7 +247,30 @@ AINFO_STRUCT ainfo_list[] = {
      50, 0, 0, 10, 0L, 0L, 0L, 1, 1,
      0x0L, 0x0L, 0x0L },
 
-  /* The list of monster types */
+  /*
+   * Monster Units (17 types) - Conjurable Creatures and Fantastic Beasts
+   *
+   * Monsters are powerful supernatural units that can be summoned through magic
+   * or recruited through special means. They offer unique abilities and high
+   * combat power but at significant cost. Monster units are balanced around
+   * their magical nature and special capabilities.
+   *
+   * Power Tiers:
+   * 1. Basic Monsters: Spirit, Assassin, Efreet, Gargoyle, Wraith
+   * 2. Intermediate: Hero, Centaur, Lich, Giant, SuperHero, Mummy
+   * 3. Advanced: Earthmental, Minotaur, Daemon
+   * 4. Ultimate: Balrog, Dragon
+   *
+   * Special Ability Categories:
+   * - Flight: UP_FLIGHT for aerial movement (Spirit, Efreet, Gargoyle, Balrog)
+   * - Undead: UP_UNDEAD for magical immunity (Wraith, Lich, Mummy)
+   * - Elemental: UP_FIRETYPE, UP_EARTHTYPE for elemental affinities
+   * - Combat: UP_FORTDAMAGE for siege capabilities
+   * - Magic: UP_SPELLCAST for magical abilities (Lich, Dragon)
+   *
+   * Classification: AC_MONSTER with varying Monster Magic (MM_*) and 
+   * Magic Weakness (MW_*) compatibility for summoning control.
+   */
   {"Spirit", "spir", "spirit",
      "Not among the strongest of monsters, the spirit is conjurable by many",
      UP_FLIGHT,
@@ -248,7 +368,38 @@ AINFO_STRUCT ainfo_list[] = {
      1000, 50, 50, 20, 20000L, 15L, 10000L, 3000, 500,
      MM_DRAGON | MM_OGRE | MM_ORC, 0x0L, MW_WYZARD | MW_SORCERER },
 
-  /* The normal army units */
+  /*
+   * Normal Army Units (46+ types) - Standard Military Forces
+   *
+   * This is the largest category, encompassing the conventional military units
+   * that form the backbone of most armies. Units are organized by tactical role
+   * and power level, providing diverse strategic options.
+   *
+   * Unit Classifications:
+   * - AC_NORMAL: Standard infantry and elite troops
+   * - AC_CAVALRY: Mounted units with enhanced mobility
+   * - AC_ARCHERS: Ranged units with ballistic capabilities
+   * - AC_SAILORS: Naval-capable units for amphibious operations
+   * - AC_ORCISH: Monstrous humanoid forces
+   * - AC_MERCS: Mercenary units requiring payment instead of population
+   * - AC_UNIQUE: Specialized units with unique capabilities
+   * - AC_SCOUT: Information gathering and reconnaissance
+   * - AC_AGENT: Espionage and intelligence operations
+   *
+   * Power Progression:
+   * 1. Basic Units: Militia, Goblins, Orcs, Infantry, Sailors
+   * 2. Trained Units: Marines, Assault, Archers, Ninjas, Longbowmen
+   * 3. Elite Units: Phalanx formations, Legionaries, Cavalry
+   * 4. Specialized: Siege equipment, Flying units, Undead forces
+   * 5. Advanced: Knights, Griffons, Elephants, Engineers
+   *
+   * Special Mechanics:
+   * - Minimum Unit Requirements: UP_NEEDMIN for formation units
+   * - Special Training: UP_SPCLTRAIN for elite capabilities
+   * - Naval Operations: UP_UNLOAD, UP_NAVALTAKE for amphibious warfare
+   * - Reconnaissance: UP_SIGHT, UP_SLIPPERY for scouting
+   * - Economic: UP_PAYOFF for mercenary units
+   */
   {"Militia", "mlta", "mlta",
      "Not very well trained or supplied, but when it is all you've got...",
      UP_HALFRECRUIT,
@@ -546,7 +697,31 @@ AINFO_STRUCT ainfo_list[] = {
      0x0L, 0x0L, 0x0L }
 };
 
-/* Traits of the units -- defines in armyX.h */
+/*
+ * traits_list[] - Human-Readable Unit Trait Descriptions
+ *
+ * This array provides descriptive names for all unit special abilities and
+ * traits used throughout the military system. These descriptions correspond
+ * to the UP_* bit flags defined in armyX.h and used in the ainfo_list[].
+ *
+ * The traits represent special capabilities, limitations, and characteristics
+ * that modify unit behavior beyond basic combat statistics:
+ *
+ * Command Traits: "Ruler" (territorial control)
+ * Movement Traits: "Slippery" (evasion), "Flight" (aerial movement)
+ * Nature Traits: "Undead" (magical immunity), elemental types
+ * Combat Traits: "Anti-Air", "Balistics", "Damaging", "Arrowweak"
+ * Naval Traits: "Beachhead", "Assault" (amphibious capabilities)
+ * Special Traits: "Sight" (reconnaissance), "NeedMin" (formation requirements)
+ * Economic Traits: "Payoff" (mercenary), "Free-Support" (no upkeep)
+ * Advanced Traits: "Spellcaster", "Fullcaster" (magical abilities)
+ * Utility Traits: "Mapping", "Sapper", "Coverbonus"
+ *
+ * Usage: These strings are used in user interfaces to display unit capabilities
+ * and in help systems to explain unit special abilities to players.
+ *
+ * Defines corresponding to bit flags are located in armyX.h
+ */
 char *traits_list[] = {
   "Ruler", "Slippery", "Flight", "Undead", "Anti-Air", "Balistics",
   "Beachhead", "Assault", "Sight", "NeedMin", "Damaging",
@@ -556,13 +731,70 @@ char *traits_list[] = {
   "Remote-Enlist", "Sapper", "Mapping", "Nodraft"
 };
 
-/* List of the army classes -- definitions in armyX.h */
+/*
+ * ainfo_clist[] - Military Unit Classification Names
+ *
+ * This array provides human-readable names for the military unit classification
+ * system used to organize and categorize different types of army units. Each
+ * entry corresponds to an AC_* constant defined in armyX.h.
+ *
+ * Classifications organize units by tactical role and command structure:
+ * - "Leader": Command units with territorial control capabilities
+ * - "Caster": Magical support units with spellcasting abilities
+ * - "Monster": Supernatural creatures with unique powers
+ * - "Normal": Standard infantry and conventional military forces
+ * - "Scout": Reconnaissance and information gathering units
+ * - "Agent": Espionage and intelligence operations specialists
+ * - "Merc": Mercenary forces requiring payment rather than population
+ * - "Cavalry": Mounted units with enhanced mobility and combat power
+ * - "Sailors": Naval-capable units for amphibious and maritime operations
+ * - "Orcish": Monstrous humanoid forces with special characteristics
+ * - "Archers": Ranged combat specialists with ballistic weapons
+ * - "Unique": Specialized units with distinctive capabilities
+ *
+ * Usage: These classifications are used throughout the game engine for:
+ * - Unit recruitment and availability restrictions
+ * - Combat calculation modifiers
+ * - User interface organization and display
+ * - AI decision-making and unit evaluation
+ *
+ * Definitions are located in armyX.h with AC_* constants
+ */
 char *ainfo_clist[] = {
   "Leader", "Caster", "Monster", "Normal", "Scout", "Agent",
   "Merc", "Cavalry", "Sailors", "Orcish", "Archers", "Unique"
 };
 
-/* the list of naval classes */
+/*
+ * ninfo_list[] - Naval Vessel Specifications
+ *
+ * This array defines the complete naval system, specifying the capabilities
+ * and characteristics of all ship types available in the game. Naval vessels
+ * serve as transport and combat platforms for maritime operations.
+ *
+ * Structure: NINFO_STRUCT entries containing:
+ * - Vessel name and single-character abbreviation
+ * - Combat strength and cargo capacity
+ * - Construction and maintenance costs
+ * - Base combat effectiveness rating
+ *
+ * Ship Types and Roles:
+ * - "Warship": Primary naval combat vessel with high fighting strength
+ * - "Merchants": Cargo-focused ships with maximum transport capacity
+ * - "Galleys": Balanced combat and transport capabilities
+ * - "Barges": Economical transport with minimal combat ability
+ *
+ * Game Balance:
+ * - Warships excel in naval combat but have limited cargo space
+ * - Merchants maximize cargo capacity at the cost of combat effectiveness
+ * - Galleys provide versatile medium capabilities for balanced fleets
+ * - Barges offer economical transport for peaceful expansion
+ *
+ * Cargo capacity determines how many army units each ship can transport,
+ * critical for amphibious operations and overseas expansion.
+ *
+ * NSHP_NUMBER constant defines the total number of naval vessel types
+ */
 NINFO_STRUCT ninfo_list[NSHP_NUMBER] = {
   { "Warship", "w", 30, NAVY_HOLD,
       20000L, 1000L, 95 },
@@ -574,7 +806,58 @@ NINFO_STRUCT ninfo_list[NSHP_NUMBER] = {
       18000L, 500L, 75 }
 };
 
-/* definition of army statuses */
+/*
+ * stat_info[] - Army Status Definitions and Behavioral Modifiers
+ *
+ * This array defines the complete set of army statuses that control unit
+ * behavior, combat effectiveness, and available actions during gameplay.
+ * Each status represents a tactical or strategic state that modifies how
+ * units operate within the game engine.
+ *
+ * Structure: STATUS_STRUCT entries containing:
+ * - Status names (full, abbreviated, command forms)
+ * - Priority level for status conflict resolution
+ * - Status flags (SPST_* constants) defining behavioral restrictions/bonuses
+ * - Combat modifiers (attack and defense percentage adjustments)
+ *
+ * Status Categories:
+ *
+ * 1. Combat Statuses:
+ * - "Sortie": Aggressive attack from fortified position
+ * - "Ambush": Hidden defensive position with attack bonus
+ * - "Attack": Standard offensive combat stance
+ * - "Engage": Lock combat with specific enemy force
+ * - "Defend": Defensive posture with defense bonus
+ * - "Siege": Laying siege to fortified enemy position
+ *
+ * 2. Garrison/Fortification:
+ * - "Garrison": Fortified defensive position
+ * - "Sieged": Under siege by enemy forces
+ * - "Reserve": Protected rear-area positioning
+ *
+ * 3. Naval Operations:
+ * - "Onboard": Transported on naval vessels
+ * - "Onbrd Sppt": Providing supply support while onboard
+ * - "OnbSelfSppt": Self-supporting while onboard
+ *
+ * 4. Support Operations:
+ * - "Support": Providing supply to other units
+ * - "Self Sppt": Self-sustaining without external supply
+ * - "Carry": Transporting supplies or equipment
+ *
+ * 5. Special Operations:
+ * - "Grouped": Combined unit formations
+ * - "Sweep": Area patrol and reconnaissance
+ * - "WorkCrew": Construction and engineering tasks
+ * - "Traded": Commercial activity
+ * - "Lure": Deception and misdirection
+ * - "Repair": Maintenance and restoration
+ * - "Rover": Independent patrol and exploration
+ *
+ * Status flags control movement restrictions, combat eligibility, supply
+ * requirements, and special abilities. Priority determines which status
+ * takes precedence when multiple statuses could apply.
+ */
 STATUS_STRUCT stat_info[] = {
   { "Sortie", "Sortie", "Attack", 1,
       SPST_ATT | SPST_UNCOMB | SPST_UNSWITCH | SPST_UNMOVE |
@@ -662,7 +945,32 @@ STATUS_STRUCT stat_info[] = {
       10, 0 }
 };
 
-/* the sizing information */
+/*
+ * Dynamic Array Sizing Variables
+ *
+ * These variables provide runtime calculation of array sizes for the military
+ * data structures. They enable dynamic memory management and bounds checking
+ * throughout the game engine without requiring hardcoded constants.
+ *
+ * The sizeof() calculations ensure that adding or removing entries from the
+ * data arrays automatically updates the corresponding size variables, making
+ * the system maintainable and reducing the risk of array bounds errors.
+ *
+ * Variables:
+ * - num_armytypes: Total number of army unit types in ainfo_list[]
+ * - num_atraits: Total number of unit traits in traits_list[]
+ * - num_aclasses: Total number of army classifications in ainfo_clist[]
+ * - num_statuses: Total number of army statuses in stat_info[]
+ *
+ * Usage: These variables are used throughout the codebase for:
+ * - Loop bounds checking when iterating through arrays
+ * - Dynamic memory allocation for unit-related data structures
+ * - Validation of array indices in unit lookup operations
+ * - User interface enumeration of available options
+ *
+ * The automatic sizing ensures that modifications to the data arrays
+ * don't require manual updates to size constants throughout the code.
+ */
 int num_armytypes = (sizeof(ainfo_list) / sizeof(AINFO_STRUCT));
 int num_atraits = (sizeof(traits_list) / sizeof(char *));
 int num_aclasses = (sizeof(ainfo_clist) / sizeof(char *)); 
