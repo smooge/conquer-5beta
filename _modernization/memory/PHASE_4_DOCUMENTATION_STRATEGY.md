@@ -68,7 +68,7 @@ Core utility modules that extend fundamental functionality:
 36. ✅ **magicX.c** - Magic system utilities (11 functions documented: COMPLETED)
 37. ✅ **selectX.c** - Selection system utilities (13 functions documented: COMPLETED)
 38. ✅ **sectorX.c** - Sector management utilities (30+ functions documented: COMPLETED)
-39. **unitsX.c** - Unit management utilities
+39. ✅ **unitsX.c** - Unit management utilities (63 functions documented: COMPLETED)
 
 ### Priority 5B: Data Management Extensions - Sessions 40-43
 Supporting data systems and specialized data handling:
@@ -221,11 +221,11 @@ Platform-specific and legacy code:
 31. **mailA.c** - Session completed 2025-09-07 (13 functions documented: complete in-game messaging and news system)
 32. **magicA.c** - Session completed 2025-09-07 (0 functions documented: prototype/placeholder file with comprehensive explanation)
 
-#### Priority 5: Remaining Interface and Utilities (3/32 files) 🚧
+#### Priority 5: Remaining Interface and Utilities (7/32 files) 🚧
 
-**Session Progress**: Priority 5A - 6/7 files complete (86% of high-impact utilities done!)
-**Files Completed This Session**: sectorX.c (30+ functions documented)
-**Next target**: unitsX.c (Priority 5A - Core Utilities)
+**Session Progress**: Priority 5A - 7/7 files complete (100% of high-impact utilities done!) ✅
+**Files Completed This Session**: unitsX.c (63 functions documented)
+**Next target**: Priority 5B - Data Management Extensions
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -245,8 +245,8 @@ Platform-specific and legacy code:
 
 **Next Target**: Priority 5A - Core Utilities (High Impact)
 **Current File**: unitsX.c - Unit management utilities
-**Priority 5 Progress**: 6/32 files complete (miscX.c, moveX.c already documented; hexmapX.c, magicX.c, selectX.c, sectorX.c completed)
-**Strategy**: Continue with high-impact utility files that support already-documented systems
+**Priority 5 Progress**: 7/32 files complete (miscX.c, moveX.c already documented; hexmapX.c, magicX.c, selectX.c, sectorX.c, unitsX.c completed)
+**Strategy**: All Priority 5A Core Utilities completed! Continue to Priority 5B - Data Management Extensions
 
 ### Session Metrics Goal (Updated for Checkpoint System)
 - **Target**: 1 file per session (if ≤15 functions) OR 15 functions per session (if >15 functions)
