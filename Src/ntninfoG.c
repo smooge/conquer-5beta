@@ -47,7 +47,30 @@ static int numcolumns;		/* Number of columns */
 static int colwidth;		/* The width of the columns */
 static int ni_cycle_forward;	/* Directional Indicator */
 
-/* NI_CLRTOENTER -- Clear the area needed to enter input */
+/*
+ * ni_clrtoenter - Clear screen area for input entry
+ *
+ * Clears a specified number of characters from the current item's input area
+ * on the screen, positioning the cursor appropriately for new input. This
+ * function is used to prepare the display area before accepting user input
+ * for nation information fields.
+ *
+ * Parameters:
+ *   len - Number of characters to clear (minimum 1 for proper positioning)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies screen display by clearing characters with spaces
+ *   - Positions cursor at the appropriate input location
+ *   - Calls refresh() to update display immediately
+ *
+ * Notes:
+ *   - Returns immediately if current item pointer is NULL
+ *   - Ensures minimum length of 1 for proper cursor positioning
+ *   - Uses current item's column and line positions for placement
+ */
 static void
 ni_clrtoenter PARM_1(int, len)
 {
@@ -70,7 +93,28 @@ ni_clrtoenter PARM_1(int, len)
   refresh();
 }
 
-/* NI_IGNORE -- Ain't gonna do nothing */
+/*
+ * ni_ignore - Empty placeholder function for unused items
+ *
+ * This function serves as a placeholder for nation information items that
+ * don't require any processing. It simply clears the global string buffer
+ * and performs no other operations. Used for title items, spacers, and
+ * non-editable display elements.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets string[0] to '\0' (clears global string buffer)
+ *
+ * Notes:
+ *   - Designed for items that need function pointers but no actual processing
+ *   - Part of the nation information display system's function pointer architecture
+ *   - Used extensively for formatting and spacing elements
+ */
 static void
 ni_ignore PARM_0(void)
 {
@@ -78,7 +122,30 @@ ni_ignore PARM_0(void)
   string[0] = '\0';
 }
 
-/* NI_TITLE -- Ain't gonna do nothing but the title */
+/*
+ * ni_title - Display title text for nation information sections
+ *
+ * Extracts and prepares the title text from the current item's label for
+ * display. This function is used for section headers and category titles
+ * within the nation information screen, providing visual organization of
+ * the various nation attributes and properties.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer to the item's label text
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item label is NULL
+ *   - Used for bold section headers like "= Identifiers =", "= Attributes ="
+ *   - Works in conjunction with screen formatting to center titles
+ *   - Part of the hierarchical display organization system
+ */
 static void
 ni_title PARM_0(void)
 {
@@ -91,7 +158,34 @@ ni_title PARM_0(void)
   strcpy(string, current->item->label);
 }
 
-/* NI_INATT -- Read in an attribute value */
+/*
+ * ni_inatt - Input and validate nation attribute values
+ *
+ * Handles user input for numerical nation attributes, including validation
+ * of ranges and special boundary conditions. Supports both integer and
+ * floating-point values with automatic conversion based on the item's
+ * modifier. Performs comprehensive validation for map boundaries and
+ * general attribute limits.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies the nation attribute value if input is valid
+ *   - Displays error messages for invalid inputs
+ *   - Clears input area on screen before prompting
+ *   - May call errormsg() to display validation errors
+ *
+ * Notes:
+ *   - Supports negative values if item's minval < 0
+ *   - Handles floating-point conversion using item modifier
+ *   - Special validation for map boundary items (left/right/top/bottom edges)
+ *   - Uses get_double() for floating-point, get_number() for integers
+ *   - Validates against item's minval and maxval ranges
+ */
 static void
 ni_inatt PARM_0(void)
 {
@@ -178,7 +272,33 @@ ni_inatt PARM_0(void)
   }
 }
 
-/* NI_OUTATT -- Send out an attribute value */
+/*
+ * ni_outatt - Format and output nation attribute values
+ *
+ * Formats numerical nation attribute values for display, including support
+ * for decimal places, currency symbols, and bonus indicators. Handles the
+ * conversion from internal integer representation to user-friendly display
+ * format with appropriate prefixes and suffixes.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with formatted attribute value
+ *   - Clears string buffer if current item is invalid
+ *   - May append '%' symbol for percentage values
+ *
+ * Notes:
+ *   - Adds '$' prefix for currency values (NI_DOLLAR flag)
+ *   - Adds '+' prefix for positive bonus values (NI_BONUS flag)
+ *   - Supports decimal formatting using item modifier
+ *   - Appends '%' suffix for percentage values (NI_PERCENT flag)
+ *   - Uses trim_str() to clean up formatting
+ *   - Coordinates with ni_inatt() for consistent value handling
+ */
 static void
 ni_outatt PARM_0(void)
 {
@@ -226,7 +346,33 @@ static char *hal_strings[] = {
   "HghAvg", "High", "VryHgh", "Max"
 };
 
-/* NI_OUTHAL -- Output a "High" "Avg" "Low" string based on the need */
+/*
+ * ni_outhal - Output qualitative rating strings for attribute values
+ *
+ * Converts numerical attribute values into qualitative descriptive strings
+ * ranging from "Min" to "Max" with intermediate values like "Low", "Avg",
+ * "High". Provides user-friendly interpretation of numerical attributes
+ * that might be difficult to understand in raw numeric form. God users
+ * see actual numeric values instead.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with qualitative rating string
+ *   - Clears string buffer if current item is invalid
+ *   - May call ni_outatt() for god users
+ *
+ * Notes:
+ *   - God users bypass this and see actual numeric values via ni_outatt()
+ *   - Uses hal_strings array: "Min", "VryLow", "Low", "LowAvg", "Avg", etc.
+ *   - Maps value range proportionally to 9 qualitative levels
+ *   - Handles edge cases for values at minimum and maximum boundaries
+ *   - Provides more intuitive display for complex attributes
+ */
 static void
 ni_outhal PARM_0(void)
 {
@@ -257,7 +403,34 @@ ni_outhal PARM_0(void)
   strcpy(string, hal_strings[value]);
 }
 
-/* NI_INSTR -- Call to read in a new string */
+/*
+ * ni_instr - Input and validate string values for nation information
+ *
+ * Handles user input for string-based nation attributes like nation name,
+ * leader name, and login names. Performs validation including length
+ * checking, uniqueness verification, and special constraints based on
+ * the specific type of string being entered.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies the nation string attribute if input is valid
+ *   - Displays error messages for invalid inputs
+ *   - Clears input area on screen before prompting
+ *   - May call errormsg() for validation failures
+ *
+ * Notes:
+ *   - Supports both normal strings and no-space strings (NI_NOSPACE flag)
+ *   - Validates minimum string length against item's minval
+ *   - Special validation for nation names (checks uniqueness)
+ *   - Special validation for login names (checks user existence)
+ *   - Uses get_string() with appropriate STR_NORM or STR_SPACE modes
+ *   - Returns early if empty string entered (no changes made)
+ */
 static void
 ni_instr PARM_0(void)
 {
@@ -307,7 +480,31 @@ ni_instr PARM_0(void)
   strcpy(current->item->it.p_string, string);
 }
 
-/* NI_OUTSTR -- Simple function to send out the string */
+/*
+ * ni_outstr - Output string values for nation information display
+ *
+ * Simple function to copy string-based nation attributes to the global
+ * string buffer for display. Used for nation names, leader names, login
+ * names, and other text-based attributes. Provides the output counterpart
+ * to ni_instr() for string value display.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with the string attribute value
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Simple string copy operation using strcpy()
+ *   - Works with all string-based nation attributes
+ *   - Coordinates with ni_instr() for string input/output consistency
+ *   - Used for displaying nation name, leader name, login name, etc.
+ */
 static void
 ni_outstr PARM_0(void)
 {
@@ -320,7 +517,32 @@ ni_outstr PARM_0(void)
   strcpy(string, current->item->it.p_string);
 }
 
-/* NI_INCHAR -- Enter in a single character */
+/*
+ * ni_inchar - Input and validate single character values
+ *
+ * Handles user input for single character attributes such as the nation
+ * mark character. Provides real-time character input with validation
+ * specific to the character type being entered. Currently supports
+ * validation for nation marks with race-specific restrictions.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies the character attribute if input is valid
+ *   - Clears input area on screen before prompting
+ *   - Gets single character input via next_char()
+ *
+ * Notes:
+ *   - Uses next_char() for immediate character input (no Enter required)
+ *   - Special validation for nation marks via markok() function
+ *   - Validates mark character appropriateness for nation's race
+ *   - Returns early if validation fails (no changes made)
+ *   - Clears 4 characters of input area for display
+ */
 static void
 ni_inchar PARM_0(void)
 {
@@ -345,7 +567,32 @@ ni_inchar PARM_0(void)
   *(current->item->it.p_string) = (char) new_char;
 }
 
-/* NI_OUTCHAR -- Send out the single character */
+/*
+ * ni_outchar - Output single character values for display
+ *
+ * Formats single character attributes for display on the nation information
+ * screen. Converts the character into a proper string format that can be
+ * displayed within the screen layout. Used primarily for the nation mark
+ * character display.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with formatted character value
+ *   - Clears string buffer if current item is invalid
+ *   - Calls form_str() for proper character formatting
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Creates a null-terminated string from the single character
+ *   - Uses form_str() for consistent character display formatting
+ *   - Coordinates with ni_inchar() for character input/output consistency
+ *   - Primarily used for nation mark character display
+ */
 static void
 ni_outchar PARM_0(void)
 {
@@ -362,7 +609,33 @@ ni_outchar PARM_0(void)
   form_str(string, buf, FALSE);
 }
 
-/* NI_CYCLE -- Cycle through the various items */
+/*
+ * ni_cycle - Cycle through enumerated attribute values
+ *
+ * Provides forward/backward cycling through predefined sets of values for
+ * attributes like alignment, aggression, race, and NPC status. Handles
+ * complex value encoding for multi-part attributes and provides wraparound
+ * behavior. Includes a brief pause to show the change to the user.
+ *
+ * Parameters:
+ *   void (uses global current item pointer and ni_cycle_forward direction)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies the attribute value to next/previous in sequence
+ *   - Calls sleep(2) to pause and show the change
+ *   - Clears input area on screen
+ *
+ * Notes:
+ *   - Direction controlled by global ni_cycle_forward flag
+ *   - Special handling for complex attributes (aggression, alignment, NPC status)
+ *   - Wraps around at min/max boundaries
+ *   - Supports attributes with encoded multiple values
+ *   - Uses item modifier for step size
+ *   - Different algorithms for different attribute types (NIT_AGGRESS, NIT_NPCSTAT, NIT_ALIGN)
+ */
 static void
 ni_cycle PARM_0(void)
 {
@@ -431,7 +704,32 @@ ni_cycle PARM_0(void)
   sleep(2);
 }
 
-/* NI_OUTIVAL -- ready the itemtype values for output */
+/*
+ * ni_outival - Output itemtype (material) values for display
+ *
+ * Formats material and resource values (like talons, jewels, metals, food,
+ * wood) for display in the nation information screen. Handles floating-point
+ * values that represent quantities of materials and resources, with optional
+ * currency formatting for monetary values.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with formatted material value
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Adds '$' prefix for currency values (NI_DOLLAR flag)
+ *   - Uses floating-point formatting with %.0f for whole numbers
+ *   - Handles material quantities like talons, jewels, metals, food, wood
+ *   - Works with p_itemv pointer type for itemvalue data
+ *   - Provides read-only display of resource totals
+ */
 static void
 ni_outival PARM_0(void)
 {
@@ -448,7 +746,32 @@ ni_outival PARM_0(void)
   }
 }
 
-/* NI_OUTLONG -- prepare a long value for output */
+/*
+ * ni_outlong - Output long integer values for display
+ *
+ * Formats long integer values for display in the nation information screen,
+ * such as population counts (leaders, soldiers, civilians, monsters) and
+ * scores. Provides simple numeric formatting with optional currency symbol
+ * for monetary long integer values.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with formatted long integer value
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Adds '$' prefix for currency values (NI_DOLLAR flag)
+ *   - Uses %ld format for long integer display
+ *   - Handles population totals, scores, and other large numeric values
+ *   - Works with p_longint pointer type for long integer data
+ *   - Provides read-only display of computed totals
+ */
 static void
 ni_outlong PARM_0(void)
 {
@@ -465,7 +788,34 @@ ni_outlong PARM_0(void)
   }
 }
 
-/* NI_INCOORD -- input the coordinates */
+/*
+ * ni_incoord - Input and validate coordinate values
+ *
+ * Handles user input for map coordinate pairs (X,Y) with validation to
+ * ensure coordinates are within map boundaries. Supports different types
+ * of coordinate input such as center coordinates. Prompts for both X and
+ * Y coordinates sequentially with appropriate boundary checking.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies nation coordinate values if input is valid
+ *   - Displays prompts and error messages
+ *   - Clears input area multiple times during coordinate entry
+ *   - May call errormsg() for validation failures
+ *
+ * Notes:
+ *   - Prompts for X coordinate first, then Y coordinate
+ *   - X coordinate wraps around map using modulo arithmetic
+ *   - Y coordinate must be within valid map boundaries (Y_ONMAP)
+ *   - Returns early if no_input flag is set during entry
+ *   - Currently supports NIT_CENTERCOORD coordinate type
+ *   - Uses bottommsg() to prompt for Y coordinate entry
+ */
 static void
 ni_incoord PARM_0(void)
 {
@@ -506,7 +856,32 @@ ni_incoord PARM_0(void)
   }
 }
 
-/* NI_OUTCOORD -- output the coordinates */
+/*
+ * ni_outcoord - Output coordinate values for display
+ *
+ * Formats coordinate pairs for display in the nation information screen,
+ * showing map positions in [X,Y] format. Handles different types of
+ * coordinates including capital location and center coordinates. Provides
+ * a consistent coordinate display format throughout the interface.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with formatted coordinate pair
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Formats coordinates as "[X,Y]" for consistent display
+ *   - Supports NIT_CAPCOORD (capital coordinates) display
+ *   - Supports NIT_CENTERCOORD (center coordinates) display
+ *   - Coordinates with ni_incoord() for coordinate input/output consistency
+ *   - Uses sprintf() for precise coordinate formatting
+ */
 static void
 ni_outcoord PARM_0(void)
 {
