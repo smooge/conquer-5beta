@@ -1872,6 +1872,28 @@ rand_monstunit PARM_1(int, maxstrength)
   return(count);
 }
 
+/*
+ * mtrls_load - Calculate total weight of a set of raw materials
+ *
+ * Computes the total weight of materials by multiplying each material
+ * quantity by its weight and summing the results. Uses the global
+ * materials information table for weight lookups.
+ *
+ * Parameters:
+ *   m_ptr - Array of material quantities (must not be NULL)
+ *
+ * Returns:
+ *   Total weight as long integer, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Iterates through all MTRLS_NUMBER material types
+ *   - Weight calculation: quantity * mtrls_info[i].weight
+ *   - Used for transport capacity and logistical calculations
+ *   - Essential for determining cargo load limits
+ */
 /* MTRLS_LOAD -- Return the value of the load of a set of raw materials */
 long
 mtrls_load PARM_1(itemtype *, m_ptr)
@@ -1890,6 +1912,29 @@ mtrls_load PARM_1(itemtype *, m_ptr)
   return(lng_sum);
 }
 
+/*
+ * army_load - Calculate the transport load weight of an army unit
+ *
+ * Determines the effective load weight of an army unit for transport
+ * calculations. Leaders count as their group size when leading, monsters
+ * use capture value scaling, and normal units use their strength directly.
+ *
+ * Parameters:
+ *   a_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Transport load weight as long integer, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Leaders: group size if leading, 1 if not leading
+ *   - Monsters: strength * capture_value / 10
+ *   - Normal units: strength value directly
+ *   - Used for naval and caravan transport capacity planning
+ *   - Essential for determining unit transport requirements
+ */
 /* ARMY_LOAD -- The amount of load within an army unit */
 long
 army_load PARM_1(ARMY_PTR, a_ptr)
@@ -1921,6 +1966,29 @@ army_load PARM_1(ARMY_PTR, a_ptr)
   return(lng_sum);
 }
 
+/*
+ * cvn_load - Calculate the transport load weight of a caravan unit
+ *
+ * Determines the effective load weight of a caravan unit for transport
+ * calculations. The load is based on caravan size multiplied by the
+ * standard wagon-to-caravan ratio.
+ *
+ * Parameters:
+ *   v_ptr - Pointer to caravan unit (must not be NULL)
+ *
+ * Returns:
+ *   Transport load weight as long integer, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Load calculation: size * WAGONS_IN_CVN
+ *   - Currently only accounts for wagon weight, not materials carried
+ *   - Future enhancement needed to include materials weight
+ *   - Used for naval transport capacity planning
+ *   - Essential for determining caravan transport requirements
+ */
 /* CVN_LOAD -- The amount of load within a caravan unit;
                This will need to later have mtrls weight added */
 long
@@ -1940,6 +2008,30 @@ cvn_load PARM_1(CVN_PTR, v_ptr)
   return(lng_sum);
 }
 
+/*
+ * army_shipleader - Find the leader of a unit when onboard ships
+ *
+ * Recursively traces through group leadership chains to find the top-level
+ * leader when units are onboard ships. Handles grouped units by following
+ * leader pointers and fixes circular references automatically.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit to check (must not be NULL)
+ *
+ * Returns:
+ *   Army ID of ship leader if onboard, EMPTY_HOLD otherwise
+ *
+ * Side Effects:
+ *   - May fix circular leader references by setting status to ST_DEFEND
+ *   - May modify leader field to EMPTY_HOLD for self-referential units
+ *
+ * Notes:
+ *   - ST_GROUPED units: recursively find leader's shipleader
+ *   - ST_ONBOARD units: return their own army ID
+ *   - Other statuses: return EMPTY_HOLD (not onboard)
+ *   - Automatically fixes self-referential leader pointers
+ *   - Essential for naval transport management
+ */
 /* ARMY_SHIPLEADER -- Return leader if onboard otherwise EMPTY_HOLD */
 int
 army_shipleader PARM_1(ARMY_PTR, a1_ptr)
@@ -1971,6 +2063,30 @@ army_shipleader PARM_1(ARMY_PTR, a1_ptr)
   return(hold);
 }
 
+/*
+ * wallpat_check - Check sector for neighboring walls owned by specified nation
+ *
+ * Helper function for wall_patrol that examines a sector to determine if it
+ * contains a wall owned by the specified nation. Uses global variables to
+ * communicate with the calling function through map_loop iteration.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to check
+ *   y - Y coordinate of sector to check
+ *
+ * Returns:
+ *   None (results stored in global_long)
+ *
+ * Side Effects:
+ *   - Sets global_long to TRUE if owned wall found
+ *   - Uses global_int as nation ID for ownership comparison
+ *
+ * Notes:
+ *   - Static helper function for wall_patrol only
+ *   - Checks for MAJ_WALL designation and matching ownership
+ *   - Part of wall patrol validation system
+ *   - Uses global variables for map_loop callback interface
+ */
 /* WALLPAT_CHECK -- check for neighboring walls to patrol */
 static void
 wallpat_check PARM_2(int, x, int, y)
@@ -1982,6 +2098,31 @@ wallpat_check PARM_2(int, x, int, y)
   }
 }
 
+/*
+ * wall_patrol - Determine if an army unit is acting as a wall patrol
+ *
+ * Validates whether an army unit is functioning as a wall patrol by checking
+ * multiple requirements: garrison status, stuck speed, proper location on a
+ * wall, correct ownership, and presence of neighboring walls.
+ *
+ * Parameters:
+ *   cntry - Nation ID that should own the wall
+ *   a1_ptr - Pointer to army unit to check (must not be NULL)
+ *
+ * Returns:
+ *   TRUE if unit is a valid wall patrol, FALSE otherwise
+ *
+ * Side Effects:
+ *   - Uses global variables for map_loop communication
+ *   - Temporarily modifies global_long and global_int
+ *
+ * Notes:
+ *   - Unit must have ST_GARRISON status and SPD_STUCK speed
+ *   - Must be located on a wall (MAJ_WALL) owned by specified nation
+ *   - Must have at least one adjacent wall for patrol connectivity
+ *   - Uses map_loop with wallpat_check to scan neighboring sectors
+ *   - Essential for wall defense and patrol validation
+ */
 /* WALL_PATROL -- Is an army unit acting as a wall patrol? */
 int
 wall_patrol PARM_2(int, cntry, ARMY_PTR, a1_ptr)
