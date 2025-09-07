@@ -41,7 +41,30 @@ typedef struct s_sctsum {
   struct s_sctsum *next;
 } SCTSUM_STRUCT, *SCTSUM_PTR;
 
-/* CRT_MILSUM -- Allocate the memory for a military summary */
+/*
+ * crt_milsum - Allocate and initialize a military summary structure
+ *
+ * Creates a new MILSUM_STRUCT to track military unit information for a specific
+ * nation during sector ownership calculations. This structure is used to aggregate
+ * military strength data for capture and siege resolution algorithms.
+ *
+ * Parameters:
+ *   who - Nation ID that owns the military units being summarized
+ *
+ * Returns:
+ *   Pointer to newly allocated and initialized MILSUM_STRUCT on success
+ *   Calls abrt() on memory allocation failure (does not return)
+ *
+ * Side Effects:
+ *   - Allocates memory that must be freed by caller using free()
+ *   - Terminates program on allocation failure via abrt()
+ *   - Writes error message to fupdate on allocation failure
+ *
+ * Notes:
+ *   - All MILSUM_STRUCT fields are initialized to safe defaults
+ *   - Used internally by sector ownership and siege calculation system
+ *   - Part of the military summary data aggregation framework
+ */
 static MILSUM_PTR
 crt_milsum PARM_1(int, who)
 {
@@ -60,7 +83,33 @@ crt_milsum PARM_1(int, who)
   return(MS_ptr);
 }
 
-/* CRT_SCTSUM -- Build a sector summary structure, properly initialized */
+/*
+ * crt_sctsum - Allocate and initialize a sector summary structure
+ *
+ * Creates a new SCTSUM_STRUCT to track all military activity within a specific
+ * sector during ownership change calculations. This structure aggregates holding
+ * troops, siege troops, capturing troops, and other military units for comprehensive
+ * sector control analysis during turn processing.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector being summarized (0-based map coordinates)
+ *   y - Y coordinate of the sector being summarized (0-based map coordinates)
+ *
+ * Returns:
+ *   Pointer to newly allocated and initialized SCTSUM_STRUCT on success
+ *   Calls abrt() on memory allocation failure (does not return)
+ *
+ * Side Effects:
+ *   - Allocates memory that must be freed by caller using sctsum_free()
+ *   - Terminates program on allocation failure via abrt()
+ *   - Writes error message to fupdate on allocation failure
+ *
+ * Notes:
+ *   - All military troop lists are initialized to NULL/UNOWNED/0
+ *   - Embedded MILSUM_STRUCT for hold_troops and siege_troops are initialized
+ *   - Used as foundation for sector ownership and siege calculations
+ *   - Part of the two-pass sector control algorithm in upd_capture()
+ */
 static SCTSUM_PTR
 crt_sctsum PARM_2(int, x, int, y)
 {
@@ -88,7 +137,31 @@ crt_sctsum PARM_2(int, x, int, y)
   return(SS_ptr);
 }
 
-/* SCTSUM_BYLOC -- Retrieve a sector summary by its location */
+/*
+ * sctsum_byloc - Retrieve a sector summary by its location
+ *
+ * Searches through a linked list of sector summaries to find the one matching
+ * the specified coordinates. Used during military aggregation to locate existing
+ * sector summary structures before creating new ones.
+ *
+ * Parameters:
+ *   SS_ptr - Head of linked list of SCTSUM_STRUCT to search through
+ *   x - X coordinate to match (0-based map coordinates)
+ *   y - Y coordinate to match (0-based map coordinates)
+ *
+ * Returns:
+ *   Pointer to SCTSUM_STRUCT matching the coordinates if found
+ *   NULL if no matching sector summary is found in the list
+ *
+ * Side Effects:
+ *   - None (read-only search operation)
+ *
+ * Notes:
+ *   - Uses C parameter passing behavior for iteration
+ *   - Linear search through linked list (O(n) complexity)
+ *   - Part of sector summary management system
+ *   - Coordinates must match exactly for successful lookup
+ */
 static SCTSUM_PTR
 sctsum_byloc PARM_3(SCTSUM_PTR, SS_ptr, int, x, int, y)
 {
@@ -99,7 +172,31 @@ sctsum_byloc PARM_3(SCTSUM_PTR, SS_ptr, int, x, int, y)
   return(SS_ptr);
 }
 
-/* MILSUM_BYOWNER -- Retrieve the military sumary by owner */
+/*
+ * milsum_byowner - Retrieve the military summary by owner nation
+ *
+ * Searches through a linked list of military summaries to find the one belonging
+ * to the specified nation. Used during military aggregation to locate existing
+ * military summary structures for a nation before creating new ones.
+ *
+ * Parameters:
+ *   MS_ptr - Head of linked list of MILSUM_STRUCT to search through
+ *   ntnnum - Nation ID to search for (1-based nation identifier)
+ *
+ * Returns:
+ *   Pointer to MILSUM_STRUCT owned by the specified nation if found
+ *   NULL if no matching military summary is found in the list
+ *
+ * Side Effects:
+ *   - None (read-only search operation)
+ *
+ * Notes:
+ *   - Uses C parameter passing behavior for iteration
+ *   - Linear search through linked list (O(n) complexity)
+ *   - Part of military summary management system
+ *   - Nation ID must match exactly for successful lookup
+ *   - Typo in original comment: "sumary" should be "summary"
+ */
 static MILSUM_PTR
 milsum_byowner PARM_2(MILSUM_PTR, MS_ptr, int, ntnnum)
 {
@@ -110,7 +207,32 @@ milsum_byowner PARM_2(MILSUM_PTR, MS_ptr, int, ntnnum)
   return(MS_ptr);
 }
 
-/* SORT_MILSUM -- Sort a military summary by size */
+/*
+ * sort_milsum - Sort a military summary linked list by troop size (descending)
+ *
+ * Implements an insertion sort algorithm to organize military summaries in
+ * descending order by military strength. The largest military force appears
+ * first in the list, which is crucial for determining primary attackers in
+ * sector capture calculations.
+ *
+ * Parameters:
+ *   MS_list - Head of linked list of MILSUM_STRUCT to sort
+ *
+ * Returns:
+ *   New head of the sorted linked list (largest military force first)
+ *   Original head if list is NULL or contains only one element
+ *
+ * Side Effects:
+ *   - Modifies the linked list structure by reordering nodes
+ *   - Preserves all MILSUM_STRUCT data, only changes link pointers
+ *
+ * Notes:
+ *   - Uses insertion sort algorithm (O(n²) worst case, but acceptable for small lists)
+ *   - Handles empty lists and single-element lists gracefully
+ *   - Critical for sector capture logic where largest force determines outcome
+ *   - Sorting is stable (equal values maintain relative order)
+ *   - Used primarily by upd_capture() for take_troops prioritization
+ */
 static MILSUM_PTR
 sort_milsum PARM_1(MILSUM_PTR, MS_list)
 {
@@ -155,7 +277,33 @@ sort_milsum PARM_1(MILSUM_PTR, MS_list)
   return(first_ptr);
 }
 
-/* SCTSUM_FREE -- Free up a sector summary storage class */
+/*
+ * sctsum_free - Free all memory associated with a sector summary structure
+ *
+ * Performs comprehensive cleanup of a SCTSUM_STRUCT including all linked lists
+ * of military summaries (take_troops, siege_troops.next, other_troops). This
+ * function ensures no memory leaks occur during sector ownership processing.
+ *
+ * Parameters:
+ *   SS_ptr - Pointer to SCTSUM_STRUCT to free (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Frees all MILSUM_STRUCT nodes in take_troops linked list
+ *   - Frees all MILSUM_STRUCT nodes in siege_troops.next linked list
+ *   - Frees all MILSUM_STRUCT nodes in other_troops linked list
+ *   - Frees the main SCTSUM_STRUCT itself
+ *   - Sets next pointer to NULL before freeing main structure
+ *
+ * Notes:
+ *   - hold_troops and siege_troops are embedded structures, not separate allocations
+ *   - Caller responsibility to ensure SS_ptr is valid before calling
+ *   - Used in conjunction with upd_capture() cleanup phase
+ *   - Critical for preventing memory leaks in turn processing
+ *   - Does not handle NULL SS_ptr (undefined behavior if passed)
+ */
 static void
 sctsum_free PARM_1(SCTSUM_PTR, SS_ptr)
 {
@@ -202,7 +350,36 @@ sctsum_free PARM_1(SCTSUM_PTR, SS_ptr)
   free(SS_ptr);
 }
 
-/* MEN_TO_CAPTURE -- Returns number of men needed to take a sector */
+/*
+ * men_to_capture - Calculate number of troops required to capture a sector
+ *
+ * Computes the minimum military strength needed to successfully capture a sector
+ * based on population, designation type, racial factors, diplomatic relations,
+ * and fortifications. This is a critical function for the sector capture algorithm,
+ * ensuring realistic capture requirements that vary by sector characteristics.
+ *
+ * Parameters:
+ *   xloc - X coordinate of target sector (0-based map coordinates)
+ *   yloc - Y coordinate of target sector (0-based map coordinates)
+ *   by - Nation ID attempting the capture (1-based nation identifier)
+ *
+ * Returns:
+ *   Minimum number of troops required to capture the sector
+ *   TAKESECTOR constant if input validation fails or sector is invalid
+ *
+ * Side Effects:
+ *   - Modifies global sct_ptr to point to target sector
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Base capture difficulty varies by designation (Capital=3x, City=2x, Town=1.5x)
+ *   - Canal sectors have 2x modifier due to government employee resistance
+ *   - Fortified sectors add 20% to capture difficulty
+ *   - Racial compatibility affects capture resistance (race_info matrix)
+ *   - Jihad diplomatic status adds 10% resistance penalty
+ *   - Population size directly impacts total troops required
+ *   - Uses BASE_TAKEPCT as baseline percentage for calculations
+ */
 long
 men_to_capture PARM_3(int, xloc, int, yloc, ntntype, by)
 {
@@ -264,7 +441,41 @@ men_to_capture PARM_3(int, xloc, int, yloc, ntntype, by)
   return(hold);
 }
 
-/* CAPTURE_LAND -- Transfer ownership and cause fleeing */
+/*
+ * capture_land - Transfer sector ownership and handle population effects
+ *
+ * Executes the complete sector capture process including ownership transfer,
+ * population casualties, fleeing civilians, city transfers, devastation effects,
+ * and alignment-based modifiers. This is the core function that implements the
+ * consequences of successful military conquest in the game.
+ *
+ * Parameters:
+ *   whom - Nation ID gaining control of the sector (UNOWNED to abandon)
+ *   xloc - X coordinate of sector being captured (0-based map coordinates)
+ *   yloc - Y coordinate of sector being captured (0-based map coordinates)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Changes sector ownership to specified nation
+ *   - Modifies population based on racial compatibility and alignment
+ *   - Causes population fleeing to nearby friendly sectors
+ *   - Transfers or destroys cities/capitals with associated bonuses
+ *   - May cause sector devastation if casualties are severe (>50%)
+ *   - Generates news reports and player messages
+ *   - Temporarily modifies global country and ntn_ptr variables
+ *
+ * Notes:
+ *   - If whom=UNOWNED, sector becomes abandoned and population zeroed
+ *   - Kill/keep percentages determined by race_info compatibility matrix
+ *   - Alignment differences affect population survival rates (±5% per alignment step)
+ *   - Slaver magic reduces kill rate by 20% and increases keep rate by 50%
+ *   - Cities are transferred with inventory, renamed if name conflicts exist
+ *   - Capital capture grants +2 attack bonus, other cities grant +1 attack/defense
+ *   - Devastation affects farms/fertile sectors and adds MIN_DEVASTATED flag
+ *   - Preserves original global state (country, ntn_ptr) after execution
+ */
 void
 capture_land PARM_3(ntntype, whom, int, xloc, int, yloc)
 {
@@ -446,7 +657,31 @@ static int reach_xloc, reach_yloc, reach_limit, reach_target;
 static int reach_val[11][11];
 static char reach_visit[11][11];
 
-/* ALIGN_XDIFF -- align the x differential if along edges */
+/*
+ * align_xdiff - Adjust X coordinate difference for world map wrapping
+ *
+ * Handles the cylindrical world map topology where the map wraps around at the
+ * X boundaries. Calculates the shortest distance between two X coordinates,
+ * accounting for the possibility that going "the other way around" might be shorter.
+ *
+ * Parameters:
+ *   xd_val - Raw X coordinate difference (target_x - source_x)
+ *
+ * Returns:
+ *   Adjusted X difference taking map wrapping into account
+ *   Positive values indicate eastward direction, negative indicate westward
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - World map wraps only on X-axis (cylindrical), Y-axis has fixed boundaries
+ *   - Compares abs(xd_val) with MAPX - abs(xd_val) to find shorter path
+ *   - If wraparound is shorter, adjusts sign to indicate proper direction
+ *   - Critical for accurate distance calculations in reach and movement systems
+ *   - Used by pathfinding functions to determine actual movement distances
+ *   - MAPX constant defines the width of the world map
+ */
 static int
 align_xdiff PARM_1(int, xd_val)
 {
@@ -461,7 +696,36 @@ align_xdiff PARM_1(int, xd_val)
   return(xd_val);
 }
 
-/* NEXT_CHECKP -- Call the next check element */
+/*
+ * next_checkp - Recursive pathfinding function for reach calculation
+ *
+ * Implements a flood-fill algorithm to determine which sectors are reachable
+ * from a starting point within a specified range. Recursively explores adjacent
+ * sectors while respecting movement restrictions and diplomatic relations.
+ * This function is the core of the reachability system used for movement validation.
+ *
+ * Parameters:
+ *   xloc - X coordinate of current sector being checked
+ *   yloc - Y coordinate of current sector being checked
+ *
+ * Returns:
+ *   None (void function, modifies global reach arrays)
+ *
+ * Side Effects:
+ *   - Marks sectors as visited in reach_visit array
+ *   - Sets reachability values in reach_val array based on ownership
+ *   - Recursively calls itself for adjacent sectors via map_loop()
+ *   - Modifies global reach calculation state
+ *
+ * Notes:
+ *   - Stops recursion if sector is outside reach_limit range
+ *   - Respects food/movement restrictions via tofood() function
+ *   - Handles diplomatic restrictions (MV_OTHNATION) for non-allied nations
+ *   - Uses reach_target for special target marking (sets to MAXNTN when found)
+ *   - Works within 11x11 local coordinate system centered on origin
+ *   - Critical component of movement validation and AI pathfinding
+ *   - Called initially by set_reach(), then recursively explores neighbors
+ */
 static void
 next_checkp PARM_2(int, xloc, int, yloc)
 {
@@ -504,7 +768,37 @@ next_checkp PARM_2(int, xloc, int, yloc)
   map_loop(xloc, yloc, 1, next_checkp);
 }
 
-/* SET_REACH -- Set the reach values around the given location */
+/*
+ * set_reach - Initialize reachability calculation for a specific location
+ *
+ * Sets up the global reach calculation system centered on the specified coordinates.
+ * Initializes the 11x11 reach arrays and starts the recursive pathfinding process
+ * to determine which sectors are accessible from the starting point within a 2-sector
+ * radius. This is the entry point for movement validation and AI pathfinding.
+ *
+ * Parameters:
+ *   xloc - X coordinate of center point for reach calculation
+ *   yloc - Y coordinate of center point for reach calculation
+ *   value - Target value for special marking (-1 for general reachability)
+ *
+ * Returns:
+ *   None (void function, initializes global reach state)
+ *
+ * Side Effects:
+ *   - Sets reach_init to TRUE to indicate valid reach data
+ *   - Initializes reach_xloc, reach_yloc as calculation center
+ *   - Sets reach_limit to 2 (standard movement range)
+ *   - Sets reach_target for special target identification
+ *   - Clears all reach_val and reach_visit arrays to default state
+ *   - Triggers recursive pathfinding via next_checkp()
+ *
+ * Notes:
+ *   - Creates 11x11 local coordinate system (5 sectors in each direction)
+ *   - reach_limit of 2 allows checking sectors up to 2 moves away
+ *   - All arrays initialized to -1 (unreachable) and 0 (unvisited)
+ *   - Must be called before using get_reach() or change_reach()
+ *   - Used by movement validation, AI pathfinding, and relocation systems
+ */
 void
 set_reach PARM_3(int, xloc, int, yloc, int, value)
 {
@@ -529,7 +823,34 @@ set_reach PARM_3(int, xloc, int, yloc, int, value)
   next_checkp(xloc, yloc);
 }
 
-/* GET_REACH -- Is is within reach? */
+/*
+ * get_reach - Query reachability status for a specific sector
+ *
+ * Retrieves the reachability value for a sector from the previously calculated
+ * reach arrays. This function is used after set_reach() to determine if a sector
+ * is accessible and what nation owns it (or special status values).
+ *
+ * Parameters:
+ *   xloc - X coordinate of sector to query
+ *   yloc - Y coordinate of sector to query
+ *
+ * Returns:
+ *   Nation ID of sector owner if reachable (0-MAXNTN)
+ *   MAXNTN if sector matches reach_target value
+ *   -1 if sector is unreachable or calculation not initialized
+ *
+ * Side Effects:
+ *   - None (read-only query function)
+ *
+ * Notes:
+ *   - Requires set_reach() to be called first (checks reach_init flag)
+ *   - Validates Y coordinate is on map and within reach_limit
+ *   - Uses align_xdiff() to handle map wrapping for X coordinates
+ *   - Converts world coordinates to local 11x11 array coordinates
+ *   - Returns ownership information for movement and diplomatic validation
+ *   - Critical for movement validation and AI decision making
+ *   - Typo in original comment: "Is is" should be "Is it"
+ */
 int
 get_reach PARM_2(int, xloc, int, yloc)
 {
@@ -548,7 +869,35 @@ get_reach PARM_2(int, xloc, int, yloc)
 	 [yloc - reach_yloc + reach_limit]);
 }
 
-/* CHANGE_REACH -- Adjust the given value */
+/*
+ * change_reach - Modify reachability value for a specific sector
+ *
+ * Updates the reach value for a sector that was previously calculated by set_reach().
+ * This function allows dynamic modification of reachability data, typically used
+ * when sector ownership changes during movement or when adjusting for special
+ * conditions like relocation calculations.
+ *
+ * Parameters:
+ *   xloc - X coordinate of sector to modify
+ *   yloc - Y coordinate of sector to modify
+ *   value - New reachability value to set for the sector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies reach_val array at the specified coordinates
+ *   - Writes warning messages to fupdate if validation fails
+ *
+ * Notes:
+ *   - Requires reach system to be initialized (reach_init must be TRUE)
+ *   - Validates sector is within reach_limit range before modification
+ *   - Warns if attempting to modify unset/uninitialized values (-1)
+ *   - Uses align_xdiff() to handle map wrapping for X coordinates
+ *   - Converts world coordinates to local 11x11 array coordinates
+ *   - Used for dynamic updates during movement and relocation calculations
+ *   - Critical for maintaining accurate reachability during state changes
+ */
 void
 change_reach PARM_3(int, xloc, int, yloc, int, value)
 {
@@ -574,7 +923,33 @@ change_reach PARM_3(int, xloc, int, yloc, int, value)
   reach_val[xind][yind] = value;
 }
 
-/* ADJ_RELOC -- Adjust the reach settings for relocation */
+/*
+ * adj_reloc - Adjust reach settings for population relocation calculations
+ *
+ * Helper function for set_relocation() that modifies reach values to reflect
+ * sector attractiveness for population relocation. Converts basic reachability
+ * data into attractiveness values used by the population relocation system.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to evaluate for relocation
+ *   y - Y coordinate of sector to evaluate for relocation
+ *
+ * Returns:
+ *   None (void function, modifies reach arrays)
+ *
+ * Side Effects:
+ *   - Calls get_reach() to query current reachability value
+ *   - Calls change_reach() to update with new attractiveness value
+ *   - May call attract_val() to calculate sector attractiveness
+ *
+ * Notes:
+ *   - Only processes sectors that are reachable (get_reach() != -1)
+ *   - For friendly sectors (same country), sets value to attract_val()
+ *   - For non-friendly sectors, sets value to -1 (not suitable for relocation)
+ *   - Uses global country variable for ownership comparison
+ *   - Part of the population relocation and movement system
+ *   - Called by map_loop() in set_relocation() for each nearby sector
+ */
 static void
 adj_reloc PARM_2(int, x, int, y)
 {
@@ -589,7 +964,34 @@ adj_reloc PARM_2(int, x, int, y)
   }
 }
 
-/* SET_RELOCATION -- Build reach settings for relocation */
+/*
+ * set_relocation - Initialize reach system for population relocation
+ *
+ * Sets up the reachability system specifically for population relocation
+ * calculations. Initializes basic reachability from the specified center point,
+ * then adjusts all reachable sectors to reflect their attractiveness for
+ * population movement and resettlement.
+ *
+ * Parameters:
+ *   xloc - X coordinate of center point for relocation calculation
+ *   yloc - Y coordinate of center point for relocation calculation
+ *
+ * Returns:
+ *   None (void function, initializes reach system for relocation)
+ *
+ * Side Effects:
+ *   - Calls set_reach() to initialize basic reachability (-1 target)
+ *   - Calls map_loop() with adj_reloc() to adjust all nearby sectors
+ *   - Modifies global reach arrays with attractiveness values
+ *
+ * Notes:
+ *   - Uses -1 as reach_target to establish general reachability
+ *   - Processes all sectors within 2-sector radius via map_loop()
+ *   - Converts reachability data into attractiveness data for relocation
+ *   - Used by population movement and relocation systems
+ *   - Sectors owned by same country get attract_val(), others get -1
+ *   - Critical for determining where populations can relocate to
+ */
 void
 set_relocation PARM_2(int, xloc, int, yloc)
 {
@@ -600,7 +1002,33 @@ set_relocation PARM_2(int, xloc, int, yloc)
   map_loop(xloc, yloc, 2, adj_reloc);
 }
 
-/* FLEE_FIND -- Find allies / friends to run to */
+/*
+ * flee_find - Count friendly sectors available for fleeing populations
+ *
+ * Helper function for flee_people() that counts potential destinations for
+ * fleeing civilians. Categorizes reachable sectors as either allied/owned
+ * (preferred) or neutral/friendly (secondary option) for population distribution.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to evaluate as fleeing destination
+ *   y - Y coordinate of sector to evaluate as fleeing destination
+ *
+ * Returns:
+ *   None (void function, modifies global counters)
+ *
+ * Side Effects:
+ *   - Increments global_int for allied/owned sectors
+ *   - Increments global_long for neutral/friendly sectors
+ *   - Uses get_reach() to query sector reachability and ownership
+ *
+ * Notes:
+ *   - Only processes sectors that are reachable (get_reach() returns valid owner)
+ *   - Preferred destinations: same country or allied nations (DIP_ALLIED)
+ *   - Secondary destinations: neutral/friendly nations (<=DIP_NEUTRAL, !=DIP_UNMET)
+ *   - Uses global country variable for diplomatic status checking
+ *   - Part of population fleeing system used during sector capture
+ *   - Called by map_loop() in flee_people() to survey all nearby sectors
+ */
 static void
 flee_find PARM_2(int, x, int, y)
 {
@@ -624,7 +1052,34 @@ flee_find PARM_2(int, x, int, y)
   }
 }
 
-/* FLEE_RUN -- Actually run away and hide */
+/*
+ * flee_run - Execute population distribution to fleeing destinations
+ *
+ * Helper function for flee_people() that actually places fleeing civilians
+ * into friendly sectors. Uses the counts from flee_find() to determine
+ * which sectors should receive population and distributes people accordingly.
+ *
+ * Parameters:
+ *   x - X coordinate of potential destination sector
+ *   y - Y coordinate of potential destination sector
+ *
+ * Returns:
+ *   None (void function, modifies sector population)
+ *
+ * Side Effects:
+ *   - Increases population of suitable destination sectors
+ *   - Uses global_long as population amount to distribute per sector
+ *   - Uses global_int as distribution mode selector
+ *
+ * Notes:
+ *   - Mode 0 (global_int==0): Distribute to allied/owned sectors only
+ *   - Mode 1 (global_int==1): Distribute to neutral/friendly sectors only
+ *   - Only adds population if sector matches the current distribution mode
+ *   - Distribution amount (global_long) calculated by flee_people()
+ *   - Part of population fleeing system used during sector capture
+ *   - Called by map_loop() in flee_people() after flee_find() survey
+ *   - Provides realistic population dispersal during wartime/conquest
+ */
 static void
 flee_run PARM_2(int, x, int, y)
 {
@@ -656,7 +1111,38 @@ flee_run PARM_2(int, x, int, y)
 
 }
 
-/* FLEE_PEOPLE -- Cause N people to run away and hide */
+/*
+ * flee_people - Cause population to flee from a sector to nearby friendly areas
+ *
+ * Implements the population fleeing mechanism used during sector capture, combat,
+ * or other traumatic events. Calculates reachable friendly destinations and
+ * distributes fleeing civilians among them. If no safe destinations exist,
+ * some population may be lost to casualties.
+ *
+ * Parameters:
+ *   amount - Number of people attempting to flee (cannot exceed sector population)
+ *   xloc - X coordinate of source sector (where people are fleeing from)
+ *   yloc - Y coordinate of source sector (where people are fleeing from)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reduces population of source sector by amount (or portion thereof)
+ *   - Increases population of reachable friendly sectors
+ *   - May cause casualties if no friendly destinations available
+ *   - Temporarily modifies global country variable
+ *   - Uses global_int and global_long for calculation state
+ *
+ * Notes:
+ *   - Prioritizes allied/owned sectors, falls back to neutral/friendly if needed
+ *   - Uses reach system with -2 target for special fleeing calculations
+ *   - Distribution modes: 0=allies only, 1=neutrals only, 2=no destinations (casualties)
+ *   - In mode 2 (no safe destinations), 25% of fleeing population dies
+ *   - Population is distributed evenly among available destination sectors
+ *   - Critical for realistic population dynamics during warfare and conquest
+ *   - Preserves original global state after execution
+ */
 void
 flee_people PARM_3(long, amount, int, xloc, int, yloc)
 {
@@ -726,7 +1212,43 @@ flee_people PARM_3(long, amount, int, xloc, int, yloc)
   country = ontnnum;
 }
 
-/* UPD_CAPTURE -- Compute change is ownership as well as sieges */
+/*
+ * upd_capture - Compute sector ownership changes and siege establishment
+ *
+ * Implements the comprehensive two-pass algorithm for resolving all sector
+ * ownership changes and siege establishment during turn processing. This is
+ * the master function that coordinates military strength analysis, diplomatic
+ * considerations, and capture/siege resolution across the entire game world.
+ *
+ * Algorithm Overview:
+ * Pass 1: Traverse all army units, building sector summaries with military data
+ * Pass 2: Process each sector summary to determine ownership changes and sieges
+ *
+ * Parameters:
+ *   None (operates on global game state)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates and manages linked lists of SCTSUM_STRUCT for all contested sectors
+ *   - Calls capture_land() for successful sector captures
+ *   - Sets siege status flags for cities under successful siege
+ *   - Generates comprehensive news reports and player messages
+ *   - Writes detailed status information to fupdate log
+ *   - Allocates and frees substantial temporary memory structures
+ *
+ * Notes:
+ *   - Military summaries categorize troops: hold_troops, siege_troops, take_troops, other_troops
+ *   - Capture requires attackers to exceed TAKE_RATIO * defenders in strength
+ *   - Successful capture also requires meeting men_to_capture() population threshold
+ *   - Siege requires 2:1 ratio of siege troops to holding troops (cities only)
+ *   - Diplomatic relations affect which troops aid/hinder capture attempts
+ *   - Allied/treaty nations can assist captures, belligerent+ nations defend
+ *   - Complex news generation system provides detailed battle reports
+ *   - Memory management includes comprehensive cleanup via sctsum_free()
+ *   - Used during turn processing as core warfare resolution mechanism
+ */
 void
 upd_capture PARM_0(void)
 {
