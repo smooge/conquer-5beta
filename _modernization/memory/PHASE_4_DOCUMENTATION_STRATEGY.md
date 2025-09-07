@@ -83,7 +83,7 @@ Interface modules that extend the UI system:
 
 44. ✅ **customG.c** - Custom interface elements (7 functions) - COMPLETED!
 45. ✅ **caravanG.c** - Caravan management interface (12 functions) - COMPLETED!
-46. **enlistG.c** - Unit enlistment interface
+46. ✅ **enlistG.c** - Unit enlistment interface (7 functions) - COMPLETED!
 47. **emailG.c** - Email interface
 48. **ieditG.c** - Item editing interface
 49. **jointG.c** - Joint operations interface
@@ -247,9 +247,9 @@ Platform-specific and legacy code:
 **Priority 5B Status**: All Priority 5B files documented successfully!
 
 **Next Target**: Priority 5C - User Interface Extensions
-**Current File**: enlistG.c - Unit enlistment interface
-**Priority 5 Progress**: 13/32 files complete (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 2/11 complete)
-**Strategy**: Continue Priority 5C - User Interface Extensions (10 files remaining)
+**Current File**: emailG.c - Email interface
+**Priority 5 Progress**: 14/32 files complete (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 3/11 complete)
+**Strategy**: Continue Priority 5C - User Interface Extensions (8 files remaining)
 
 ### Session Metrics Goal (Updated for Checkpoint System)
 - **Target**: 1 file per session (if ≤15 functions) OR 15 functions per session (if >15 functions)
