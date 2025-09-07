@@ -1,10 +1,10 @@
 # Phase 4 Documentation - Current Status
 
 **Last Updated**: 2025-09-07
-**Current Phase**: Priority 3 (User Interface) - File 5 of 8 completed
+**Current Phase**: Priority 3 (User Interface) - File 6 of 8 completed
 
 ## Session Summary
-Successfully completed hexmapG.c documentation with all 32 functions comprehensively documented, including complex hexagonal movement patterns and display system architecture.
+Successfully completed armyG.c documentation with all 13 functions comprehensively documented, including complex army manipulation, grouping, supply management, and autonumbering systems.
 
 ## Current Progress
 
@@ -12,41 +12,44 @@ Successfully completed hexmapG.c documentation with all 32 functions comprehensi
 - **Priority 1**: Core Game Engine (8/8 files) ✅
 - **Priority 2**: I/O and Data Management (9/9 files) ✅
 
-### Priority 3: User Interface (5/8 files completed)
+### Priority 3: User Interface (6/8 files completed)
 1. ✅ **mainG.c** - Main game interface and command processing (3 functions)
 2. ✅ **displayG.c** - Map display and UI rendering system (18 major functions)
 3. ✅ **infoG.c** - Information display and reporting system (12 major functions)
 4. ✅ **selectG.c** - Unit selection and navigation system (16 major functions)
-5. ✅ **hexmapG.c** - Hexagonal map display system (32 functions) - COMPLETED!
-6. 🎯 **armyG.c** - Next target for documentation (Army interface)
-7. **navyG.c** - Navy interface
+5. ✅ **hexmapG.c** - Hexagonal map display system (32 functions)
+6. ✅ **armyG.c** - Army interface and manipulation system (13 functions) - COMPLETED!
+7. 🎯 **navyG.c** - Next target for documentation (Navy interface)
 8. **magicG.c** - Magic system interface
 
 ## Key Accomplishments Last Session
-- Completed ALL 32 functions in hexmapG.c with comprehensive documentation
-- Documented complex hexagonal movement patterns with column parity calculations
-- Explained 4 coordinate systems: Absolute, Cursor, Offset, Relative
-- Covered 15+ display modes and 5-level fog-of-war system
-- Analyzed critical functions: coffmap(), map_char(), whatcansee(), print_map()
-- Preserved technical insights about hexagonal vs rectangular movement
-- Created clean git commit: Complete comprehensive documentation for hexmapG.c
+- Completed ALL 13 functions in armyG.c with comprehensive documentation
+- Documented complex army combination system with status, supply, and efficiency merging
+- Explained sophisticated group management with leader coordination and movement sync
+- Covered resource management system for supplies with sector-based transactions
+- Analyzed army disbanding with population and economic redistribution effects
+- Documented comprehensive validation systems preventing illegal operations
+- Explained interactive command interface with context-sensitive option highlighting
+- Covered army numbering system supporting default, class, and unit-specific rules
+- Created clean git commit: Complete comprehensive documentation for armyG.c
 
 ## Next Session Preparation
-- **Target File**: armyG.c (Army interface system)
+- **Target File**: navyG.c (Navy interface system)
 - **Strategy**: Continue one-file-per-session approach
-- **Focus**: Document army management and interface functions
-- **Expected**: 5-15 functions based on file complexity
+- **Focus**: Document navy management and interface functions
+- **Expected**: 10-20 functions based on file complexity
 
 ## Technical Notes
-hexmapG.c represents the complete hexagonal map display system with:
-- 4 coordinate systems: Absolute, Cursor, Offset, Relative with complex transformations
-- 15+ display modes: terrain, political, military, economic, strategic views
-- 5-level fog-of-war: HS_NOSEE → HS_SEEPART → HS_SEEMOST → HS_SEEFULL → HS_SEEALL
-- Complex hexagonal movement patterns with column parity calculations
-- Navigation functions: 6 direction movements + 8 screen movements
-- Advanced highlighting system with 15+ criteria types and static caching
-- Map character generation supporting void magic concealment and coastline effects
-- Boundary checking with different logic for gods vs players
+armyG.c represents the complete army interface and manipulation system with:
+- 13 functions: 9 static helpers + 4 public interfaces
+- Complex army combination system with extensive validation
+- Group management with leader coordination and movement synchronization
+- Supply management with resource transactions and validation
+- Army disbanding with population/economic redistribution
+- Interactive command interface with context-sensitive highlighting
+- Comprehensive validation preventing illegal operations
+- Army autonumbering system with hierarchical rules
+- Scout ungrouping enforcement maintaining game rules
 
-## Files Documented: 22 total, 257+ functions
+## Files Documented: 23 total, 270+ functions
 Ready to continue Phase 4 documentation with Priority 3 User Interface files.

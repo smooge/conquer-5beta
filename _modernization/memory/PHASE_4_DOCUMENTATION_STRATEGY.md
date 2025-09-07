@@ -40,7 +40,7 @@ Game interface and display systems:
 19. **infoG.c** ✅ (Complete - 12 major functions documented: information display and reporting system)
 20. **selectG.c** ✅ (Complete - 16 major functions documented: unit selection and navigation system)
 21. **hexmapG.c** ✅ (Complete - 32 functions documented: complete hexagonal map display system)
-22. **armyG.c** - Army interface
+22. ✅ **armyG.c** - Army interface and manipulation system (13 functions) - COMPLETED!
 23. **navyG.c** - Navy interface
 24. **magicG.c** - Magic system interface
 
@@ -125,6 +125,7 @@ Lower priority interface and utility modules:
 20. **infoG.c** - Session completed 2025-09-06 (12 major functions documented: information display and reporting system)
 21. **selectG.c** - Session completed 2025-09-06 (16 major functions documented: unit selection and navigation system)
 22. **hexmapG.c** - Session completed 2025-09-06 (32 functions documented: complete hexagonal map display system)
+23. **armyG.c** - Session completed 2025-09-07 (13 functions documented: complete army interface and manipulation system)
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -133,8 +134,8 @@ Lower priority interface and utility modules:
 **All Priority 2 I/O and Data Management files have been documented!**
 
 ### Current Target
-**Priority 3 Progress: 5/8 files complete**
-**Next file**: `armyG.c` (army interface system)
+**Priority 3 Progress: 6/8 files complete**
+**Next file**: `navyG.c` (navy interface system)
 
 ### Session Metrics Goal
 - Target: 1 file per session
