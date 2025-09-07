@@ -903,7 +903,35 @@ ni_outcoord PARM_0(void)
   }
 }
 
-/* NI_SPECIAL -- output not like any of the other routines */
+/*
+ * ni_special - Output special enumerated attribute values with descriptive names
+ *
+ * Handles output for complex attributes that require special formatting and
+ * descriptive text rather than simple numeric display. This function provides
+ * human-readable names for race, alignment, class, aggression, and NPC status
+ * attributes. Used for attributes that have meaningful categorical values
+ * rather than continuous numeric ranges.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global string buffer with descriptive attribute name
+ *   - Clears string buffer if current item is invalid
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Handles NIT_RACE: Displays race name from race_info array
+ *   - Handles NIT_ALIGN: Shows alignment name or "*dead*" for inactive nations
+ *   - Handles NIT_CLASS: Displays governmental class from nclass_list
+ *   - Handles NIT_AGGRESS: Shows aggression mode or "*dead*" for inactive
+ *   - Handles NIT_NPCSTAT: Displays "Player", "NPC", "Monster", or "*dead*"
+ *   - Uses alignment[] and aggressname[] lookup arrays for descriptive names
+ *   - Special handling for INACTIVE nations (displays "*dead*")
+ */
 static void
 ni_special PARM_0(void)
 {
@@ -1293,7 +1321,30 @@ KEYSYS_STRUCT ninfo_keysys = {
 };
 static NTN_STRUCT ni_backupvals;
 
-/* NI_ATTRUNIQ -- Treat this attribute uniquely */
+/*
+ * ni_attruniq - Check if attribute requires unique handling during initialization
+ *
+ * Determines whether a specific attribute should be handled separately from
+ * the standard attribute initialization loop. Some economic attributes like
+ * charity, currency, tax rate, and inflation require special positioning
+ * and initialization logic that differs from the generic attribute setup.
+ *
+ * Parameters:
+ *   atval - Attribute identifier to check (BUTE_* constant)
+ *
+ * Returns:
+ *   TRUE if attribute requires unique handling, FALSE for standard processing
+ *
+ * Side Effects:
+ *   None (pure function)
+ *
+ * Notes:
+ *   - Returns TRUE for economic attributes: BUTE_CHARITY, BUTE_CURRENCY, BUTE_TAXRATE, BUTE_INFLATION
+ *   - These attributes are positioned separately in the screen layout
+ *   - Used by ni_init() to skip special attributes during generic loop
+ *   - Allows special attributes to have custom placement and initialization
+ *   - Other attributes return FALSE and use standard initialization
+ */
 static int
 ni_attruniq PARM_1(int, atval)
 {
@@ -1313,7 +1364,37 @@ ni_attruniq PARM_1(int, atval)
   return(hold);
 }
 
-/* NI_INIT -- initialize the variables contained within the screen */
+/*
+ * ni_init - Initialize nation information screen item pointers and attributes
+ *
+ * Sets up all the item pointers in the items array to point to the appropriate
+ * nation data structures. This function links the display items with the actual
+ * nation data, including attributes, strings, coordinates, totals, and special
+ * values. Must be called before displaying the nation information screen.
+ *
+ * Parameters:
+ *   void (operates on global items array and ntn_ptr)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies all item pointer fields in the items array
+ *   - Links display items to actual nation data structures
+ *   - Sets up attribute mappings from bute_info array
+ *   - Initializes special economic attribute pointers
+ *
+ * Notes:
+ *   - Handles attributes in sequence, skipping unique ones via ni_attruniq()
+ *   - Sets up special economic attributes (charity, currency, tax, inflation) separately
+ *   - Maps nation identity fields (name, login, leader, mark, race, class)
+ *   - Links activity values (alignment, aggression, NPC status) to active field
+ *   - Sets up bonus fields (attack, defense, reproduction, movement)
+ *   - Maps material totals (talons, jewels, metals, wood, food)
+ *   - Links population and military totals (leaders, civilians, soldiers, monsters)
+ *   - Maps coordinate boundaries (left, right, top, bottom edges)
+ *   - Critical setup function required before screen display
+ */
 static void
 ni_init PARM_0(void)
 {
@@ -1401,7 +1482,37 @@ ni_init PARM_0(void)
   items[NIT_BOTTOMEDGE].it.p_short = &(ntn_ptr->bottomedge);
 }
 
-/* ni_setup_screen initializes the screen structure */
+/*
+ * ni_setup_screen - Initialize screen layout structure for nation information display
+ *
+ * Calculates and sets up the complete screen layout for the nation information
+ * display, including column positioning, item placement, and screen geometry.
+ * Dynamically determines the optimal number of columns based on screen size
+ * and allocates memory for the screen item array. Handles repositioning if
+ * initial layout doesn't fit properly.
+ *
+ * Parameters:
+ *   void (operates on global screen variables and items array)
+ *
+ * Returns:
+ *   FALSE on successful setup, TRUE if screen is too small to display
+ *
+ * Side Effects:
+ *   - Allocates memory for ni_screen array
+ *   - Sets global variables: numitems, numcolumns, colwidth
+ *   - Positions all visible items on screen with line/column coordinates
+ *   - May call abrt() if memory allocation fails
+ *
+ * Notes:
+ *   - Calculates numcolumns based on screen width (minimum 3, scales with COLS/40)
+ *   - Uses reposition_screen goto for dynamic column adjustment
+ *   - Ensures minimum column width of 18 characters
+ *   - Handles section headers with special spacing and alignment
+ *   - Positions items within NI_MAXHEIGHT per column
+ *   - Creates blank lines before section headers
+ *   - Returns TRUE if screen too small (colwidth < 18)
+ *   - Critical function for establishing display geometry
+ */
 static int
 ni_setup_screen PARM_0(void)
 {
@@ -1536,7 +1647,35 @@ ni_setup_screen PARM_0(void)
   return(FALSE);
 }
 
-/* NI_SHOWITEM -- Show the item on the screen */
+/*
+ * ni_showitem - Display a single nation information item on the screen
+ *
+ * Renders a specific item from the nation information screen, including proper
+ * formatting, highlighting, and positioning. Handles both section headers and
+ * data items with appropriate visual formatting. Applies highlighting for the
+ * currently selected item and manages screen positioning.
+ *
+ * Parameters:
+ *   indx - Index of the item to display in the ni_screen array
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Writes to screen at item's line/column position
+ *   - May enable/disable standout mode for highlighting
+ *   - Temporarily modifies global current pointer
+ *   - Calls item's output function to get display data
+ *
+ * Notes:
+ *   - Returns immediately if invalid index or NULL item
+ *   - Applies highlighting if item is current selection or has NI_BOLD flag
+ *   - Handles section headers (NI_BOLD | NI_EMPTY) with centered text
+ *   - Renders data items with label, dots, and value formatting
+ *   - Uses colwidth for proper spacing and alignment
+ *   - Preserves original current pointer after operation
+ *   - Calls refresh() to update display immediately
+ */
 static void
 ni_showitem PARM_1(int, indx)
 {
@@ -1600,7 +1739,34 @@ ni_showitem PARM_1(int, indx)
   current = old_current;
 }
 
-/* write the bottom message */
+/*
+ * ni_bottom - Display bottom screen help messages for nation information interface
+ *
+ * Renders context-sensitive help messages at the bottom of the screen based on
+ * the current user permissions and browsing mode. Provides different command
+ * hints for god users, players, and browsing mode. Essential for user guidance
+ * in the nation information interface.
+ *
+ * Parameters:
+ *   void (uses global god_browsing and is_god flags)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Writes help text to bottom screen lines (LINES-3 and LINES-2)
+ *   - Uses standout mode for highlighting help text
+ *   - Centers text based on screen width (COLS)
+ *
+ * Notes:
+ *   - God browsing mode: Shows only 'Q' to quit
+ *   - Normal mode: Shows 'Q' to quit and 'X' to change password
+ *   - God editing mode: Shows 'D' to delete, 'C' to change, '?' for help
+ *   - God browsing mode: Shows 'I' for info and '?' for help
+ *   - Player mode: Shows 'I' for info, 'C' to change, '?' for help
+ *   - Uses standout()/standend() for visual emphasis
+ *   - Provides essential user interface guidance
+ */
 static void
 ni_bottom PARM_0(void)
 {
@@ -1626,7 +1792,36 @@ ni_bottom PARM_0(void)
   standend();
 }
 
-/* NI_SHOW -- redraw the entire display, clear if needed */
+/*
+ * ni_show - Redraw the complete nation information screen display
+ *
+ * Renders the entire nation information screen including title, all items,
+ * and bottom help messages. Handles both full screen redraws and partial
+ * updates based on the global redraw flag. Central display function that
+ * coordinates all screen elements for a complete interface refresh.
+ *
+ * Parameters:
+ *   void (uses global redraw flag and screen arrays)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Clears screen if DRAW_FULL redraw mode
+ *   - Writes screen title, all items, and help messages
+ *   - Resets redraw flag to DRAW_DONE after full redraw
+ *   - Calls ni_showitem() for each visible item
+ *
+ * Notes:
+ *   - Checks global redraw flag for full vs partial redraw
+ *   - Full redraw: clears screen completely and resets flag
+ *   - Partial redraw: clears from current position to bottom
+ *   - Centers title "National Information Screen" on top line
+ *   - Uses standout mode for title highlighting
+ *   - Displays all numitems via ni_showitem() loop
+ *   - Calls ni_bottom() for help message display
+ *   - Essential function for complete screen refresh
+ */
 static void
 ni_show PARM_0(void)
 {
@@ -1654,7 +1849,32 @@ ni_show PARM_0(void)
   ni_bottom();
 }
 
-/* NI_SETCURSOR -- move the cursor to the end of the current item */
+/*
+ * ni_setcursor - Position cursor at the end of the current item for input
+ *
+ * Moves the screen cursor to the appropriate position for the currently
+ * selected nation information item. Places the cursor at the end of the
+ * item's display area, preparing for potential input or highlighting the
+ * current selection position. Essential for visual feedback during navigation.
+ *
+ * Parameters:
+ *   void (uses global current item pointer)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Moves cursor to current item's end position
+ *   - Calls refresh() to update cursor display immediately
+ *
+ * Notes:
+ *   - Returns immediately if current item pointer is NULL
+ *   - Positions cursor at current->col + colwidth - 1
+ *   - Uses current item's line and calculated column position
+ *   - Provides visual indicator of current selection
+ *   - Called after screen updates to maintain cursor positioning
+ *   - Essential for user interface feedback during navigation
+ */
 static void
 ni_setcursor PARM_0(void)
 {
@@ -1663,7 +1883,35 @@ ni_setcursor PARM_0(void)
   refresh();
 }
 
-/* change an item */
+/*
+ * ni_change - Initiate change process for the currently selected item
+ *
+ * Handles the user request to modify the currently selected nation information
+ * item. Validates permissions, checks editability, displays appropriate prompts,
+ * and calls the item's input function to handle the actual change. Central
+ * function for all item modification operations in the interface.
+ *
+ * Parameters:
+ *   void (uses global current item pointer and user permission flags)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - May display error messages for invalid operations
+ *   - Shows bottom message with item's prompt text
+ *   - Calls item's input function to handle actual change
+ *   - May modify nation data through input function
+ *
+ * Notes:
+ *   - Returns immediately if current item or item pointer is NULL
+ *   - Checks NI_EDITABLE() macro for item modification permissions
+ *   - Prevents changes if god_browsing mode is active
+ *   - Displays item-specific prompt via bottommsg()
+ *   - Calls item's inp_func() to handle the actual input/validation
+ *   - Error messages: "That item may not be changed" or "You are just browsing, cut that out"
+ *   - Essential function for all user modifications to nation data
+ */
 static void
 ni_change PARM_0(void)
 {
@@ -1688,7 +1936,36 @@ ni_change PARM_0(void)
   (*(current->item->inp_func))();
 }
 
-/* NI_RECORD -- make sure to record all that has changed */
+/*
+ * ni_record - Record all changes made to nation data during session
+ *
+ * Compares the current nation data with the backup copy to detect all changes
+ * made during the nation information session. For each changed field, calls
+ * the appropriate recording macro to log the modification. Critical function
+ * for maintaining game data integrity and change tracking.
+ *
+ * Parameters:
+ *   org - Pointer to original nation data (backup copy from session start)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Calls various XADJ* macros to record specific field changes
+ *   - May write to god log file for administrative changes
+ *   - Updates change tracking systems for modified attributes
+ *   - Sets global_int for attribute-specific change logging
+ *
+ * Notes:
+ *   - Compares current ntn_ptr with original org backup
+ *   - Handles string fields: name, login, password, leader
+ *   - Tracks numeric fields: repro, race, mark, location, coordinates
+ *   - Records boundary changes: left/right/top/bottom edges
+ *   - Logs class, attack/defense bonuses, score, activity status
+ *   - Special handling for activity changes with god logging
+ *   - Loops through all BUTE_NUMBER attributes with XADJBUTE macro
+ *   - Essential for maintaining proper game state consistency
+ */
 static void
 ni_record PARM_1(NTN_PTR,org)
 {
@@ -1732,7 +2009,30 @@ ni_record PARM_1(NTN_PTR,org)
   }
 }
 
-/* NI_EXIT -- set flag for leaving */
+/*
+ * ni_exit - Set flag to exit the nation information screen
+ *
+ * Simple function to signal termination of the nation information session.
+ * Sets the global done flag that controls the main interface loop, causing
+ * the screen to close and return to the previous interface. Used by the
+ * 'Q' key binding to quit the screen.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Sets ni_doneflag to TRUE
+ *
+ * Notes:
+ *   - Primary exit mechanism for nation information screen
+ *   - Triggered by user pressing 'Q' or 'q' key
+ *   - Returns 0 for compatibility with key binding system
+ *   - Main loop checks ni_doneflag to determine when to exit
+ *   - Clean exit that allows proper cleanup and data recording
+ */
 static int
 ni_exit PARM_0(void)
 {
@@ -1740,7 +2040,32 @@ ni_exit PARM_0(void)
   return(0);
 }
 
-/* NI_ALIGN -- align the current point */
+/*
+ * ni_align - Update current item pointer based on current item number
+ *
+ * Synchronizes the global current pointer with the currnum index to ensure
+ * proper item selection tracking. Validates the current item number and
+ * sets the current pointer to the appropriate screen item, or NULL if the
+ * index is invalid. Essential for maintaining selection state consistency.
+ *
+ * Parameters:
+ *   void (uses global currnum and ni_screen array)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Updates global current pointer
+ *   - May set current to NULL if currnum is invalid
+ *
+ * Notes:
+ *   - Validates currnum is within bounds (0 to numitems-1)
+ *   - Sets current to point to ni_screen[currnum] if valid
+ *   - Sets current to NULL if currnum is out of bounds
+ *   - Called by navigation functions to maintain selection consistency
+ *   - Critical for proper item selection and cursor positioning
+ *   - Simple but essential synchronization function
+ */
 static void
 ni_align PARM_0(void)
 {
@@ -1752,7 +2077,33 @@ ni_align PARM_0(void)
   }
 }
 
-/* NI_BACKWARD -- move upward among the items */
+/*
+ * ni_backward - Move to the previous selectable item in the list
+ *
+ * Navigates backward through the nation information items, wrapping around
+ * to the end when reaching the beginning. Skips over non-selectable items
+ * like section headers (NI_BOLD | NI_EMPTY). Provides sequential backward
+ * navigation through all editable and viewable items.
+ *
+ * Parameters:
+ *   void (uses global currnum and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Decrements currnum or wraps to end of list
+ *   - Updates current pointer via ni_align()
+ *   - Skips non-selectable section headers
+ *
+ * Notes:
+ *   - Moves currnum backward with wraparound to numitems-1
+ *   - Uses do-while loop to skip section headers
+ *   - Calls ni_align() to update current pointer
+ *   - Triggered by backspace, Delete key, or backward navigation
+ *   - Returns 0 for key binding compatibility
+ *   - Provides intuitive backward movement through selectable items
+ */
 static int
 ni_backward PARM_0(void)
 {
@@ -1770,7 +2121,33 @@ ni_backward PARM_0(void)
   return(0);
 }
 
-/* NI_FORWARD -- move forward among the items */
+/*
+ * ni_forward - Move to the next selectable item in the list
+ *
+ * Navigates forward through the nation information items, wrapping around
+ * to the beginning when reaching the end. Skips over non-selectable items
+ * like section headers (NI_BOLD | NI_EMPTY). Provides sequential forward
+ * navigation through all editable and viewable items.
+ *
+ * Parameters:
+ *   void (uses global currnum and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Increments currnum or wraps to beginning of list
+ *   - Updates current pointer via ni_align()
+ *   - Skips non-selectable section headers
+ *
+ * Notes:
+ *   - Moves currnum forward with wraparound to 0
+ *   - Uses do-while loop to skip section headers
+ *   - Calls ni_align() to update current pointer
+ *   - Triggered by Enter, Tab, Space, or forward navigation
+ *   - Returns 0 for key binding compatibility
+ *   - Provides intuitive forward movement through selectable items
+ */
 static int
 ni_forward PARM_0(void)
 {
@@ -1787,7 +2164,33 @@ ni_forward PARM_0(void)
   return(0);
 }
 
-/* NI_UP -- move upward among the items */
+/*
+ * ni_up - Move vertically up within the same column of items
+ *
+ * Navigates upward within the current column of the nation information display,
+ * maintaining column alignment while moving between vertically adjacent items.
+ * Provides more precise navigation than sequential movement by respecting
+ * the multi-column layout structure. Skips section headers appropriately.
+ *
+ * Parameters:
+ *   void (uses global current pointer and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Moves currnum to item above in same column
+ *   - Updates current pointer via ni_align()
+ *   - May skip section headers with special logic
+ *
+ * Notes:
+ *   - Only moves if current and previous items are in same column
+ *   - Checks current->col == ni_screen[currnum-1].col for column alignment
+ *   - Handles section headers by looking for alternative positions
+ *   - Returns early if movement not possible or at boundary
+ *   - Triggered by up arrow keys or Ctrl-P
+ *   - Provides intuitive vertical navigation in multi-column display
+ */
 static int
 ni_up PARM_0(void)
 {
@@ -1819,7 +2222,34 @@ ni_up PARM_0(void)
   return(0);
 }
 
-/* NI_DOWN -- move upward among the items */
+/*
+ * ni_down - Move vertically down within the same column of items
+ *
+ * Navigates downward within the current column of the nation information display,
+ * maintaining column alignment while moving between vertically adjacent items.
+ * Provides more precise navigation than sequential movement by respecting
+ * the multi-column layout structure. Skips section headers appropriately.
+ *
+ * Parameters:
+ *   void (uses global current pointer and navigation state)
+ *
+ * Returns:
+ *   0 (standard return value for key binding functions)
+ *
+ * Side Effects:
+ *   - Moves currnum to item below in same column
+ *   - Updates current pointer via ni_align()
+ *   - May skip section headers with special logic
+ *
+ * Notes:
+ *   - Only moves if current and next items are in same column
+ *   - Checks current->col == ni_screen[currnum+1].col for column alignment
+ *   - Handles section headers by looking for alternative positions
+ *   - Returns early if movement not possible or at boundary
+ *   - Triggered by down arrow keys or Ctrl-N
+ *   - Provides intuitive vertical navigation in multi-column display
+ *   - Complements ni_up() for complete vertical navigation
+ */
 static int
 ni_down PARM_0(void)
 {
