@@ -37,7 +37,36 @@
 /* indicator for whether or not the magic is casting from a shrine */
 int shrine_helped = 0;
 
-/* SPELLOK -- Check if the given nation is able to cast a spell */
+/*
+ * spellok - Check if the given nation is able to cast a spell
+ *
+ * Validates whether a spell can be cast by checking multiple requirements:
+ * prerequisites, magical knowledge, unit casting ability, spell points,
+ * physical health, and locale restrictions. Handles special cases for
+ * god mode and shrine assistance bonuses.
+ *
+ * Parameters:
+ *   spl_num - The spell type/index to validate
+ *   pts - Available spell points for casting
+ *   hlth - Current physical health of the caster
+ *   showwhy - Whether to display error messages if spell cannot be cast
+ *
+ * Returns:
+ *   1 if spell can be cast successfully
+ *   0 if spell cannot be cast (but no error)
+ *   -1 if spell cannot be cast due to error condition
+ *
+ * Side Effects:
+ *   - May display error messages if showwhy is TRUE
+ *   - Accesses global variables: is_god, ntn_ptr, army_ptr, city_ptr
+ *   - Uses shrine_helped for cost/health reduction calculations
+ *
+ * Notes:
+ *   - God mode bypasses most restrictions except focus nation requirements
+ *   - Shrine assistance reduces spell costs and health drain
+ *   - Transmutation spells (class 'R') require supply center location
+ *   - Monster units have restrictions on certain spell types
+ */
 static int
 spellok PARM_4(Spelltype, spl_num, int, pts, int, hlth, int, showwhy)
 {
@@ -153,7 +182,39 @@ spellok PARM_4(Spelltype, spl_num, int, pts, int, hlth, int, showwhy)
   return(1);
 }
 
-/* WORK_SPELL -- This command actually performs the different spells */
+/*
+ * work_spell - Execute the actual spell effects and mechanics
+ *
+ * Performs the core implementation of spell casting by handling each
+ * spell type's specific effects. Manages spell point costs, target
+ * validation, resource consumption, and unit modifications. Handles
+ * complex spells like teleportation, summoning, and transmutation.
+ *
+ * Parameters:
+ *   spellnum - The specific spell type to execute (SPL_COMBAT, SPL_HEAL, etc.)
+ *   monst_val - Monster type for summoning/sending spells
+ *   max_pts - Maximum spell points available to the caster
+ *   pt_cost - Pointer to variable receiving actual spell point cost
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies target units (army_tptr, navy_tptr, cvn_tptr)
+ *   - Consumes resources (jewels for summoning/sending)
+ *   - Updates unit locations (teleportation)
+ *   - Creates new units (summoning)
+ *   - Modifies city materials (transmutation)
+ *   - Updates display and cursor position
+ *   - May reduce caster movement points
+ *
+ * Notes:
+ *   - Uses extensive global state (army_ptr, city_ptr, world coordinates)
+ *   - Teleportation validates distance limits and charges proportionally
+ *   - Summoning creates monsters at caster location with proper initialization
+ *   - God mode bypasses most resource costs but follows some restrictions
+ *   - Shrine assistance affects costs and effectiveness
+ */
 static void
 work_spell PARM_4(Spelltype, spellnum, int, monst_val,
 		  int, max_pts, int *, pt_cost)
@@ -552,7 +613,36 @@ work_spell PARM_4(Spelltype, spellnum, int, monst_val,
   army_ptr = tmp_aptr;
 }
 
-/* GO_SPELL -- Perform a specified spell */
+/*
+ * go_spell - Handle user interface and setup for spell casting
+ *
+ * Manages the spell casting interface by processing different spell classes,
+ * gathering required parameters from the user, validating targets, and
+ * calculating costs. Handles target selection for unit spells, monster
+ * selection for summoning, and material selection for transmutation.
+ *
+ * Parameters:
+ *   spl_number - The spell index to cast
+ *   maxpts - Maximum spell points available for casting
+ *
+ * Returns:
+ *   Actual spell point cost if successful
+ *   -1 if spell casting was cancelled or failed
+ *
+ * Side Effects:
+ *   - Prompts user for spell targets and parameters
+ *   - Updates display with spell information
+ *   - Sets global target variables (army_tptr, navy_tptr, cvn_tptr)
+ *   - May modify city materials for transmutation preparation
+ *   - Calls work_spell() to execute the actual spell effects
+ *
+ * Notes:
+ *   - Spell classes: 'D'/'O'/'S' = direct cast, 'L'/'U'/'u' = unit target
+ *   - 'M' = monster spells, 'R' = transmutation requiring material selection
+ *   - Shrine assistance affects final spell point costs
+ *   - Success rate check determines if spell actually takes effect
+ *   - Different spell classes have different target validation requirements
+ */
 static int
 go_spell PARM_2(Spelltype, spl_number, int, maxpts)
 {
@@ -774,7 +864,37 @@ go_spell PARM_2(Spelltype, spl_number, int, maxpts)
   return(ptcost);
 }
 
-/* CAST_SPELLS -- Allow the nation to cast a spell from the unit */
+/*
+ * cast_spells - Main spell casting interface for player units
+ *
+ * Provides the primary spell casting interface allowing players to select
+ * and cast spells from army units. Validates caster requirements, displays
+ * available spells, handles user selection, and manages spell point and
+ * health costs. Supports both normal play and god mode operation.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 if no spell was cast or operation cancelled
+ *   MOVECOST if spell was successfully cast (for normal units)
+ *
+ * Side Effects:
+ *   - Prompts user for spell caster selection
+ *   - Displays available spells based on magical knowledge
+ *   - Deducts spell points and health from caster
+ *   - Updates army unit statistics after spell casting
+ *   - Handles shrine location bonuses for magical assistance
+ *   - May enter god mode for deity spell casting
+ *
+ * Notes:
+ *   - Requires army unit with spell casting ability or leader status
+ *   - Shrine locations provide magical assistance reducing costs
+ *   - God mode allows unlimited spell casting with different restrictions
+ *   - Health threshold (SPL_STR_LIM) required for spell casting
+ *   - Spell availability depends on nation's magical knowledge
+ *   - Interactive spell selection using key bindings
+ */
 int
 cast_spells PARM_0(void)
 {
@@ -975,7 +1095,29 @@ KEYSYS_STRUCT magic_keysys = {
   "magic", mg_funcs, mg_klist, 0, 0
 };
 
-/* MG_HELP -- Show all of the commands for the magic screen */
+/*
+ * mg_help - Display help information for magic power screen commands
+ *
+ * Shows comprehensive help screen listing all available commands and
+ * key bindings for the magic power management interface. Uses the
+ * global help system to display command descriptions and usage.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Displays help screen with command list
+ *   - Sets mg_fulldraw flag to trigger complete screen redraw
+ *   - Temporarily replaces current display content
+ *
+ * Notes:
+ *   - Help content generated from mg_funcs and mg_bindings arrays
+ *   - Returns to magic screen after help is dismissed
+ *   - Part of the magic screen key binding system
+ */
 static int
 mg_help PARM_0(void)
 {
@@ -988,7 +1130,32 @@ mg_help PARM_0(void)
   return(0);
 }
 
-/* MG_POWCNT -- Return the number of powers in the current class */
+/*
+ * mg_powcnt - Count magical powers in specified class and ownership mode
+ *
+ * Counts the number of magical powers available for display based on
+ * the magic class (Military/Civilian/Wizardry) and whether showing
+ * owned or unowned powers. Used for navigation bounds checking and
+ * display organization in the magic power interface.
+ *
+ * Parameters:
+ *   magic_type - Magic class index (MAG_MILITARY, MAG_CIVILIAN, MAG_WIZARDRY)
+ *   normal - Mode flag: TRUE for owned powers, FALSE for unowned/available
+ *
+ * Returns:
+ *   Number of powers in the specified class and mode
+ *   0 if no powers available or nation has no powers in normal mode
+ *
+ * Side Effects:
+ *   - Accesses nation power data (ntn_ptr->powers[])
+ *   - May call magic_ok() for prerequisite validation
+ *
+ * Notes:
+ *   - Uses bitwise operations to check power ownership
+ *   - Filters unowned powers through magic_ok() prerequisite checking
+ *   - Essential for magic screen navigation and bounds checking
+ *   - Returns 0 immediately if normal mode and no powers owned
+ */
 static int
 mg_powcnt PARM_2(int, magic_type, int, normal)
 {
@@ -1017,7 +1184,31 @@ mg_powcnt PARM_2(int, magic_type, int, normal)
   return(count);
 }
 
-/* MG_POWINT -- Return the current magic power integer representation */
+/*
+ * mg_powint - Get bit position of currently selected magical power
+ *
+ * Converts the current selection index (mg_select) into the actual
+ * bit position within the nation's power bitmask for the current
+ * magic type. Handles both owned and unowned power modes by counting
+ * through the appropriate power set.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Bit position (0-31) of the currently selected power
+ *   32 if no powers available in the current mode
+ *
+ * Side Effects:
+ *   - Accesses global magic screen state (mg_select, mg_type, mg_mode)
+ *   - May call magic_ok() for prerequisite validation
+ *
+ * Notes:
+ *   - Essential for converting display selection to power bitmask position
+ *   - Used by other functions to identify specific powers for operations
+ *   - Handles edge case of empty power lists gracefully
+ *   - Works with both owned powers display and available powers display
+ */
 static int
 mg_powint PARM_0(void)
 {
@@ -1044,7 +1235,31 @@ mg_powint PARM_0(void)
   return(cnt_pos);
 }
 
-/* MG_POWCOST -- The cost for a power of the given type */
+/*
+ * mg_powcost - Calculate jewel cost for acquiring a magical power
+ *
+ * Computes the jewel cost for purchasing a magical power based on
+ * the nation's current power holdings, racial cost modifiers, and
+ * magical bonuses. Cost increases with the number of powers already
+ * owned and varies by magic class.
+ *
+ * Parameters:
+ *   magic_type - Magic class for cost calculation
+ *
+ * Returns:
+ *   Jewel cost for acquiring a power in the specified class
+ *
+ * Side Effects:
+ *   - Accesses nation race and power data
+ *   - Checks for Jeweler magical power bonus
+ *
+ * Notes:
+ *   - Base cost from race_info[].cost_base[] for each magic class
+ *   - Cost scales with total powers: target class * (count+1), others * count/2
+ *   - Learning mode (mg_mode == FALSE) triples the cost
+ *   - Jeweler power provides 5% discount (95% of normal cost)
+ *   - Used for both display and actual purchase validation
+ */
 static long
 mg_powcost PARM_1(int, magic_type)
 {
@@ -1081,7 +1296,35 @@ mg_powcost PARM_1(int, magic_type)
   return(cost);
 }
 
-/* MG_DISPLAY -- Display all of the powers for the nation */
+/*
+ * mg_display - Render the complete magical powers interface screen
+ *
+ * Draws the comprehensive magic power management interface including
+ * three-column layout for magic classes, power lists, costs, and
+ * navigation aids. Handles both owned and unowned power display modes
+ * with proper highlighting and formatting.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears and redraws entire screen or sections as needed
+ *   - Updates display based on mg_fulldraw flag
+ *   - Shows current selection with standout highlighting
+ *   - Displays power costs and jewel funding information
+ *   - Renders help prompt at bottom
+ *
+ * Notes:
+ *   - Three-column layout: Military, Civilian, Wizardry powers
+ *   - MG_COLNUM (16) rows per column with automatic wrapping
+ *   - Current magic type highlighted in title and cost sections
+ *   - Selected power highlighted within appropriate column
+ *   - Capital jewel supply shown for funding reference
+ *   - Screen layout adapts to terminal width (COLS)
+ */
 static void
 mg_display PARM_0(void)
 {
@@ -1281,7 +1524,30 @@ mg_display PARM_0(void)
   refresh();
 }
 
-/* MG_LIMIT -- Be sure that the selection is not beyond bounds */
+/*
+ * mg_limit - Ensure selection index stays within valid bounds
+ *
+ * Validates and corrects the current power selection index to prevent
+ * navigation beyond available powers in the current magic type and mode.
+ * Called after navigation operations to maintain interface consistency.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies mg_select global variable to stay within bounds
+ *   - Sets mg_select to 0 if no powers available
+ *   - Reduces mg_select to last valid index if beyond range
+ *
+ * Notes:
+ *   - Essential for preventing array bounds violations
+ *   - Called after column switches and mode toggles
+ *   - Works with current mg_type and mg_mode settings
+ *   - Handles empty power lists gracefully
+ */
 static void
 mg_limit PARM_0(void)
 {
@@ -1295,7 +1561,29 @@ mg_limit PARM_0(void)
   }
 }
 
-/* MG_LEFT -- Move one column to the left in the display */
+/*
+ * mg_left - Navigate left in the magic power display interface
+ *
+ * Implements leftward navigation either within the current column
+ * (moving up by MG_COLNUM positions) or switching to the previous
+ * magic class column. Handles wraparound and bounds checking.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies mg_select and potentially mg_type global variables
+ *   - Calls mg_limit() to ensure valid selection bounds
+ *
+ * Notes:
+ *   - If selection >= MG_COLNUM, moves up one column within class
+ *   - Otherwise switches to previous magic class (with wraparound)
+ *   - Attempts to maintain similar vertical position in new column
+ *   - Part of the magic screen navigation key binding system
+ */
 static int
 mg_left PARM_0(void)
 {
@@ -1312,7 +1600,29 @@ mg_left PARM_0(void)
   return(0);
 }
 
-/* MG_RIGHT -- Move one column to the right in the display */
+/*
+ * mg_right - Navigate right in the magic power display interface
+ *
+ * Implements rightward navigation either within the current column
+ * (moving down by MG_COLNUM positions) or switching to the next
+ * magic class column. Handles wraparound and bounds checking.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Modifies mg_select and potentially mg_type global variables
+ *   - Calls mg_limit() to ensure valid selection bounds
+ *
+ * Notes:
+ *   - If room exists, moves down one column within current class
+ *   - Otherwise switches to next magic class (with wraparound)
+ *   - Attempts to maintain similar vertical position in new column
+ *   - Part of the magic screen navigation key binding system
+ */
 static int
 mg_right PARM_0(void)
 {
@@ -1329,7 +1639,29 @@ mg_right PARM_0(void)
   return(0);
 }
 
-/* MG_UP -- Move one up along the column display */
+/*
+ * mg_up - Move selection up one position in current magic class
+ *
+ * Implements upward navigation within the current magic class column.
+ * Decrements the selection index if possible, otherwise provides
+ * audio feedback that the top has been reached.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Decrements mg_select if not at top
+ *   - Calls beep() if already at top position
+ *
+ * Notes:
+ *   - Simple single-step upward movement
+ *   - Prevents navigation above index 0
+ *   - Provides user feedback when movement not possible
+ *   - Part of the magic screen navigation key binding system
+ */
 static int
 mg_up PARM_0(void)
 {
@@ -1342,7 +1674,29 @@ mg_up PARM_0(void)
   return(0);
 }
 
-/* MG_DOWN -- Move one down the column display */
+/*
+ * mg_down - Move selection down one position in current magic class
+ *
+ * Implements downward navigation within the current magic class column.
+ * Increments the selection index if possible, otherwise provides
+ * audio feedback that the bottom has been reached.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Increments mg_select if not at bottom
+ *   - Calls beep() if already at bottom position
+ *
+ * Notes:
+ *   - Simple single-step downward movement
+ *   - Prevents navigation beyond available powers
+ *   - Provides user feedback when movement not possible
+ *   - Part of the magic screen navigation key binding system
+ */
 static int
 mg_down PARM_0(void)
 {
@@ -1355,7 +1709,35 @@ mg_down PARM_0(void)
   return(0);
 }
 
-/* MG_BUY -- Purchase a magical power */
+/*
+ * mg_buy - Purchase a magical power for the nation
+ *
+ * Handles the complete purchase process for acquiring magical powers,
+ * including cost validation, jewel deduction, random power selection
+ * (if in random mode), and updating nation power data. Supports both
+ * specific power purchase and random power acquisition.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (purchase completed or cancelled)
+ *
+ * Side Effects:
+ *   - Deducts jewels from capital city materials
+ *   - Adds new magical power to nation's power set
+ *   - Updates both current and initial city material stores
+ *   - Calls mg_limit() to update selection bounds
+ *   - May prompt user for purchase confirmation
+ *
+ * Notes:
+ *   - Prevents purchases during god browsing mode
+ *   - God mode bypasses jewel costs but still requires capital
+ *   - Random mode (mg_mode == TRUE) selects available power randomly
+ *   - Specific mode purchases the currently selected power
+ *   - Validates sufficient jewel funding before purchase
+ *   - Expert mode skips confirmation prompts
+ */
 static int
 mg_buy PARM_0(void)
 {
@@ -1481,7 +1863,34 @@ mg_buy PARM_0(void)
   return(0);
 }
 
-/* MG_INFO -- Provide information about a magical power */
+/*
+ * mg_info - Display detailed information about selected magical power
+ *
+ * Shows comprehensive information screen for the currently selected
+ * magical power including description, prerequisites, dependent army
+ * units, dependent spells, and attribute effects. Provides full
+ * context for understanding power utility and relationships.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (information displayed)
+ *
+ * Side Effects:
+ *   - Clears screen and displays detailed power information
+ *   - Sets mg_fulldraw flag for complete screen redraw when returning
+ *   - Waits for user input before returning to magic screen
+ *
+ * Notes:
+ *   - Returns immediately if no valid power selected
+ *   - Shows power description from magic power database
+ *   - Lists prerequisite powers from all magic classes
+ *   - Identifies army units that require this power
+ *   - Lists spells that depend on this power
+ *   - Shows attribute bonuses/penalties if applicable
+ *   - Uses '*' marker to indicate additional prerequisites needed
+ */
 static int
 mg_info PARM_0(void)
 {
@@ -1682,7 +2091,35 @@ mg_info PARM_0(void)
   return(0);
 }
 
-/* MG_KILLPOW -- Remove a magical power */
+/*
+ * mg_killpow - Remove a magical power from the nation
+ *
+ * Handles the complete process of selling back a magical power,
+ * including validation that the power can be safely removed,
+ * calculating refund value, and updating nation power data.
+ * Prevents removal of powers required by other owned powers.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (removal completed or cancelled)
+ *
+ * Side Effects:
+ *   - Removes magical power from nation's power set
+ *   - Adds refund jewels to capital city materials
+ *   - Calls mg_limit() to update selection bounds
+ *   - May prompt user for removal confirmation
+ *
+ * Notes:
+ *   - Only works in owned powers mode (mg_mode == TRUE)
+ *   - Prevents removal during god browsing mode
+ *   - Validates that power is not required by other owned powers
+ *   - Refund is 1/3 of current purchase cost
+ *   - God mode removes powers without jewel refund
+ *   - Expert mode skips confirmation prompts
+ *   - Requires capital city for jewel storage
+ */
 static int
 mg_killpow PARM_0(void)
 {
@@ -1779,7 +2216,29 @@ mg_killpow PARM_0(void)
   return(0);
 }
 
-/* MG_SWITCH -- Switch between magical columns in the display */
+/*
+ * mg_switch - Cycle to the next magic class column
+ *
+ * Switches the current magic type to the next class in sequence
+ * (Military -> Civilian -> Wizardry -> Military). Updates selection
+ * bounds to ensure valid positioning in the new magic class.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Increments mg_type with wraparound (modulo 3)
+ *   - Calls mg_limit() to ensure valid selection in new class
+ *
+ * Notes:
+ *   - Provides quick way to cycle through magic classes
+ *   - Maintains current selection index when possible
+ *   - Part of the magic screen navigation key binding system
+ *   - Bound to tab key for easy access
+ */
 static int
 mg_switch PARM_0(void)
 {
@@ -1789,7 +2248,29 @@ mg_switch PARM_0(void)
   return(0);
 }
 
-/* MG_TOGGLE -- End the purchase when on the selected type */
+/*
+ * mg_toggle - Toggle between owned and unowned power display modes
+ *
+ * Switches the magic screen between showing owned powers and showing
+ * available (unowned) powers that can be purchased. Updates selection
+ * bounds to accommodate the different power sets in each mode.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Toggles mg_mode flag (TRUE = owned, FALSE = unowned)
+ *   - Calls mg_limit() to ensure valid selection in new mode
+ *
+ * Notes:
+ *   - Owned mode shows powers currently possessed by nation
+ *   - Unowned mode shows powers that can be purchased
+ *   - Different power counts may require selection adjustment
+ *   - Essential for both viewing current powers and shopping for new ones
+ */
 static int
 mg_toggle PARM_0(void)
 {
@@ -1799,7 +2280,29 @@ mg_toggle PARM_0(void)
   return(0);
 }
 
-/* MG_INIT -- Initialize the variables for the magic display */
+/*
+ * mg_init - Initialize magic screen state and key bindings
+ *
+ * Sets up the initial state for the magic power management interface
+ * including selection position, magic type, and key binding system.
+ * Ensures the magic screen starts in a consistent, known state.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Initializes mg_done, mg_select, mg_type global variables
+ *   - Calls align_magic_keys() to set up key binding system
+ *
+ * Notes:
+ *   - Sets mg_done = FALSE to enable main loop
+ *   - Starts with mg_select = 0 (first power)
+ *   - Defaults to MAG_MILITARY magic type
+ *   - Key bindings initialized only once via align_magic_keys()
+ */
 static void
 mg_init PARM_0(void)
 {
@@ -1812,7 +2315,29 @@ mg_init PARM_0(void)
   align_magic_keys();
 }
 
-/* MG_REFRESH -- Redraw the screen if needed */
+/*
+ * mg_refresh - Force complete redraw of magic screen display
+ *
+ * Triggers a full screen redraw to clear any display corruption
+ * or artifacts. Handles platform-specific refresh requirements
+ * for proper display restoration.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Sets mg_fulldraw flag to trigger complete redraw
+ *   - On VAXC platform, immediately clears and refreshes screen
+ *
+ * Notes:
+ *   - Used when screen becomes corrupted or cluttered
+ *   - Bound to Ctrl-L and Ctrl-R for standard refresh behavior
+ *   - Platform-specific code for VMS/VAXC compatibility
+ *   - Part of the magic screen key binding system
+ */
 static int
 mg_refresh PARM_0(void)
 {
@@ -1824,7 +2349,28 @@ mg_refresh PARM_0(void)
   return(0);
 }
 
-/* MG_EXIT -- Just get the flip out of there */
+/*
+ * mg_exit - Exit the magic power management screen
+ *
+ * Signals termination of the magic screen interface by setting
+ * the done flag. Causes the main magic screen loop to exit and
+ * return control to the calling function.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Sets mg_done flag to TRUE
+ *   - Causes magic screen main loop to terminate
+ *
+ * Notes:
+ *   - Clean exit mechanism for magic screen interface
+ *   - Bound to 'q' and 'Q' keys for intuitive quitting
+ *   - Part of the magic screen key binding system
+ */
 static int
 mg_exit PARM_0(void)
 {
@@ -1832,7 +2378,35 @@ mg_exit PARM_0(void)
   return(0);
 }
 
-/* SHOW_MAGIC -- Display and adjust all of the magic powers for the nation */
+/*
+ * show_magic - Main entry point for magical power management interface
+ *
+ * Provides the complete magical power management system allowing players
+ * to view, purchase, and sell magical powers. Handles both normal play
+ * and god mode operation with appropriate permission checking and state
+ * management.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 if god mode or operation cancelled
+ *   MOVECOST if normal play mode (consumes movement points)
+ *
+ * Side Effects:
+ *   - Initializes magic screen state and display
+ *   - Processes user input for power management
+ *   - May enter/exit god mode as appropriate
+ *   - Updates display based on user actions
+ *
+ * Notes:
+ *   - God mode requires nation selection before proceeding
+ *   - Main loop continues until mg_exit() sets mg_done flag
+ *   - Uses key binding system for command interpretation
+ *   - Unknown keys display error message with key identification
+ *   - Properly handles god mode state restoration on exit
+ *   - Costs movement points in normal play to prevent abuse
+ */
 int
 show_magic PARM_0(void)
 {
@@ -1880,7 +2454,30 @@ show_magic PARM_0(void)
   return(MOVECOST);
 }
 
-/* MG_OPTIONS -- Quickie command to change options for magic mode */
+/*
+ * mg_options - Access configuration options for magic screen
+ *
+ * Provides access to the global options system specifically for
+ * the magic power management interface. Allows customization of
+ * key bindings and other magic screen behaviors.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 (always successful)
+ *
+ * Side Effects:
+ *   - Opens options configuration interface
+ *   - May modify key bindings for magic screen
+ *   - Updates mg_bindings based on user changes
+ *
+ * Notes:
+ *   - Uses global option_cmd() function with magic-specific context
+ *   - Passes magic_keysys and mg_bindings for configuration
+ *   - Part of the magic screen key binding system
+ *   - Allows runtime customization of magic screen behavior
+ */
 static int
 mg_options PARM_0(void)
 {
@@ -1969,7 +2566,32 @@ KBIND_STRUCT mg_klist[] = {
   { "q", mg_exit }
 };
 
-/* ALIGN_MAGIC_KEYS -- Align all of the magic system keys */
+/*
+ * align_magic_keys - Initialize the magic screen key binding system
+ *
+ * Sets up the complete key binding system for the magical power
+ * management interface. Initializes key mappings from the static
+ * binding arrays and calculates array sizes for the binding system.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Initializes mg_bindings key binding structure (if not already done)
+ *   - Sets magic_keysys array size values
+ *   - Calls init_keys() to establish key binding mappings
+ *
+ * Notes:
+ *   - Only initializes bindings once (checks mg_bindings == NULL)
+ *   - Uses mg_klist[] array for key-to-function mappings
+ *   - Uses mg_funcs[] array for function descriptions
+ *   - Calculates array sizes using sizeof operations
+ *   - Essential for magic screen functionality
+ *   - Called from mg_init() during magic screen startup
+ */
 void
 align_magic_keys PARM_0(void)
 {
