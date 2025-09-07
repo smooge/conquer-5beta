@@ -24,7 +24,34 @@
 #include "displayX.h"
 #include "optionsX.h"
 
-/* TARGET_VALUE -- Conversion routine to parse string from target */
+/*
+ * target_value - Convert string to target value based on highlight style
+ *
+ * Parses a string representation of a target value according to the specified
+ * highlight style type. Supports mineral designations, major designations,
+ * nation ownership, and trade goods as target types. Used for configuring
+ * display highlighting targets in the hexagonal map interface.
+ *
+ * Parameters:
+ *   hstyle - Highlight style type (HI_MINDESG, HI_MAJDESG, HI_OWN, HI_TGOODS)
+ *   str - String representation of the target value to parse
+ *
+ * Returns:
+ *   Target value index on successful match, -2 on no match found, 0 for
+ *   unknown highlight styles. Special values: UNOWNED for "*" with HI_OWN,
+ *   TG_NONE for "*" with HI_TGOODS
+ *
+ * Side Effects:
+ *   None - pure parsing function without state modification
+ *
+ * Notes:
+ *   - Static function used internally by display setup routines
+ *   - Uses str_test() for partial string matching on names
+ *   - Handles special wildcard "*" syntax for ownership and trade goods
+ *   - Case-sensitive string matching for exact target identification
+ *   - Returns -2 specifically to indicate "no match" vs valid index 0
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 static int
 target_value PARM_2(int, hstyle, char *, str)
 {
@@ -72,7 +99,38 @@ target_value PARM_2(int, hstyle, char *, str)
   return(-2);
 }
 
-/* DFLT_DISP_SETUP -- Build up one of the settings of the default display */
+/*
+ * dflt_disp_setup - Configure default display mode settings
+ *
+ * Parses and applies configuration settings for the default display mode.
+ * Handles highlight styles, target specifications, focus positions, and
+ * display styles for different hexagonal map positions. Provides comprehensive
+ * error checking and validation for configuration file parsing.
+ *
+ * Parameters:
+ *   str - Configuration string to parse
+ *   fstr - Source filename for error reporting
+ *   lnum - Line number in configuration file for error reporting
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies global display_mode structure settings
+ *   - Updates highlight styles, targets, focus, and display styles
+ *   - Outputs error messages for invalid configuration syntax
+ *   - Processes highlight, target, focus, and position directives
+ *
+ * Notes:
+ *   - Parses "highlight [position] [style]" directives
+ *   - Handles "target [position] [value]" specifications
+ *   - Processes "focus [position]" focus point settings
+ *   - Supports position-specific display style configuration
+ *   - Validates all configuration parameters with detailed error messages
+ *   - Uses global arrays: hex_list, highl_list, display_list for validation
+ *   - Integrates with target_value() for target parsing
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 dflt_disp_setup PARM_3(char *, str, char *, fstr, int, lnum)
 {
@@ -226,7 +284,38 @@ dflt_disp_setup PARM_3(char *, str, char *, fstr, int, lnum)
   }
 }
 
-/* DISPLAY_SETUP -- Configure the display modes */
+/*
+ * display_setup - Configure named display modes
+ *
+ * Creates and configures named display modes with custom settings. Parses
+ * display mode names from quoted strings and applies configuration settings
+ * for highlight styles, targets, focus positions, and display styles.
+ * Provides comprehensive display mode management with error validation.
+ *
+ * Parameters:
+ *   str - Configuration string containing display mode name and settings
+ *   fstr - Source filename for error reporting
+ *   lnum - Line number in configuration file for error reporting
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Creates new display modes via crt_dmode() if they don't exist
+ *   - Modifies display mode structures with new configuration settings
+ *   - Updates highlight styles, targets, focus, and display styles for modes
+ *   - Outputs error messages for invalid configuration syntax
+ *
+ * Notes:
+ *   - Expects display mode name in quotes: "modename" [settings]
+ *   - Supports same configuration syntax as dflt_disp_setup()
+ *   - Creates custom display modes that can be switched between during play
+ *   - Validates display mode name extraction and configuration parameters
+ *   - Integrates with display mode management system
+ *   - Uses target_value() for target specification parsing
+ *   - Handles highlight, target, focus, and position-specific directives
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 display_setup PARM_3(char *, str, char *, fstr, int, lnum)
 {
@@ -410,7 +499,40 @@ display_setup PARM_3(char *, str, char *, fstr, int, lnum)
   }
 }
 
-/* KEYSYS_SETUP -- Configure the keybindings */
+/*
+ * keysys_setup - Configure keybinding systems
+ *
+ * Comprehensive keybinding configuration system that manages key mappings
+ * for multiple interface subsystems. Supports binding, rebinding, and
+ * unbinding keys to functions across global, email, reader, magic, and
+ * other specialized key mapping systems. Handles escape sequence processing
+ * and function validation.
+ *
+ * Parameters:
+ *   action - Action type (OPT_BINDKEY, OPT_REBIND, OPT_UNBIND)
+ *   str - Configuration string containing keysystem, key, and function
+ *   fstr - Source filename for error reporting
+ *   lnum - Line number in configuration file for error reporting
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies keybinding lists for specified subsystems
+ *   - Creates new key bindings or updates existing ones
+ *   - Removes key bindings when unbinding
+ *   - Outputs error messages for invalid configurations
+ *
+ * Notes:
+ *   - Supports multiple keysystems: global, email, reader, magic, mparse, ninfo, xfer
+ *   - Parses quoted key sequences with escape sequence support
+ *   - Validates function names against subsystem-specific function lists
+ *   - Handles key binding creation, modification, and removal
+ *   - Uses convert_kbind() for escape sequence processing
+ *   - Integrates with func_match() for function name validation
+ *   - Manages separate binding lists for each keysystem
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 keysys_setup PARM_4(int, action, char *, str, char *, fstr, int, lnum)
 {
@@ -531,7 +653,33 @@ keysys_setup PARM_4(int, action, char *, str, char *, fstr, int, lnum)
   }
 }
 
-/* CHECK_SPELLS -- check the spell list */
+/*
+ * check_spells - Validate spell number and report errors
+ *
+ * Simple validation function that checks if a spell number is within
+ * the valid range of defined spells. Reports error messages with location
+ * information when invalid spell numbers are encountered, typically during
+ * map data loading or spell processing.
+ *
+ * Parameters:
+ *   spellnum - Spell number to validate
+ *   xloc - X coordinate for error reporting context
+ *   yloc - Y coordinate for error reporting context
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Outputs error message if spell number is invalid
+ *   - Uses global string buffer for error message formatting
+ *
+ * Notes:
+ *   - Validates against global spell_number constant
+ *   - Provides location context for debugging invalid spell references
+ *   - Used during map data processing and spell system validation
+ *   - Simple bounds checking without complex spell validation logic
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 check_spells PARM_3(int, spellnum, int, xloc, int, yloc)
 {
@@ -547,7 +695,31 @@ check_spells PARM_3(int, spellnum, int, xloc, int, yloc)
 /* temporary global to enable transition of function lists */
 PARSE_PTR tmp_parsep;
 
-/* BIND_FUNC -- return a string name for the given function */
+/*
+ * bind_func - Return function name string for given function index
+ *
+ * Utility function that returns the real name string for a function based
+ * on its index in the current parser function list. Used for keybinding
+ * display and configuration management. Provides bounds checking and
+ * NULL return for invalid indices.
+ *
+ * Parameters:
+ *   which - Function index to look up in the parser function table
+ *
+ * Returns:
+ *   Function name string on success, NULL for invalid index
+ *
+ * Side Effects:
+ *   None - pure lookup function without state modification
+ *
+ * Notes:
+ *   - Uses global tmp_parsep pointer for parser function table access
+ *   - Validates index against global_int boundary
+ *   - Returns realname field from parser function structure
+ *   - Used for displaying function names in keybinding interfaces
+ *   - Temporary global access pattern for function list transition
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 char *
 bind_func PARM_1(int, which)
 {
@@ -556,7 +728,37 @@ bind_func PARM_1(int, which)
   return(tmp_parsep[which].realname);
 }
 
-/* HANGUP -- signal catching routine */
+/*
+ * hangup - Signal handler for graceful program termination
+ *
+ * Signal catching routine that performs graceful cleanup when the program
+ * receives termination signals (typically SIGHUP). Ensures proper nation
+ * data saving, mail system cleanup, and resource deallocation before
+ * program exit. Critical for maintaining game state integrity during
+ * unexpected disconnections.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void (does not return - calls exit())
+ *
+ * Side Effects:
+ *   - Performs movement relocation if in movement mode
+ *   - Closes nation data and saves state
+ *   - Cleans up mail reading/writing operations and locks
+ *   - Exits program with FAIL status
+ *   - May update file system state through cleanup operations
+ *
+ * Notes:
+ *   - Registered as signal handler for graceful shutdown
+ *   - Handles both mail sending and reading cleanup scenarios
+ *   - Ensures file locks are properly released to prevent deadlocks
+ *   - Critical for multi-user game integrity during disconnections
+ *   - Calls email_close() and rmail_close() for mail system cleanup
+ *   - Uses movemode check for movement system state management
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 hangup PARM_0(void)
 {
