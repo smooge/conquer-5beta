@@ -33,6 +33,33 @@
 #include "caravanX.h"
 #include "dstatusX.h"
 
+/*
+ * army_support - Calculate the support costs for an army unit
+ *
+ * Calculates the maintenance costs required to support an army unit, including
+ * food consumption, payment (talons), and special costs for monster units.
+ * Handles different unit types with varying cost structures and applies
+ * magical and mercenary cost adjustments.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *   out_costs - Array to store calculated costs (must not be NULL)
+ *   amount - Multiplier for cost calculation (supply periods)
+ *
+ * Returns:
+ *   None (results stored in out_costs array)
+ *
+ * Side Effects:
+ *   - Zeros out_costs array initially
+ *   - Applies magical cost adjustments
+ *   - Different cost calculations for monsters vs normal units
+ *
+ * Notes:
+ *   - Free supply units (scouts) have zero costs
+ *   - Monster units cost jewels based on missing magical powers
+ *   - Normal units consume food and require talon payment
+ *   - Mercenary units have higher costs based on market rates
+ */
 /* ARMY_SUPPORT -- Calculate the support costs for an army unit */
 void
 army_support PARM_3(ARMY_PTR, a1_ptr, itemtype *, out_costs, int, amount)
@@ -93,6 +120,31 @@ army_support PARM_3(ARMY_PTR, a1_ptr, itemtype *, out_costs, int, amount)
   mgk_cost_adjust(1, out_costs);
 }
 
+/*
+ * a_issupplyable - Determine if an army unit can be supplied from given coordinates
+ *
+ * Checks whether an army unit is eligible to receive supplies from a specific
+ * location based on unit status and positioning constraints. Validates that
+ * units with certain statuses can only be supplied from their current location.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit to check (must not be NULL)
+ *   x - X coordinate of potential supply source
+ *   y - Y coordinate of potential supply source  
+ *   sayit - If TRUE, display error messages for invalid supply attempts
+ *
+ * Returns:
+ *   TRUE if unit can be supplied from (x,y), FALSE otherwise
+ *
+ * Side Effects:
+ *   - May display error messages if sayit is TRUE
+ *   - No state modifications
+ *
+ * Notes:
+ *   - Units with certain statuses can only be supplied from current location
+ *   - Supply restrictions prevent remote supply of immobilized units
+ *   - Used by supply management system to validate supply operations
+ */
 /* A_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
 int
 a_issupplyable PARM_4(ARMY_PTR, a1_ptr, int, x, int, y, int, sayit)
@@ -121,6 +173,30 @@ a_issupplyable PARM_4(ARMY_PTR, a1_ptr, int, x, int, y, int, sayit)
   return(TRUE);
 }
 
+/*
+ * cvn_support - Calculate the supply levels for a caravan
+ *
+ * Computes the maintenance costs required to support a caravan unit,
+ * including crew and passenger food consumption and talon maintenance costs.
+ * Similar to army_support but specialized for caravan logistics.
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan unit (must not be NULL)
+ *   out_costs - Array to store calculated costs (must not be NULL)
+ *   amount - Multiplier for cost calculation (supply periods)
+ *
+ * Returns:
+ *   None (results stored in out_costs array)
+ *
+ * Side Effects:
+ *   - Zeros out_costs array initially
+ *   - Applies magical cost adjustments for caravan type
+ *
+ * Notes:
+ *   - Costs scale with caravan size, crew, and passenger count
+ *   - Food requirements include both crew and transported people
+ *   - Talon costs are fixed per caravan size unit
+ */
 /* CVN_SUPPORT -- Calculate the supply levels for a caravan */
 void
 cvn_support PARM_3(CVN_PTR, v1_ptr, itemtype *, out_costs, int, amount)
@@ -143,6 +219,29 @@ cvn_support PARM_3(CVN_PTR, v1_ptr, itemtype *, out_costs, int, amount)
   mgk_cost_adjust(0, out_costs);
 }
 
+/*
+ * cvn_redocosts - Calculate the repair costs for a caravan
+ *
+ * Computes the materials and costs required to repair a damaged caravan
+ * back to full efficiency. Repair costs are proportional to damage level
+ * and caravan size, requiring both talons and wood resources.
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan unit (must not be NULL)
+ *   out_costs - Array to store calculated repair costs (must not be NULL)
+ *
+ * Returns:
+ *   None (results stored in out_costs array)
+ *
+ * Side Effects:
+ *   - Zeros out_costs array initially
+ *   - Applies magical cost adjustments
+ *
+ * Notes:
+ *   - Repair costs scale with (100 - efficiency) percentage
+ *   - Requires both talons and wood materials
+ *   - No cost if caravan is at 100% efficiency
+ */
 /* CVN_REDOCOSTS -- Calculate the repair costs for the caravan */
 void
 cvn_redocosts PARM_2(CVN_PTR, v1_ptr, itemtype *, out_costs)
@@ -166,6 +265,31 @@ cvn_redocosts PARM_2(CVN_PTR, v1_ptr, itemtype *, out_costs)
   mgk_cost_adjust(0, out_costs);
 }
 
+/*
+ * v_issupplyable - Determine if a caravan can be supplied from given coordinates
+ *
+ * Checks whether a caravan unit is eligible to receive supplies from a specific
+ * location based on unit status and positioning constraints. Similar to
+ * a_issupplyable but specialized for caravan supply validation.
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan unit to check (must not be NULL)
+ *   x - X coordinate of potential supply source
+ *   y - Y coordinate of potential supply source
+ *   sayit - If TRUE, display error messages for invalid supply attempts
+ *
+ * Returns:
+ *   TRUE if caravan can be supplied from (x,y), FALSE otherwise
+ *
+ * Side Effects:
+ *   - May display error messages if sayit is TRUE
+ *   - No state modifications
+ *
+ * Notes:
+ *   - Caravans with certain statuses can only be supplied from current location
+ *   - Supply restrictions prevent remote supply of immobilized caravans
+ *   - Used by caravan supply management system
+ */
 /* V_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
 int
 v_issupplyable PARM_4(CVN_PTR, v1_ptr, int, x, int, y, int, sayit)
@@ -194,6 +318,30 @@ v_issupplyable PARM_4(CVN_PTR, v1_ptr, int, x, int, y, int, sayit)
   return(TRUE);
 }
 
+/*
+ * navy_support - Calculate the supply levels for a naval unit
+ *
+ * Computes the maintenance costs required to support a naval fleet,
+ * including crew food consumption, passenger food (for galleys), and
+ * talon maintenance costs. Costs scale with ship types, sizes, and crew.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to navy unit (must not be NULL)
+ *   out_costs - Array to store calculated costs (must not be NULL)
+ *   amount - Multiplier for cost calculation (supply periods)
+ *
+ * Returns:
+ *   None (results stored in out_costs array)
+ *
+ * Side Effects:
+ *   - Zeros out_costs array initially
+ *   - Applies magical cost adjustments for naval type
+ *
+ * Notes:
+ *   - Costs calculated per cargo hold across all ship types
+ *   - Galleys require additional food for transported people
+ *   - Crew food consumption scales with fleet composition
+ */
 /* NAVY_SUPPORT -- Calculate the supply levels for a naval unit */
 void
 navy_support PARM_3(NAVY_PTR, n1_ptr, itemtype *, out_costs, int, amount)
@@ -221,6 +369,29 @@ navy_support PARM_3(NAVY_PTR, n1_ptr, itemtype *, out_costs, int, amount)
   mgk_cost_adjust(2, out_costs);
 }
 
+/*
+ * navy_redocosts - Calculate the repair costs for a naval fleet
+ *
+ * Computes the materials and costs required to repair damaged ships
+ * back to full efficiency. Repair costs vary by ship type, size, and
+ * damage level, requiring both talons and wood resources.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to navy unit (must not be NULL)
+ *   out_costs - Array to store calculated repair costs (must not be NULL)
+ *
+ * Returns:
+ *   None (results stored in out_costs array)
+ *
+ * Side Effects:
+ *   - Zeros out_costs array initially
+ *   - Applies magical cost adjustments
+ *
+ * Notes:
+ *   - Repair costs scale with (100 - efficiency) per ship type
+ *   - Different ship types have different talon and wood costs
+ *   - Costs calculated per cargo hold for each ship class
+ */
 /* NAVY_REDOCOSTS -- Calculate the repair costs for the navy */
 void
 navy_redocosts PARM_2(NAVY_PTR, n1_ptr, itemtype *, out_costs)
@@ -247,6 +418,31 @@ navy_redocosts PARM_2(NAVY_PTR, n1_ptr, itemtype *, out_costs)
   mgk_cost_adjust(2, out_costs);
 }
 
+/*
+ * n_issupplyable - Determine if a naval unit can be supplied from given coordinates
+ *
+ * Checks whether a naval fleet is eligible to receive supplies from a specific
+ * location. Naval units have special restrictions: fleets at sea can only be
+ * supplied from their current sector, while fleets in port can be supplied normally.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to navy unit to check (must not be NULL)
+ *   x - X coordinate of potential supply source
+ *   y - Y coordinate of potential supply source
+ *   sayit - If TRUE, display error messages for invalid supply attempts
+ *
+ * Returns:
+ *   TRUE if navy can be supplied from (x,y), FALSE otherwise
+ *
+ * Side Effects:
+ *   - May display error messages if sayit is TRUE
+ *   - No state modifications
+ *
+ * Notes:
+ *   - Fleets at sea (ELE_WATER) can only be supplied from same sector
+ *   - This prevents unrealistic remote supply of naval units
+ *   - Used by naval supply management system
+ */
 /* N_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
 int
 n_issupplyable PARM_4(NAVY_PTR, n1_ptr, int, x, int, y, int, sayit)
@@ -271,6 +467,30 @@ n_issupplyable PARM_4(NAVY_PTR, n1_ptr, int, x, int, y, int, sayit)
   return(TRUE);
 }
 
+/*
+ * navy_addships - Add ships of specified type and size to a fleet element
+ *
+ * Increases the ship count in a fleet information word by adding nships
+ * of the specified size category. Performs bounds checking to ensure the
+ * resulting count doesn't exceed the maximum allowed ships per size class.
+ *
+ * Parameters:
+ *   info - Current fleet information word (bit-packed ship counts)
+ *   sh_size - Ship size class (N_LIGHT, N_MEDIUM, N_HEAVY)
+ *   nships - Number of ships to add (must be positive)
+ *
+ * Returns:
+ *   Updated fleet information word on success, -1 on failure
+ *
+ * Side Effects:
+ *   - None (pure function, returns modified value)
+ *
+ * Notes:
+ *   - Ship information is bit-packed with size-specific bit positions
+ *   - Maximum ships per size class is limited by N_MASK
+ *   - Validates size parameters before modification
+ *   - Used for fleet construction and reinforcement operations
+ */
 /* NAVY_ADDSHIPS -- increase element by nships of given type
                     return resulting element or -1 for failure */
 int
@@ -302,6 +522,30 @@ navy_addships PARM_3(uns_short, info, int, sh_size, int, nships)
   return(info);
 }
 
+/*
+ * navy_subships - Remove ships of specified type and size from a fleet element
+ *
+ * Decreases the ship count in a fleet information word by removing nships
+ * of the specified size category. Performs validation to ensure sufficient
+ * ships exist before removal to prevent negative counts.
+ *
+ * Parameters:
+ *   info - Current fleet information word (bit-packed ship counts)
+ *   sh_size - Ship size class (N_LIGHT, N_MEDIUM, N_HEAVY)
+ *   nships - Number of ships to remove (must be positive)
+ *
+ * Returns:
+ *   Updated fleet information word on success, -1 on failure
+ *
+ * Side Effects:
+ *   - None (pure function, returns modified value)
+ *
+ * Notes:
+ *   - Validates sufficient ships exist before removal
+ *   - Ship information is bit-packed with size-specific bit positions
+ *   - Used for fleet reduction, losses, and ship transfers
+ *   - Prevents invalid negative ship counts
+ */
 /* NAVY_SUBSHIPS -- remove nships of given shipsize for a given fleet
                     return result or -1 if it is not possible */
 int
@@ -333,6 +577,30 @@ navy_subships PARM_3(uns_short, info, int, sh_size, int, nships)
   return(info);
 }
 
+/*
+ * navy_mvpts - Calculate movement points for a naval fleet
+ *
+ * Determines the movement speed of a naval fleet based on ship composition,
+ * crew levels, nation magical powers, and unit status. Slower ships limit
+ * the entire fleet's speed, and various factors can enhance or reduce speed.
+ *
+ * Parameters:
+ *   nat_ptr - Pointer to nation owning the fleet (must not be NULL)
+ *   nvy_ptr - Pointer to navy unit (must not be NULL)
+ *
+ * Returns:
+ *   Movement points available for the fleet, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Fleet speed limited by slowest ship type and size
+ *   - Crew levels affect speed proportionally
+ *   - Magical powers (SAILOR, MARINE, WATER) provide speed bonuses
+ *   - Unit speed status affects final movement calculation
+ *   - Heavy ships are slower than light ships of same type
+ */
 /* NAVY_MVPTS --  Find speed of naval fleet */
 int
 navy_mvpts PARM_2(NTN_PTR, nat_ptr, NAVY_PTR, nvy_ptr)
@@ -389,6 +657,29 @@ navy_mvpts PARM_2(NTN_PTR, nat_ptr, NAVY_PTR, nvy_ptr)
   return(hold);
 }
 
+/*
+ * cvn_mvpts - Calculate movement points for a caravan
+ *
+ * Determines the movement speed of a caravan based on the nation's maximum
+ * movement capability, crew levels, and unit speed status. Caravans have
+ * simpler movement calculations than naval fleets.
+ *
+ * Parameters:
+ *   nat_ptr - Pointer to nation owning the caravan (must not be NULL)
+ *   c_ptr - Pointer to caravan unit (must not be NULL)
+ *
+ * Returns:
+ *   Movement points available for the caravan, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Base speed is min(nation_maxmove, 12) divided by 2
+ *   - Unit speed status modifies movement
+ *   - Crew levels affect speed proportionally
+ *   - Simpler calculation than naval or army movement
+ */
 /* CVN_MVPTS --  Find speed of caravan */
 int
 cvn_mvpts PARM_2(NTN_PTR, nat_ptr, CVN_PTR, c_ptr)
@@ -411,6 +702,28 @@ cvn_mvpts PARM_2(NTN_PTR, nat_ptr, CVN_PTR, c_ptr)
   return(hold);
 }
 
+/*
+ * main_leader - Find the top-level leader of a unit group
+ *
+ * Traverses the leadership chain to find the main leader of a group,
+ * following leader pointers until reaching a unit that is not grouped
+ * under another leader. Handles circular references and invalid chains.
+ *
+ * Parameters:
+ *   idnum - Army ID number to start leadership search from
+ *
+ * Returns:
+ *   Pointer to main leader unit, or NULL if not found
+ *
+ * Side Effects:
+ *   - None (read-only traversal)
+ *
+ * Notes:
+ *   - Follows leader chain until finding ungrouped unit
+ *   - Protects against infinite loops with circular leader references
+ *   - Used for group command and coordination operations
+ *   - Returns the actual decision-making leader of a group
+ */
 /* MAIN_LEADER -- Get the setting of the guy at the front of a group */
 ARMY_PTR
 main_leader PARM_1( int, idnum )
@@ -435,6 +748,30 @@ main_leader PARM_1( int, idnum )
   return(a1_ptr);
 }
 
+/*
+ * men_ingroup - Count the number of soldiers in a given group
+ *
+ * Recursively counts all units under a group leader's command, including
+ * the leader and all grouped subordinates. Can optionally count only
+ * anti-aircraft capable units for air defense calculations.
+ *
+ * Parameters:
+ *   idnum - Army ID of the group leader
+ *   onlyaair - If TRUE, count only anti-aircraft capable units
+ *
+ * Returns:
+ *   Total count of soldiers/units in the group
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - Validates leader is actually leading before counting
+ *   - Includes leader in count if appropriate
+ *   - Recursively counts sub-groups led by subordinate leaders
+ *   - Uses army capture size for non-leader units
+ *   - Essential for group management and combat calculations
+ */
 /* MEN_INGROUP -- Return the number of soldiers in a given group */
 int
 men_ingroup PARM_2( int, idnum, int, onlyaair )
@@ -500,6 +837,29 @@ men_ingroup PARM_2( int, idnum, int, onlyaair )
   return(count);
 }
 
+/*
+ * ships_in_sector - Count the total number of ships in a given sector
+ *
+ * Scans all naval fleets in the current nation located at the specified
+ * coordinates and counts the total number of individual ships across all
+ * ship types and sizes. Used for naval traffic and capacity analysis.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to count
+ *   y - Y coordinate of sector to count
+ *
+ * Returns:
+ *   Total number of individual ships in the sector
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - Counts ships across all size classes (light, medium, heavy)
+ *   - Sums ships from all fleet types (galleys, warships, etc.)
+ *   - Only counts ships belonging to current nation (ntn_ptr)
+ *   - Returns 0 if no nation context or no ships found
+ */
 /* SHIPS_IN_SECTOR -- Retrun the number of ships in a given sector */
 int
 ships_in_sector PARM_2( int, x, int, y)
@@ -528,6 +888,29 @@ ships_in_sector PARM_2( int, x, int, y)
   return(num);
 }
 
+/*
+ * wagons_in_sector - Count the total number of caravan wagons in a sector
+ *
+ * Scans all caravan units in the current nation located at the specified
+ * coordinates and counts the total number of individual wagons. Each caravan
+ * unit contributes multiple wagons based on its size.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to count
+ *   y - Y coordinate of sector to count
+ *
+ * Returns:
+ *   Total number of individual wagons in the sector
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - Each caravan unit contributes (size * WAGONS_IN_CVN) wagons
+ *   - Only counts caravans belonging to current nation (ntn_ptr)
+ *   - Used for traffic analysis and logistical planning
+ *   - Returns 0 if no nation context or no caravans found
+ */
 /* WAGONS_IN_SECTOR -- Return the number of caravan wagons in a given sector */
 int
 wagons_in_sector PARM_2( int, x, int, y)
@@ -552,6 +935,32 @@ wagons_in_sector PARM_2( int, x, int, y)
   return(num);
 }
 
+/*
+ * men_ingarrison - Count garrison troops in a sector across all allied nations
+ *
+ * Counts all military units with garrison status in the specified sector,
+ * including troops from the sector owner and allied nations. Can optionally
+ * count only anti-aircraft capable units for air defense calculations.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *   onlyaair - If TRUE, count only anti-aircraft capable units
+ *
+ * Returns:
+ *   Total count of garrisoned soldiers in the sector
+ *
+ * Side Effects:
+ *   - Temporarily switches nation context during counting
+ *   - Restores original nation context when complete
+ *
+ * Notes:
+ *   - Only counts units with ST_GARRISON status
+ *   - Includes allied nation troops if they have alliance with sector owner
+ *   - Recursively counts grouped units under garrison leaders
+ *   - Essential for defensive strength calculations
+ *   - Validates sector ownership before counting
+ */
 /* MEN_INGARRISON -- Return the number of men garrisoned in the sector */
 long
 men_ingarrison PARM_3( int, x, int, y, int, onlyaair )
@@ -626,6 +1035,32 @@ men_ingarrison PARM_3( int, x, int, y, int, onlyaair )
   return(count);
 }
 
+/*
+ * set_grpmove - Assign movement settings to an entire unit group
+ *
+ * Sets the movement speed and movement points for a group leader and all
+ * units grouped under that leader. Recursively applies settings to sub-groups
+ * and handles orphaned units when the leader no longer exists.
+ *
+ * Parameters:
+ *   idnum - Army ID of the group leader
+ *   speed - Speed setting to apply (SPD_SLOW to SPD_STUCK)
+ *   mval - Movement points value to assign
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Modifies unit speed and movement for entire group
+ *   - May orphan grouped units if leader doesn't exist
+ *   - Uses static depth counter to prevent infinite recursion
+ *
+ * Notes:
+ *   - Recursively handles nested group structures
+ *   - Orphaned units are reset to ST_DEFEND status
+ *   - Validates speed parameters before application
+ *   - Essential for coordinated group movement
+ */
 /* SET_GRPMOVE -- Assign a given movement to an entire group */
 void
 set_grpmove PARM_3(int, idnum, int, speed, int, mval)
@@ -698,6 +1133,33 @@ set_grpmove PARM_3(int, idnum, int, speed, int, mval)
   }
 }
 
+/*
+ * set_grploc - Assign a location to an entire unit group
+ *
+ * Moves a group leader and all units grouped under that leader to the
+ * specified coordinates. Recursively handles sub-groups and triggers
+ * army sorting to maintain proper sector organization.
+ *
+ * Parameters:
+ *   idnum - Army ID of the group leader
+ *   x - Target X coordinate (must be valid map position)
+ *   y - Target Y coordinate (must be valid map position)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Modifies unit locations for entire group
+ *   - Triggers army_sort() to reorganize unit lists
+ *   - May orphan grouped units if leader doesn't exist
+ *   - Uses static depth counter to prevent infinite recursion
+ *
+ * Notes:
+ *   - Validates map coordinates before movement
+ *   - Recursively handles nested group structures
+ *   - Orphaned units are reset to ST_DEFEND status
+ *   - Essential for coordinated group movement operations
+ */
 /* SET_GRPLOC -- Assign a given location to an entire group */
 void
 set_grploc PARM_3(int, idnum, int, x, int, y)
@@ -777,6 +1239,29 @@ set_grploc PARM_3(int, idnum, int, x, int, y)
   army_sort(FALSE);
 }
 
+/*
+ * group_stat - Determine the effective status of a grouped unit
+ *
+ * Follows the leadership chain to find the actual status of a grouped unit
+ * by tracing through leader pointers until finding a unit with a non-grouped
+ * status. Handles circular references and broken chains gracefully.
+ *
+ * Parameters:
+ *   idnum - Army ID of the unit to check status for
+ *
+ * Returns:
+ *   Effective status of the unit (ST_DEFEND if problems detected)
+ *
+ * Side Effects:
+ *   - May modify unit status to ST_DEFEND if circular reference detected
+ *   - May display error messages for invalid group chains
+ *
+ * Notes:
+ *   - Prevents infinite loops with depth counter (max 20 iterations)
+ *   - Defaults to ST_DEFEND for safety when problems detected
+ *   - Essential for determining real unit behavior in groups
+ *   - Fixes self-referential leader pointers automatically
+ */
 /* GROUP_STAT -- Return the status of the given group */
 int
 group_stat PARM_1(int, idnum)
@@ -813,6 +1298,28 @@ group_stat PARM_1(int, idnum)
   return(statval);
 }
 
+/*
+ * real_stat - Get the effective operational status of an army unit
+ *
+ * Determines the actual status that governs unit behavior, following
+ * group leadership chains if the unit is grouped under another leader.
+ * Provides the status used for combat, movement, and other decisions.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Effective status governing unit behavior
+ *
+ * Side Effects:
+ *   - None (read-only status resolution)
+ *
+ * Notes:
+ *   - Returns unit's own status if not grouped
+ *   - Follows leadership chain if unit has ST_GROUPED status
+ *   - Used throughout game logic for status-dependent decisions
+ *   - Simpler interface than group_stat for direct unit queries
+ */
 /* REAL_STAT -- Return the real status of the army unit */
 int
 real_stat PARM_1(ARMY_PTR, a1_ptr)
@@ -826,6 +1333,30 @@ real_stat PARM_1(ARMY_PTR, a1_ptr)
   return(hold);
 }
 
+/*
+ * defaultunit - Select the optimal default unit type for nation drafting
+ *
+ * Determines the best available unit type for a nation to draft based on
+ * their magical powers, race characteristics, and available unit types.
+ * Prioritizes more powerful units when the nation has appropriate powers.
+ *
+ * Parameters:
+ *   None (uses global ntn_ptr for nation context)
+ *
+ * Returns:
+ *   Unit type ID for default drafting, or DEFAULT_ARMYTYPE if none found
+ *
+ * Side Effects:
+ *   - None (read-only unit type selection)
+ *
+ * Notes:
+ *   - Vampire nations prefer zombies if available
+ *   - Orc nations prefer uruk-hai and olog-hai based on powers
+ *   - Archery nations prefer archers
+ *   - Nomad nations prefer light cavalry
+ *   - Falls back to infantry if no special preferences match
+ *   - Essential for automated unit recruitment decisions
+ */
 /* DEFAULTUNIT -- Selection of the default unit for drafting */
 int
 defaultunit PARM_0(void)
@@ -874,6 +1405,28 @@ defaultunit PARM_0(void)
   return(DEFAULT_ARMYTYPE);
 }
 
+/*
+ * getruler - Get the ruler unit type for a nation class
+ *
+ * Looks up the appropriate ruler unit type for the specified nation class
+ * from the nation class configuration table. Rulers are the highest-level
+ * leaders available to each nation type.
+ *
+ * Parameters:
+ *   class - Nation class index (0 to nclass_number-1)
+ *
+ * Returns:
+ *   Unit type ID for the ruler, or DEFAULT_RULERTYPE if not found
+ *
+ * Side Effects:
+ *   - May write warning messages to fupdate file
+ *
+ * Notes:
+ *   - Each nation class has a predefined ruler type
+ *   - Falls back to DEFAULT_RULERTYPE if ruler not found
+ *   - Logs warnings for missing ruler types
+ *   - Used during nation initialization and leader creation
+ */
 /* GETRULER -- Return the major leader for the national class */
 int
 getruler PARM_1(int, class)
@@ -896,6 +1449,28 @@ getruler PARM_1(int, class)
   return(lead_val);
 }
 
+/*
+ * getminleader - Get the minor leader unit type for a nation class
+ *
+ * Looks up the appropriate minor leader unit type for the specified nation
+ * class from the nation class configuration table. Minor leaders are
+ * mid-level commanders below the main ruler.
+ *
+ * Parameters:
+ *   class - Nation class index (0 to nclass_number-1)
+ *
+ * Returns:
+ *   Unit type ID for the minor leader, or DEFAULT_LEADERTYPE if not found
+ *
+ * Side Effects:
+ *   - May write warning messages to fupdate file
+ *
+ * Notes:
+ *   - Each nation class has a predefined minor leader type
+ *   - Falls back to DEFAULT_LEADERTYPE if leader not found
+ *   - Logs warnings for missing leader types
+ *   - Used for creating secondary commanders and group leaders
+ */
 /* GETMINLEADER -- Return the minor leader for the national class */
 int
 getminleader PARM_1(int, class)
@@ -918,6 +1493,28 @@ getminleader PARM_1(int, class)
   return(lead_val);
 }
 
+/*
+ * cargo_holds - Calculate total cargo capacity from ship information word
+ *
+ * Computes the total cargo hold capacity from a bit-packed ship information
+ * word by summing holds across all ship sizes. Light ships have fewer holds
+ * than heavy ships, with capacity scaling by size class.
+ *
+ * Parameters:
+ *   shipinfo - Bit-packed ship information (0 = no ships)
+ *
+ * Returns:
+ *   Total number of cargo holds across all ships
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Light ships = 1 hold each, Medium = 2 holds, Heavy = 3 holds
+ *   - Quick return of 0 if no ships present
+ *   - Used for capacity calculations and resource transport planning
+ *   - Works with bit-packed ship data format
+ */
 /* CARGO_HOLDS -- The number of holds in the given ship information */
 int
 cargo_holds PARM_1(int, shipinfo)
@@ -935,6 +1532,28 @@ cargo_holds PARM_1(int, shipinfo)
   return(count);
 }
 
+/*
+ * navy_holds - Get cargo capacity for a specific ship class in a fleet
+ *
+ * Returns the total cargo hold capacity for a specific ship class
+ * (galleys, warships, etc.) within a naval fleet. Delegates to
+ * cargo_holds for the actual calculation.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to navy unit
+ *   classnum - Ship class index (0 to NSHP_NUMBER-1)
+ *
+ * Returns:
+ *   Number of cargo holds for the specified ship class
+ *
+ * Side Effects:
+ *   - None (read-only capacity query)
+ *
+ * Notes:
+ *   - Simple wrapper around cargo_holds for specific ship class
+ *   - Used when calculating capacity for specific ship types
+ *   - Ship classes include galleys, warships, etc.
+ */
 /* NAVY_HOLDS -- The number of holds among a class of ships in a given fleet */
 int
 navy_holds PARM_2(NAVY_PTR, n1_ptr, int, classnum)
@@ -942,6 +1561,28 @@ navy_holds PARM_2(NAVY_PTR, n1_ptr, int, classnum)
   return( cargo_holds(n1_ptr->ships[classnum]) );
 }
 
+/*
+ * check_leader - Verify if a unit is actively leading other units
+ *
+ * Checks whether the specified unit is actually functioning as a group
+ * leader by scanning for other units in the same sector that are grouped
+ * under this unit's command.
+ *
+ * Parameters:
+ *   idnum - Army ID of potential leader to check
+ *
+ * Returns:
+ *   TRUE if unit is actively leading others, FALSE otherwise
+ *
+ * Side Effects:
+ *   - None (read-only leadership verification)
+ *
+ * Notes:
+ *   - Searches same sector for units with this leader ID
+ *   - Unit must exist and be in a valid location
+ *   - Returns FALSE if unit doesn't exist or has no followers
+ *   - Used to validate leadership status for game mechanics
+ */
 /* CHECK_LEADER -- return TRUE or FALSE if a leader is really leading */
 int
 check_leader PARM_1(int, idnum)
@@ -968,6 +1609,30 @@ check_leader PARM_1(int, idnum)
   return(FALSE);
 }
 
+/*
+ * army_mvpts - Calculate movement points for an army unit
+ *
+ * Computes the movement points available to an army unit based on nation
+ * movement capability, unit type speed, unit status, and group leadership
+ * constraints. Group leaders are limited by their slowest subordinates.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation owning the unit (must not be NULL)
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Movement points available for the unit, 0 if invalid parameters
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Formula: (nation_maxmove * unit_speed * speed_status) / 20
+ *   - Group leaders limited by slowest grouped subordinate
+ *   - SPD_STUCK status results in 0 movement
+ *   - Leaders get slight movement penalty when managing groups
+ *   - Essential for movement planning and turn management
+ */
 /* ARMY_MVPTS -- Return the starting movement for the specified unit */
 int
 army_mvpts PARM_2(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr)
@@ -1040,6 +1705,31 @@ take_value PARM_1(int, statval)
   return(hold);
 }
 
+/*
+ * army_captsize - Calculate unit strength for sector capture operations
+ *
+ * Determines the effective strength of an army unit for capturing or holding
+ * territory, considering unit type, status, efficiency, and capture capabilities.
+ * Different unit types contribute different amounts to territorial control.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *   takefigure - If TRUE, apply status and efficiency modifiers
+ *
+ * Returns:
+ *   Effective capture strength, 0 if unit cannot capture territory
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Scout units cannot capture territory (return 0)
+ *   - Leaders count as 1 regardless of strength
+ *   - Normal units use strength * capture_value / 10
+ *   - Status affects capture ability (attack vs defend vs reserve)
+ *   - Efficiency reduces effective strength when takefigure is TRUE
+ *   - Essential for territorial control calculations
+ */
 /* ARMY_CAPTSIZE -- Strength of the unit in relation to sector taking */
 long
 army_captsize PARM_2(ARMY_PTR, a1_ptr, int, takefigure)
@@ -1083,6 +1773,29 @@ army_captsize PARM_2(ARMY_PTR, a1_ptr, int, takefigure)
   return(lvalue * multval);
 }
 
+/*
+ * army_worksize - Calculate unit strength for construction and work projects
+ *
+ * Determines the effective work capacity of an army unit for building
+ * projects, construction, and other labor-intensive activities. Different
+ * unit types have varying work capabilities.
+ *
+ * Parameters:
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Effective work capacity, 0 if invalid unit
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Leaders contribute minimal work capacity (1 unit)
+ *   - Normal units use strength * work_value / 10
+ *   - Efficiency affects final work output
+ *   - Used for construction time and labor calculations
+ *   - Essential for building and engineering projects
+ */
 /* ARMY_WORKSIZE -- Strength of the unit in relation to building potential */
 long
 army_worksize PARM_1(ARMY_PTR, a1_ptr)
@@ -1106,6 +1819,29 @@ army_worksize PARM_1(ARMY_PTR, a1_ptr)
   return((lvalue * a1_ptr->efficiency) / 100);
 }
 
+/*
+ * rand_monstunit - Select a random monster unit within strength limits
+ *
+ * Randomly selects an available monster unit type that doesn't exceed the
+ * specified maximum strength requirement. Used for random monster encounters
+ * and automated monster summoning with appropriate power levels.
+ *
+ * Parameters:
+ *   maxstrength - Maximum strength limit for selected monster
+ *
+ * Returns:
+ *   Unit type ID of randomly selected monster
+ *
+ * Side Effects:
+ *   - None (read-only selection using random numbers)
+ *
+ * Notes:
+ *   - Only considers monster units (a_ismonster)
+ *   - Excludes non-draftable monsters (a_nodraft)
+ *   - Filters by minimum strength requirements
+ *   - Uses two-pass algorithm: count valid options, then select randomly
+ *   - Essential for balanced random encounters
+ */
 /* RAND_MONSTUNIT -- Give random monster unit as limited by size */
 int
 rand_monstunit PARM_1(int, maxstrength)
