@@ -3692,6 +3692,29 @@ army_renum PARM_1(int, newnum)
   ARMY_ID = newnum;
 }
 
+/*
+ * navy_renum - Renumber a naval unit and update all references
+ *
+ * Changes the ID number of the current naval unit and updates all references
+ * to the old ID throughout the game data structures. Ensures referential
+ * integrity for items that belong to this naval unit.
+ *
+ * Parameters:
+ *   newnum - New ID number to assign to the naval unit
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Updates naval unit's ID number
+ *   - Updates naval references in item structures
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr and navy_ptr
+ *   - If unit has items, updates item ownership references
+ *   - Does not affect army or caravan references (navies only carry armies/caravans)
+ *   - Essential for maintaining data consistency during naval renumbering
+ */
 /* NAVY_RENUM -- Renumber the current navy unit in the current nation */
 void
 navy_renum PARM_1(int, newnum)
@@ -3710,6 +3733,30 @@ navy_renum PARM_1(int, newnum)
   NAVY_ID = newnum;
 }
 
+/*
+ * cvn_renum - Renumber a caravan unit and update all references
+ *
+ * Changes the ID number of the current caravan unit and updates all references
+ * to the old ID throughout the game data structures. Ensures referential
+ * integrity across naval units and items that reference this caravan.
+ *
+ * Parameters:
+ *   newnum - New ID number to assign to the caravan unit
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Updates caravan unit's ID number
+ *   - Updates caravan references in naval units (if onboard)
+ *   - Updates caravan references in item structures
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr and cvn_ptr
+ *   - If caravan is onboard ships, updates naval cargo references
+ *   - If caravan has items, updates item ownership references
+ *   - Essential for maintaining data consistency during caravan renumbering
+ */
 /* CVN_RENUM -- Renumber the current caravan unit in the current nation */
 void
 cvn_renum PARM_1(int, newnum)
@@ -3738,6 +3785,32 @@ cvn_renum PARM_1(int, newnum)
   CVN_ID = newnum;
 }
 
+/*
+ * army_spellpts - Calculate maximum spell points for an army unit
+ *
+ * Determines the maximum spell points an army unit should have based on
+ * unit type, caster abilities, nation spell point capacity, and unit
+ * characteristics. Different unit types have varying spell capacities.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (for spell point attributes)
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Maximum spell points for the unit, 0 if unit cannot cast spells
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Only leaders (a_isleader) and spell casters (a_castspells) get spell points
+ *   - Rulers and full casters: full nation spell point attribute
+ *   - Other leaders: half nation spell point attribute
+ *   - Non-caster leaders: quarter nation spell point attribute
+ *   - Monster units: 75% of calculated value with strength scaling
+ *   - Final value affected by unit strength for monsters
+ *   - Essential for magical combat and spellcasting capacity
+ */
 /* ARMY_SPELLPTS -- How many spell points maximum should a unit get? */
 int
 army_spellpts PARM_2(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr)
@@ -3777,6 +3850,30 @@ army_spellpts PARM_2(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr)
   return(hold);
 }
 
+/*
+ * start_unitsply - Get standard starting supply value for new units
+ *
+ * Determines the initial supply level that newly created units should
+ * have when recruited or created. Provides a reasonable default that
+ * balances early unit effectiveness with resource management.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Standard starting supply value (2, or MAXSUPPLIES if less than 2)
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Returns 2 as standard starting supply if MAXSUPPLIES >= 2
+ *   - Returns MAXSUPPLIES if system limit is less than 2
+ *   - Ensures new units start with reasonable supply levels
+ *   - Used during unit recruitment and creation processes
+ *   - Prevents units from starting with excessive or inadequate supplies
+ *   - Essential for consistent unit initialization
+ */
 /* START_UNITSPLY -- Return the standard starting supply value for new units */
 int
 start_unitsply PARM_0(void)
