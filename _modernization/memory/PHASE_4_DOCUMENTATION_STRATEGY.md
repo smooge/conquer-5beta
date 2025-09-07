@@ -243,12 +243,19 @@ Platform-specific and legacy code:
 **All Priority 5B Data Management Extensions files have been documented!**
 
 ### Current Target
-**Priority 5C Progress: 9/11 files** (9 files fully complete)
-**Current Target**: moveG.c (Movement interface)
+**Priority 5C Progress: 9.5/11 files** (9 files complete, 1 file in progress)
+**Current Target**: moveG.c (Movement interface) - **CHECKPOINT 1 COMPLETE**
 
-**Next Target**: Continue with moveG.c (Movement interface) in next session
-**Priority 5 Progress**: 20/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 9/11 complete)
+**Next Target**: Resume moveG.c Checkpoint 2 (functions 16-24) in next session
+**Priority 5 Progress**: 20.5/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 9.5/11 in progress)
 **Strategy**: Continue Priority 5C - User Interface Extensions
+
+### Active Checkpoint Status 📍
+**moveG.c Checkpoint 1**: ✅ COMPLETE (Functions 1-15 documented)
+- **Commit**: `5c1804e` - Checkpoint 1 documentation with 448+ lines added
+- **Functions Documented**: 15/24 (move_select through mp_west)
+- **Progress**: Core movement system architecture, validation, and display systems
+- **Next**: Resume with Checkpoint 2 (functions 16-24) in fresh session
 
 ### Session Metrics Goal (Updated for Checkpoint System)
 - **Target**: 1 file per session (if ≤15 functions) OR 15 functions per session (if >15 functions)
