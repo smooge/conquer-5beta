@@ -246,16 +246,16 @@ Platform-specific and legacy code:
 **Priority 5C Progress: 10/11 files** (10 files complete, 1 file remaining)
 **Current Target**: moveG.c (Movement interface) - **COMPLETED** ✅
 
-**Next Target**: ntninfoG.c (Nation information interface) - final Priority 5C file
+**Next Target**: ntninfoG.c (Nation information interface) - final Priority 5C file - **CHECKPOINT 1 COMPLETE**
 **Priority 5 Progress**: 21/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 10/11 complete)
 **Strategy**: Continue Priority 5C - User Interface Extensions
 
 ### Active Checkpoint Status 📍
-**moveG.c**: ✅ COMPLETE (All 24 functions documented)
-- **Checkpoint 1**: `5c1804e` - Functions 1-15 (core movement system)
-- **Checkpoint 2**: CURRENT SESSION - Functions 16-24 (directional commands and interface)
-- **Functions Documented**: 24/24 (complete movement interface system)
-- **Status**: Ready for final commit and Priority 5C completion
+**ntninfoG.c**: 🚧 IN PROGRESS (Nation information interface)
+- **Checkpoint 1**: `818cfd4` - Functions 1-15 (core I/O functions) ✅ COMPLETE
+- **Checkpoint 2**: PENDING - Functions 16-30 (interface control and navigation)
+- **Functions Documented**: 15/30+ (estimated 30+ total functions)
+- **Status**: Continue with Checkpoint 2 in next session
 
 ### Session Metrics Goal (Updated for Checkpoint System)
 - **Target**: 1 file per session (if ≤15 functions) OR 15 functions per session (if >15 functions)
