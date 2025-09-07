@@ -27,7 +27,30 @@
 #include "statusX.h"
 #include "caravanX.h"
 
-/* CHANGE_NSPEED -- Adjust the movement rate of a navy unit */
+/*
+ * change_nspeed - Adjust the movement rate of a navy unit
+ *
+ * Changes the movement speed setting of a naval fleet, affecting how far
+ * the fleet can move per turn. Applies movement penalties for non-god
+ * players to prevent speed manipulation exploits.
+ *
+ * Parameters:
+ *   n1_ptr - Navy unit to change speed for (must not be NULL)
+ *   new_speed - New speed setting (SPD_SLOW, SPD_NORMAL, SPD_FAST)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies navy's movement speed setting
+ *   - Reduces current movement points by 10 unless god
+ *   - Updates navy status flags for display
+ *
+ * Notes:
+ *   - Gods bypass movement point penalties
+ *   - Speed changes consume movement points to prevent exploitation
+ *   - Function validates input and handles NULL pointer gracefully
+ */
 static void
 change_nspeed PARM_2(NAVY_PTR, n1_ptr, int, new_speed)
 {
@@ -53,7 +76,36 @@ change_nspeed PARM_2(NAVY_PTR, n1_ptr, int, new_speed)
   NADJSTAT;
 }
 
-/* DISB_NAVY -- Get rid of a naval unit */
+/*
+ * disb_navy - Disband a naval fleet and handle resource redistribution
+ *
+ * Completely disbands a naval fleet, returning crew to civilian population
+ * and redistributing supplies back to the sector. This function handles
+ * population dispersal, supply return, and economic effects of fleet
+ * disbanding with different rules for crew and passengers.
+ *
+ * Parameters:
+ *   n1_ptr - Navy fleet to disband (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Destroys the naval fleet completely
+ *   - Adds crew and passengers to sector civilian population
+ *   - Returns supplies to sector resource pools
+ *   - Updates city recruiting pools where applicable
+ *   - Triggers hex display recalculation
+ *
+ * Notes:
+ *   - Fleets must disband in own territory unless god
+ *   - All cargo must be unloaded before disbanding
+ *   - May prompt for confirmation unless expert mode
+ *   - Crew dispersal calculated by ship type and capacity
+ *   - 1/4 of population added to city recruiting pool
+ *   - Supply redistribution may be lost if sector inaccessible
+ *   - Wood from ships potentially added to sector (unimplemented)
+ */
 void
 disb_navy PARM_1 (NAVY_PTR, n1_ptr)
 {
@@ -154,7 +206,37 @@ disb_navy PARM_1 (NAVY_PTR, n1_ptr)
   navy_ptr = nhold_ptr;
 }
 
-/* COMB_NAVIES -- Merge the second navy into the first */
+/*
+ * comb_navies - Merge the second navy fleet into the first
+ *
+ * Combines two naval fleets into a single fleet, merging ship counts,
+ * crew levels, supplies, cargo, and other attributes. The second fleet
+ * is destroyed after successful merging. This function performs extensive
+ * validation to ensure fleets can be legally combined.
+ *
+ * Parameters:
+ *   n1_ptr - Target navy fleet to merge into (must not be NULL)
+ *   n2_ptr - Source navy fleet to merge from (will be destroyed, must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Increases ship counts of first fleet by ships from second fleet
+ *   - Destroys the second navy fleet completely
+ *   - Adjusts crew, supply, cargo, and material values proportionally
+ *   - Merges cargo (armies/caravans) from second fleet
+ *   - Updates movement based on minimum of both fleets
+ *
+ * Notes:
+ *   - Fleets must be in same location and compatible status
+ *   - Cannot combine if both carry armies or both carry caravans
+ *   - Spell enhancement status must match between fleets
+ *   - Ship combination validates maximum capacity per ship type
+ *   - Crew and supply values weighted by cargo hold capacity
+ *   - Passenger capacity calculated separately for galleys
+ *   - Movement is set to minimum to prevent exploitation
+ */
 static void
 comb_navies PARM_2 (NAVY_PTR, n1_ptr, NAVY_PTR, n2_ptr)
 {
@@ -333,7 +415,31 @@ comb_navies PARM_2 (NAVY_PTR, n1_ptr, NAVY_PTR, n2_ptr)
   navy_ptr = NULL;
 }
 
-/* CHANGE_NAVYSTATUS -- Adjust the status of a navy unit */
+/*
+ * change_nstatus - Adjust the status of a navy unit to a new operational status
+ *
+ * Changes the operational status of a naval fleet (sailing, blockade, repair,
+ * etc.) and applies movement penalties to prevent status manipulation exploits.
+ * This is a simpler version of army status changes without group management.
+ *
+ * Parameters:
+ *   n1_ptr - Navy unit to change status for (must not be NULL)
+ *   new_stat - New status value to assign to the fleet
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies navy's operational status
+ *   - Reduces movement points by 10 unless god
+ *   - Updates navy status flags for display
+ *
+ * Notes:
+ *   - Gods bypass movement penalties
+ *   - Status changes consume movement points to prevent exploitation
+ *   - No group management needed (navies don't group like armies)
+ *   - Simpler validation than army status changes
+ */
 static void
 change_nstatus PARM_2(NAVY_PTR, n1_ptr, int, new_stat)
 {
@@ -356,7 +462,35 @@ change_nstatus PARM_2(NAVY_PTR, n1_ptr, int, new_stat)
   }
 }
 
-/* SPLIT_NAVY -- Create a new naval unit with the ships specified */
+/*
+ * split_navy - Create a new naval unit with interactively specified ships
+ *
+ * Interactive interface for splitting ships from an existing fleet to create
+ * a new fleet. Prompts user for each ship type/size combination, validates
+ * inputs, and creates new fleet with proportional crew, supplies, and cargo.
+ *
+ * Parameters:
+ *   n1_ptr - Source navy fleet to split ships from (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates a new navy fleet with specified ships
+ *   - Reduces source fleet by removed ships
+ *   - Distributes passengers, cargo, and supplies proportionally
+ *   - New fleet inherits location, status, and other attributes
+ *   - Triggers navy sorting to maintain list order
+ *
+ * Notes:
+ *   - Cannot split fleets with certain statuses (sale, etc.)
+ *   - Cannot split ships carrying armies (warships) or caravans (barges)
+ *   - Prompts for each ship type/size combination interactively
+ *   - Validates that original fleet retains at least some ships
+ *   - Validates that split operation actually moves ships
+ *   - Materials distributed proportionally by merchant ship capacity
+ *   - Passengers only transferred if galleys are split
+ */
 static void
 split_navy PARM_1(NAVY_PTR, n1_ptr)
 {
@@ -504,7 +638,36 @@ split_navy PARM_1(NAVY_PTR, n1_ptr)
   navy_sort();
 }
 
-/* SEPARATE_NAVY -- Separate out a specified ship class from the fleet */
+/*
+ * separate_navy - Separate out all ships of a specified class from the fleet
+ *
+ * Separates all ships of a chosen type (warships, merchants, barges, galleys)
+ * from an existing fleet to create a new independent fleet. This is faster
+ * than interactive splitting when you want to separate entire ship classes.
+ *
+ * Parameters:
+ *   n1_ptr - Source navy fleet to separate ships from (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates a new navy fleet with all ships of specified type
+ *   - Removes all ships of specified type from source fleet
+ *   - Transfers associated cargo based on ship type (armies, caravans, materials, passengers)
+ *   - New fleet inherits location, status, crew, supply, and efficiency
+ *
+ * Notes:
+ *   - Requires at least 2 different ship types in original fleet
+ *   - Prompts user to choose ship type to separate
+ *   - Ship type determines what cargo is transferred:
+ *     * Warships: Transfer army cargo
+ *     * Barges: Transfer caravan cargo  
+ *     * Merchants: Transfer all materials
+ *     * Galleys: Transfer all passengers
+ *   - New fleet gets all efficiency ratings for separated ship type
+ *   - Original fleet retains all other ship types and their cargo
+ */
 static void
 separate_navy PARM_1(NAVY_PTR, n1_ptr)
 {
@@ -656,7 +819,36 @@ separate_navy PARM_1(NAVY_PTR, n1_ptr)
   }
 }
 
-/* SUPPLY_NAVY -- Attempt to set the supply value of a navy unit */
+/*
+ * supply_navy - Set the supply level of a navy unit
+ *
+ * Manages the supply level of a naval fleet by either taking resources from
+ * the current sector to increase supplies, or redistributing excess supplies
+ * back to the sector. Special handling for water sectors where fleets can
+ * only resupply from the exact sector they're in.
+ *
+ * Parameters:
+ *   n1_ptr - Navy fleet to supply (must not be NULL)
+ *   level - Desired supply level (0 to MAXSUPPLIES * 4)
+ *   doquery - If TRUE, prompt user for confirmation of resource costs
+ *
+ * Returns:
+ *   TRUE if operation should be retried/held, FALSE if completed successfully
+ *
+ * Side Effects:
+ *   - Modifies navy supply level to specified value
+ *   - Takes resources from sector when increasing supplies
+ *   - Returns excess resources to sector when decreasing supplies (if enabled)
+ *   - Updates cursor position and display during resource transactions
+ *
+ * Notes:
+ *   - Navy supply capacity is 4x army capacity (MAXSUPPLIES * 4)
+ *   - Water sectors force insectonly mode (local supply only)
+ *   - MAYGIVEBACK compile flag controls if navies can return supplies
+ *   - Must be in owned territory for normal resupply operations
+ *   - Resource availability checked before transaction
+ *   - Supply costs calculated by navy_support() function
+ */
 int
 supply_navy PARM_3(NAVY_PTR, n1_ptr, int, level, int, doquery)
 {
@@ -817,7 +1009,34 @@ supply_navy PARM_3(NAVY_PTR, n1_ptr, int, level, int, doquery)
   return(hold);
 }
 
-/* NAVY_REPAIR -- Attempt to repair a navy */
+/*
+ * navy_repair - Repair a damaged naval fleet in a harbor
+ *
+ * Restores all ship efficiency ratings to 100% for a fleet located in
+ * a harbor. Requires supply center with sufficient materials and sets
+ * fleet to repair status, consuming all remaining movement for the turn.
+ *
+ * Parameters:
+ *   n1_ptr - Navy fleet to repair (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets all ship efficiency ratings to 100%
+ *   - Consumes repair materials from harbor city
+ *   - Sets fleet status to ST_REPAIR
+ *   - Reduces fleet movement to 0
+ *
+ * Notes:
+ *   - Requires fleet to be in harbor (MIN_HARBOR designation)
+ *   - Requires functioning supply center/city in same sector
+ *   - Repair costs calculated by navy_redocosts() function
+ *   - May prompt for confirmation showing material costs
+ *   - Gods can repair anywhere without material costs
+ *   - Fleet cannot move further after repair begins
+ *   - Repairs complete efficiency regardless of damage level
+ */
 void
 navy_repair PARM_1(NAVY_PTR, n1_ptr)
 {
@@ -906,7 +1125,31 @@ navy_repair PARM_1(NAVY_PTR, n1_ptr)
   }
 }
 
-/* NSTAT_OK -- Is the naval status okay? */
+/*
+ * nstat_ok - Validate if a naval status change is legally allowed
+ *
+ * Checks whether a naval fleet can legally change to a specified status
+ * based on current conditions. This is a simpler validation than army
+ * status checks since navies have fewer restrictions and no grouping.
+ *
+ * Parameters:
+ *   new_stat - Proposed new status to validate
+ *   verbal - If TRUE, display error messages to user; if FALSE, silent check
+ *
+ * Returns:
+ *   TRUE if status change is allowed, FALSE if prohibited
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - No state changes (pure validation function)
+ *
+ * Notes:
+ *   - Gods bypass all restrictions
+ *   - Cannot change from certain unalterable statuses
+ *   - Cannot set status to same as current status
+ *   - Much simpler than army validation (no terrain/diplomatic checks)
+ *   - No grouping restrictions since navies don't group
+ */
 static int
 nstat_ok PARM_2(int, new_stat, int, verbal)
 {
@@ -945,7 +1188,31 @@ nstat_ok PARM_2(int, new_stat, int, verbal)
   return(TRUE);
 }
 
-/* NSPEED_OK -- Is the given navy speed possible for the unit */
+/*
+ * nspeed_ok - Validate if a naval speed change is legally allowed
+ *
+ * Checks whether a naval fleet can legally change to a specified movement
+ * speed based on current movement points and fleet status. Prevents
+ * speed manipulation exploits while allowing legitimate speed changes.
+ *
+ * Parameters:
+ *   new_speed - Proposed new speed setting to validate
+ *   verbal - If TRUE, display error messages to user; if FALSE, silent check
+ *
+ * Returns:
+ *   TRUE if speed change is allowed, FALSE if prohibited
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - No state changes (pure validation function)
+ *
+ * Notes:
+ *   - Fleets with nomove status cannot change speed
+ *   - Cannot increase speed if fleet has moved too far (< 25 movement)
+ *   - Cannot set speed to same as current speed
+ *   - Validation prevents speed-change exploits
+ *   - Movement restrictions ensure tactical realism
+ */
 static int
 nspeed_ok PARM_2(int, new_speed, int, verbal)
 {
@@ -980,7 +1247,36 @@ nspeed_ok PARM_2(int, new_speed, int, verbal)
   return(TRUE);
 }
 
-/* EXT_NAVYINFO -- Provide extended information about the naval fleet */
+/*
+ * ext_navyinfo - Display comprehensive information about a naval fleet
+ *
+ * Shows detailed information about a naval fleet including ship composition,
+ * status, efficiency, crew, cargo, and supply information. This provides
+ * players with complete fleet details for strategic planning and fleet
+ * management, similar to ext_armyinfo but for naval units.
+ *
+ * Parameters:
+ *   n1_ptr - Navy fleet to display information for (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area and displays fleet information
+ *   - Waits for user keypress before returning
+ *   - No permanent state changes
+ *
+ * Notes:
+ *   - Displays 5 lines of detailed fleet information
+ *   - Line 1: Fleet composition by ship type with light/medium/heavy counts
+ *   - Line 2: Status, speed, movement remaining, and movement ability
+ *   - Line 3: Efficiency by ship type, total crew, and location
+ *   - Line 4: Cargo details (passengers, armies, caravans, materials)
+ *   - Line 5: Supply level and per-turn supply costs
+ *   - Ship counts shown as light/medium/heavy ratios
+ *   - Crew calculated as crew-per-hold times total holds
+ *   - Coordinates shown in relative format for player reference
+ */
 void
 ext_navyinfo PARM_1(NAVY_PTR, n1_ptr)
 {
@@ -1092,7 +1388,39 @@ ext_navyinfo PARM_1(NAVY_PTR, n1_ptr)
   presskey();
 }
 
-/* EXT_NAVYCMD -- Perform an extended navy operation */
+/*
+ * ext_navycmd - Main interface for extended naval fleet operations
+ *
+ * Comprehensive command interface for naval fleet manipulation including
+ * combining, splitting, separating, status changes, speed adjustments,
+ * supply management, repair operations, and cargo transfer. This is the
+ * primary fleet management interface in the game, analogous to ext_armycmd.
+ *
+ * Parameters:
+ *   navie - Navy fleet ID to operate on, or -1 to use unit selector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May modify navy fleets in various ways based on user command
+ *   - Updates display and prompts user for input
+ *   - Can create, destroy, or modify naval fleets
+ *   - May trigger fleet list resorting and display updates
+ *
+ * Notes:
+ *   - If navie is -1, uses graphical unit selector
+ *   - Displays all available commands with highlighting for valid options
+ *   - Commands include: info (?), combine (+), merge (M), split (-), 
+ *     separate (/), renumber (#), speed changes (<>=), disband (D), 
+ *     supply (S), repair (R), transfer cargo (T), and status changes
+ *   - Command availability depends on fleet state and location
+ *   - Speed commands shown with abbreviated names (< = >)
+ *   - Status commands displayed with highlighting for valid statuses
+ *   - Repair only available for damaged fleets in harbors
+ *   - Expert mode skips some confirmations
+ *   - Navigation automatically follows fleet after operations when appropriate
+ */
 void
 ext_navycmd PARM_1 (int, navie)
 {
@@ -1373,7 +1701,38 @@ ext_navycmd PARM_1 (int, navie)
   }
 }
 
-/* NAVY_TRANSPORT -- Load/Unload the given naval unit */
+/*
+ * navy_transport - Interactive cargo transfer interface for naval fleets
+ *
+ * Comprehensive interface for transferring cargo (armies, caravans, materials,
+ * passengers) between naval fleets and other units (other fleets, caravans,
+ * cities, or sectors). Handles movement synchronization and provides multiple
+ * transfer target options with intelligent selection logic.
+ *
+ * Parameters:
+ *   n1_ptr - Navy fleet to transfer cargo from/to (NULL to use selector)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Transfers cargo between fleet and selected target
+ *   - Synchronizes movement points between transferring units
+ *   - May modify fleet cargo, city resources, or sector resources
+ *   - Updates display during transfer operations
+ *
+ * Notes:
+ *   - If n1_ptr is NULL, uses graphical fleet selector
+ *   - Transfer targets: other fleets, caravans, cities, or sector
+ *   - Water sectors restrict transfers (fleets can't transfer to land)
+ *   - Movement points synchronized to minimum between units
+ *   - Expert mode may skip movement synchronization confirmation
+ *   - Uses transfer mode interface (xfer_mode) for actual transfers
+ *   - Automatically detects available transfer targets in sector
+ *   - Prompts user to choose between multiple available targets
+ *   - God mode allows transfers without normal restrictions
+ *   - Transfer operations use specialized conversion functions
+ */
 void
 navy_transport PARM_1(NAVY_PTR, n1_ptr)
 {
