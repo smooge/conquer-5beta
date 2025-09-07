@@ -39,7 +39,36 @@
 #include "dstatusX.h"
 #include "keyvalsX.h"
 
-/* COMB_ARMIES -- Merge the second army into the first */
+/*
+ * comb_armies - Merge the second army into the first army unit
+ *
+ * Combines two army units of the same type into a single unit, merging
+ * their strength, supplies, efficiency, and other attributes. The second
+ * army is destroyed after successful merging. This function performs
+ * extensive validation to ensure units can be legally combined.
+ *
+ * Parameters:
+ *   a1_ptr - Target army unit to merge into (must not be NULL)
+ *   a2_ptr - Source army unit to merge from (will be destroyed, must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Increases size of first army by strength of second army
+ *   - Destroys the second army unit completely
+ *   - Adjusts supply, efficiency, spell points, and movement values
+ *   - Updates group movement if units are grouped or leading
+ *   - May prompt user for confirmation if not in expert mode
+ *
+ * Notes:
+ *   - Units must be same type, same location, compatible status
+ *   - Leaders and scouts cannot be combined
+ *   - Flying/non-flying units cannot be mixed
+ *   - Spell enhancement status must match between units
+ *   - Supply and efficiency values are weighted by unit size
+ *   - Movement is set to minimum of both units
+ */
 static void
 comb_armies PARM_2 (ARMY_PTR, a1_ptr, ARMY_PTR, a2_ptr)
 {
@@ -204,7 +233,35 @@ comb_armies PARM_2 (ARMY_PTR, a1_ptr, ARMY_PTR, a2_ptr)
   army_ptr = NULL;
 }
 
-/* CHANGE_ASTATUS -- Adjust the status of an army unit */
+/*
+ * change_astatus - Adjust the status of an army unit to a new status
+ *
+ * Changes the operational status of an army unit (attack, defend, siege, etc.)
+ * and handles all associated side effects including movement penalties, group
+ * management, and special status transitions like sortie from siege.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to change status for (must not be NULL)
+ *   new_stat - New status value to assign to the unit
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies unit's operational status
+ *   - Reduces movement points based on status type (10-25 points)
+ *   - Handles ungrouping if unit was grouped
+ *   - Updates group leader status if necessary
+ *   - May prompt for sortie confirmation if sieged
+ *   - Adjusts speed from STUCK to SLOW if appropriate
+ *
+ * Notes:
+ *   - Sieged units can only switch to sortie, reserve, or attack
+ *   - Attack status from siege automatically becomes sortie (irrevocable)
+ *   - Grouped units inherit some properties from their leader
+ *   - Location-dependent statuses cost more movement points
+ *   - Gods bypass movement penalties
+ */
 static void
 change_astatus PARM_2(ARMY_PTR, a1_ptr, int, new_stat)
 {
@@ -290,7 +347,32 @@ change_astatus PARM_2(ARMY_PTR, a1_ptr, int, new_stat)
   AADJSTAT;
 }
 
-/* CHANGE_ASPEED -- Adjust the movement rate of an army unit */
+/*
+ * change_aspeed - Adjust the movement rate of an army unit
+ *
+ * Changes the movement speed setting of an army unit (slow, normal, fast)
+ * and handles group movement synchronization if the unit is leading a group.
+ * Movement speed affects how far units can move per turn.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to change speed for (must not be NULL)
+ *   new_speed - New speed setting (SPD_SLOW, SPD_NORMAL, SPD_FAST)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies unit's movement speed setting
+ *   - Reduces current movement points by 10 unless god
+ *   - Updates group movement if unit is leading a group
+ *   - Adjusts unit status flags for display
+ *
+ * Notes:
+ *   - Gods bypass movement point penalties
+ *   - Leading units synchronize group movement to their speed
+ *   - Speed changes consume movement points to prevent exploitation
+ *   - Movement penalties are waived for leaders (handled in group logic)
+ */
 static void
 change_aspeed PARM_2(ARMY_PTR, a1_ptr, int, new_speed)
 {
@@ -323,7 +405,35 @@ change_aspeed PARM_2(ARMY_PTR, a1_ptr, int, new_speed)
   }
 }
 
-/* REDUCE_ARMY -- Separate out men from the unit */
+/*
+ * reduce_army - Separate out men from the unit to create a new army
+ *
+ * Splits a specified number of men from an existing army unit to create
+ * a new independent army unit with identical properties. The new unit
+ * inherits all characteristics from the original except for size.
+ *
+ * Parameters:
+ *   a1_ptr - Source army unit to split from (must not be NULL)
+ *   men - Number of men to separate into new unit (must be > 0)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates a new army unit with specified size
+ *   - Reduces source army size by the specified amount
+ *   - Distributes spell points proportionally between units
+ *   - New unit inherits location, status, supply, efficiency, leadership
+ *   - Triggers army sorting to maintain list order
+ *
+ * Notes:
+ *   - Leaders cannot be split (they are individual units)
+ *   - Mercenaries require minimum 10 men in each resulting unit
+ *   - Cannot split entire unit (use renumbering instead)
+ *   - Units with certain statuses cannot be split
+ *   - Spell points are distributed proportionally by unit size
+ *   - New unit gets next available army ID number
+ */
 static void
 reduce_army PARM_2(ARMY_PTR, a1_ptr, long, men)
 {
@@ -406,7 +516,29 @@ reduce_army PARM_2(ARMY_PTR, a1_ptr, long, men)
   army_sort(FALSE);
 }
 
-/* SPLIT_ARMY -- Separate a specified number of men from the unit */
+/*
+ * split_army - Interactive interface to separate men from a unit
+ *
+ * Prompts the user to specify how many men to split from an army unit
+ * and then calls reduce_army to perform the actual splitting operation.
+ * This is the user-facing interface for the army splitting functionality.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to split (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Prompts user for number of men to split
+ *   - Calls reduce_army if valid input provided
+ *   - May create new army unit if operation successful
+ *
+ * Notes:
+ *   - User can cancel operation by providing no input
+ *   - Input validation is handled by reduce_army function
+ *   - Uses get_number() for user input with cancellation support
+ */
 static void
 split_army PARM_1(ARMY_PTR, a1_ptr)
 {
@@ -427,7 +559,36 @@ split_army PARM_1(ARMY_PTR, a1_ptr)
   reduce_army(a1_ptr, men);
 }
 
-/* ADD_GROUP -- Add an army to a group */
+/*
+ * add_group - Add an army unit to a group under a leader
+ *
+ * Groups an army unit under a leader for coordinated movement and command.
+ * Grouped units move together and inherit certain properties from their
+ * leader. This function handles both interactive and programmatic grouping.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to add to a group (must not be NULL)
+ *   use_selector - If TRUE, use graphical selector; if FALSE, prompt for leader ID
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Changes unit status to ST_GROUPED
+ *   - Sets unit's leader reference to group leader
+ *   - Synchronizes movement and speed with leader
+ *   - Updates leader's status to indicate leadership
+ *   - Adjusts group movement calculations
+ *
+ * Notes:
+ *   - Units and leader must be in same location
+ *   - Leader must be a valid leader unit type
+ *   - Scouts cannot be grouped (work independently)
+ *   - Flying/landed units must match leader status
+ *   - Units on transports cannot join groups
+ *   - Cannot group under already-grouped units
+ *   - Speed is synchronized to faster unit
+ */
 static void
 add_group PARM_2(ARMY_PTR, a1_ptr, int, use_selector)
 {
@@ -538,7 +699,38 @@ add_group PARM_2(ARMY_PTR, a1_ptr, int, use_selector)
   GADJMOVE;
 }
 
-/* DISB_ARMY -- Get rid of an army unit */
+/*
+ * disb_army - Disband an army unit and handle resource redistribution
+ *
+ * Completely disbands an army unit, returning soldiers to civilian population
+ * and redistributing supplies back to the sector. This is a complex operation
+ * that handles various unit types differently and manages economic effects.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to disband (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Destroys the army unit completely
+ *   - Adds soldiers to sector civilian population
+ *   - Returns supplies to sector resource pools
+ *   - Increases mercenary pool for mercenary units
+ *   - Deducts payment for units requiring pay-offs
+ *   - Updates city recruiting pools where applicable
+ *   - Triggers hex display recalculation
+ *
+ * Notes:
+ *   - Leaders cannot be disbanded (refuse suicide)
+ *   - Normal soldiers must disband in own territory
+ *   - Requires functioning capital for organization
+ *   - May prompt for confirmation unless expert mode
+ *   - Units needing pay require talons for dismissal
+ *   - Undead units don't contribute to population
+ *   - Half-men units contribute reduced population
+ *   - Supply redistribution may be lost if sector inaccessible
+ */
 void
 disb_army PARM_1 (ARMY_PTR, a1_ptr)
 {
@@ -688,7 +880,37 @@ disb_army PARM_1 (ARMY_PTR, a1_ptr)
   hex_recalc();
 }
 
-/* SUPPLY_ARMY -- Attempt to set the supply value of an army unit */
+/*
+ * supply_army - Set the supply level of an army unit
+ *
+ * Manages the supply level of an army unit by either taking resources from
+ * the current sector to increase supplies, or redistributing excess supplies
+ * back to the sector. This function handles resource calculations, validation,
+ * and transaction processing for army supply management.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to supply (must not be NULL)
+ *   level - Desired supply level (0 to MAXSUPPLIES)
+ *   doquery - If TRUE, prompt user for confirmation of resource costs
+ *
+ * Returns:
+ *   TRUE if operation should be retried/held, FALSE if completed successfully
+ *
+ * Side Effects:
+ *   - Modifies army supply level to specified value
+ *   - Takes resources from sector when increasing supplies
+ *   - Returns excess resources to sector when decreasing supplies
+ *   - Updates cursor position and display during resource transactions
+ *
+ * Notes:
+ *   - Units with free supply don't need this function
+ *   - Must be in owned territory or have special supply access
+ *   - Monsters and paid units won't give back supplies
+ *   - Resource availability is checked before transaction
+ *   - Supply costs vary by unit type and game configuration
+ *   - Insect-type units can only get supplies from current sector
+ *   - Siege status limits supply sources to current sector only
+ */
 int
 supply_army PARM_3(ARMY_PTR, a1_ptr, int, level, int, doquery)
 {
@@ -859,7 +1081,36 @@ supply_army PARM_3(ARMY_PTR, a1_ptr, int, level, int, doquery)
   return(hold);
 }
 
-/* ASTAT_OK -- Is the army status alright to implement? */
+/*
+ * astat_ok - Validate if an army status change is legally allowed
+ *
+ * Checks whether an army unit can legally change to a specified status
+ * based on current conditions, unit type, location, and diplomatic status.
+ * This function enforces game rules for status transitions.
+ *
+ * Parameters:
+ *   new_stat - Proposed new status to validate
+ *   verbal - If TRUE, display error messages to user; if FALSE, silent check
+ *
+ * Returns:
+ *   TRUE if status change is allowed, FALSE if prohibited
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - No state changes (pure validation function)
+ *
+ * Notes:
+ *   - Scouts cannot change status (always defend)
+ *   - Covering units cannot sweep
+ *   - Some statuses cannot be changed once set
+ *   - Siege status requires enemy fortification
+ *   - Garrison requires friendly fortification
+ *   - Reserve requires fortified supply center
+ *   - Ambush/engage require controlled territory
+ *   - Diplomatic status affects territorial restrictions
+ *   - Gods bypass most restrictions
+ *   - Sieged units have limited status options
+ */
 static int
 astat_ok PARM_2(int, new_stat, int, verbal)
 {
@@ -992,7 +1243,31 @@ astat_ok PARM_2(int, new_stat, int, verbal)
   return(TRUE);
 }
 
-/* ASPEED_OK -- Is the given army speed possible for the unit */
+/*
+ * aspeed_ok - Validate if an army speed change is legally allowed
+ *
+ * Checks whether an army unit can legally change to a specified movement
+ * speed based on current movement points and unit status. Prevents
+ * speed manipulation exploits while allowing legitimate speed changes.
+ *
+ * Parameters:
+ *   new_speed - Proposed new speed setting to validate
+ *   verbal - If TRUE, display error messages to user; if FALSE, silent check
+ *
+ * Returns:
+ *   TRUE if speed change is allowed, FALSE if prohibited
+ *
+ * Side Effects:
+ *   - May display error messages if verbal is TRUE
+ *   - No state changes (pure validation function)
+ *
+ * Notes:
+ *   - Units with nomove status cannot change speed
+ *   - Cannot reduce speed if unit has moved too far (< 25 movement)
+ *   - Cannot set speed to same as current speed
+ *   - Validation prevents speed-change exploits
+ *   - Movement restrictions ensure tactical realism
+ */
 static int
 aspeed_ok PARM_2(int, new_speed, int, verbal)
 {
@@ -1027,7 +1302,34 @@ aspeed_ok PARM_2(int, new_speed, int, verbal)
   return(TRUE);
 }
 
-/* EXT_ARMYINFO -- Provide a bit of information about the given army unit */
+/*
+ * ext_armyinfo - Display comprehensive information about an army unit
+ *
+ * Shows detailed information about an army unit including type, size, strength,
+ * status, location, traits, and supply information. This provides players with
+ * complete unit details for strategic planning and unit management.
+ *
+ * Parameters:
+ *   a1_ptr - Army unit to display information for (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area and displays unit information
+ *   - Waits for user keypress before returning
+ *   - No permanent state changes
+ *
+ * Notes:
+ *   - Displays 4 lines of detailed unit information
+ *   - Line 1: Unit type, size, strength, and spell power
+ *   - Line 2: Status, speed, movement remaining, and movement ability
+ *   - Line 3: Health, location, and special traits (leading, spelled, healing)
+ *   - Line 4: Supply level and per-turn supply costs
+ *   - Monster strength calculated differently (size * min strength)
+ *   - Supply information only shown for units that need supplies
+ *   - Coordinates shown in relative format for player reference
+ */
 static void
 ext_armyinfo PARM_1 (ARMY_PTR, a1_ptr)
 {
@@ -1130,7 +1432,38 @@ ext_armyinfo PARM_1 (ARMY_PTR, a1_ptr)
   presskey();
 }
 
-/* EXT_ARMYCMD -- Perform an extended army operation */
+/*
+ * ext_armycmd - Main interface for extended army unit operations
+ *
+ * Comprehensive command interface for army unit manipulation including
+ * combining, splitting, grouping, status changes, speed adjustments,
+ * supply management, and detailed unit information. This is the primary
+ * army management interface in the game.
+ *
+ * Parameters:
+ *   armie - Army unit ID to operate on, or -1 to use unit selector
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May modify army units in various ways based on user command
+ *   - Updates display and prompts user for input
+ *   - Can create, destroy, or modify army units
+ *   - May trigger army list resorting and display updates
+ *
+ * Notes:
+ *   - If armie is -1, uses graphical unit selector
+ *   - Displays all available commands with highlighting for valid options
+ *   - Commands include: info (?), combine (+), merge (M), split (-/), 
+ *     ungroup (U), group (G), renumber (#), speed changes (<>=), 
+ *     disband (D), supply (S), leader adjustment (!), and status changes
+ *   - Command availability depends on unit type and current status
+ *   - Speed commands shown with abbreviated names (< > =)
+ *   - Status commands displayed with highlighting for valid statuses
+ *   - Expert mode skips some confirmations
+ *   - Navigation automatically follows unit after operations when appropriate
+ */
 void
 ext_armycmd PARM_1 (int, armie)
 {
@@ -1497,7 +1830,38 @@ ext_armycmd PARM_1 (int, armie)
   }
 }
 
-/* AUNIT_NUMBERING -- Interface to the army unit autonumbering system */
+/*
+ * aunit_numbering - Interface to the army unit automatic numbering system
+ *
+ * Provides a comprehensive interface for managing automatic army unit ID
+ * numbering rules. Allows setting default numbers, class-specific numbers,
+ * and unit-type-specific numbers to control how new units are numbered
+ * when created. Supports both global defaults and nation-specific schemes.
+ *
+ * Parameters:
+ *   None (void parameter list)
+ *
+ * Returns:
+ *   0 on successful completion
+ *
+ * Side Effects:
+ *   - May modify global or nation-specific numbering schemes
+ *   - Updates display with current numbering rules
+ *   - Can trigger complete renumbering of existing units
+ *   - Modifies persistent game configuration
+ *
+ * Notes:
+ *   - Works for both god (global defaults) and nations (specific schemes)
+ *   - Displays paginated list of current numbering rules
+ *   - Commands: S)et default, A)rmy class, U)nittype, D)efaults, 
+ *     R)enumber all, C)lear, Q)uit
+ *   - Numbering priority: specific unit type > army class > default
+ *   - Nations inherit global defaults if no specific scheme set
+ *   - Renumbering applies new scheme to all existing units
+ *   - Supports three numbering rule types: default (0), class (1), unit (2)
+ *   - Range validation ensures unit numbers stay within valid limits
+ *   - Changes are persistent and affect future unit creation
+ */
 int
 aunit_numbering PARM_0(void)
 {
@@ -1787,7 +2151,32 @@ aunit_numbering PARM_0(void)
   return(0);
 }
 
-/* UNGROUP_SCOUTS -- Remove any scouts from a group and set to defend */
+/*
+ * ungroup_scouts - Remove any scouts from a group and set to defend
+ *
+ * Automatically ungroups any scout units that are grouped under a specific
+ * leader and sets them to defend status. This enforces the game rule that
+ * scouts must work independently and cannot remain grouped.
+ *
+ * Parameters:
+ *   grpnum - Group leader ID number to check for grouped scouts
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Changes grouped scout units to defend status
+ *   - Removes scouts from group leadership
+ *   - Updates unit status flags for affected scouts
+ *
+ * Notes:
+ *   - Only affects scout units grouped under specified leader
+ *   - Scouts are set to ST_DEFEND status after ungrouping
+ *   - Searches units in same location as the group leader
+ *   - Preserves army_ptr state by saving and restoring
+ *   - Called automatically when group conditions change
+ *   - Enforces game rule that scouts work alone
+ */
 void
 ungroup_scouts PARM_1(int, grpnum)
 {
