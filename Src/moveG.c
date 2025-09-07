@@ -1662,7 +1662,32 @@ mp_west PARM_0(void)
   return(0);
 }
 
-/* MP_SOUTH -- Move the unit one to the south */
+/*
+ * mp_south - Move the unit one sector to the south
+ *
+ * Sets movement coordinates for southward movement. Unlike diagonal movements,
+ * south movement is identical in both hexagonal and rectangular map systems,
+ * simply decreasing the Y coordinate by one. This is one of the fundamental
+ * directional movement commands in the movement interface.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew to current X position (no change)
+ *   - Sets mp_ynew to one sector south (YREAL - 1)
+ *   - Clears mp_noinp flag to signal new movement input
+ *   - Uses global coordinate variables (xoffset, xcurs, YREAL)
+ *
+ * Notes:
+ *   - Identical behavior in hexagonal and rectangular map systems
+ *   - Movement validation occurs in calling function, not here
+ *   - Part of the six-directional movement command suite
+ *   - Always valid direction in both map geometries
+ */
 static int
 mp_south PARM_0(void)
 {
@@ -1673,7 +1698,32 @@ mp_south PARM_0(void)
   return(0);
 }
 
-/* MP_NORTH -- Move the unit one to the north */
+/*
+ * mp_north - Move the unit one sector to the north
+ *
+ * Sets movement coordinates for northward movement. Like south movement,
+ * north movement is identical in both hexagonal and rectangular map systems,
+ * simply increasing the Y coordinate by one. This provides consistent
+ * north-south navigation regardless of the underlying map geometry.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew to current X position (no change)
+ *   - Sets mp_ynew to one sector north (YREAL + 1)
+ *   - Clears mp_noinp flag to signal new movement input
+ *   - Uses global coordinate variables (xoffset, xcurs, YREAL)
+ *
+ * Notes:
+ *   - Identical behavior in hexagonal and rectangular map systems
+ *   - Movement validation occurs in calling function, not here
+ *   - Part of the six-directional movement command suite
+ *   - Always valid direction in both map geometries
+ */
 static int
 mp_north PARM_0(void)
 {
@@ -1684,7 +1734,38 @@ mp_north PARM_0(void)
   return(0);
 }
 
-/* MP_EAST -- Move the unit one sector to the east */
+/*
+ * mp_east - Move the unit one sector to the east
+ *
+ * Sets movement coordinates for eastward movement. In hexagonal maps,
+ * direct east movement is not geometrically possible (hex grids only
+ * support six-directional movement), so this generates an error message
+ * unless god mode is active. In rectangular maps, east movement simply
+ * increases the X coordinate.
+ *
+ * This function demonstrates the geometric constraints of hexagonal
+ * movement systems where only six directions are valid: north, south,
+ * northeast, northwest, southeast, and southwest.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates (rectangular maps)
+ *   - Clears mp_noinp flag if movement is valid
+ *   - Displays error message for invalid hexagonal east movement
+ *   - Uses global coordinate variables and world.hexmap flag
+ *
+ * Notes:
+ *   - Hexagonal geometry prevents direct east/west movement
+ *   - God mode overrides hexagonal movement restrictions
+ *   - Error message explains geometric limitation to users
+ *   - Rectangular maps support full eight-directional movement
+ *   - Companion to mp_west() with identical geometric restrictions
+ */
 static int
 mp_east PARM_0(void)
 {
@@ -1700,7 +1781,38 @@ mp_east PARM_0(void)
   return(0);
 }
 
-/* MP_SOUTHEAST -- Move unit one sector to the south east */
+/*
+ * mp_southeast - Move the unit one sector to the southeast
+ *
+ * Sets movement coordinates for southeast diagonal movement. The coordinate
+ * calculation differs significantly between hexagonal and rectangular map
+ * systems due to their different geometric properties. In hexagonal maps,
+ * the Y coordinate adjustment depends on column parity (even/odd X coordinates),
+ * while rectangular maps use simple diagonal coordinate adjustment.
+ *
+ * Hexagonal southeast movement uses complex coordinate transformation:
+ * - X increases by 1 (moves east)
+ * - Y decreases by 0 or 1 based on current column parity
+ * - Even columns: Y decreases by 0
+ * - Odd columns: Y decreases by 1
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates based on map type
+ *   - Clears mp_noinp flag to signal new movement input
+ *   - Uses global coordinate variables (xoffset, xcurs, XREAL, YREAL)
+ *
+ * Notes:
+ *   - Hexagonal maps require column parity calculation for Y coordinate
+ *   - Rectangular maps use simple diagonal coordinate adjustment
+ *   - Movement validation occurs in calling function, not here
+ *   - Part of the six-directional movement command suite (hex) or eight-directional (rect)
+ */
 static int
 mp_southeast PARM_0(void)
 {
@@ -1716,7 +1828,41 @@ mp_southeast PARM_0(void)
   return(0);
 }
 
-/* MP_NORTHEAST -- Move unit one sector to the north east */
+/*
+ * mp_northeast - Move the unit one sector to the northeast
+ *
+ * Sets movement coordinates for northeast diagonal movement. Like southeast
+ * movement, the coordinate calculation differs between hexagonal and rectangular
+ * map systems. In hexagonal maps, the Y coordinate adjustment depends on
+ * column parity, while rectangular maps use simple diagonal movement.
+ *
+ * Hexagonal northeast movement coordinate transformation:
+ * - X increases by 1 (moves east)
+ * - Y increases by 0 or 1 based on current column parity
+ * - Even columns: Y increases by 0
+ * - Odd columns: Y increases by 1
+ *
+ * This creates the characteristic "zigzag" movement pattern of hexagonal
+ * grids where diagonal movements alternate between pure horizontal movement
+ * and combined horizontal-vertical movement based on column position.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates based on map type
+ *   - Clears mp_noinp flag to signal new movement input
+ *   - Uses global coordinate variables (xoffset, xcurs, XREAL, YREAL)
+ *
+ * Notes:
+ *   - Hexagonal coordinate parity calculation ensures proper hex geometry
+ *   - Rectangular maps use simple diagonal coordinate adjustment
+ *   - Movement validation occurs in calling function, not here
+ *   - Complements mp_southeast() with opposite diagonal direction
+ */
 static int
 mp_northeast PARM_0(void)
 {
@@ -1732,7 +1878,43 @@ mp_northeast PARM_0(void)
   return(0);
 }
 
-/* MP_NORTHWEST -- Move unit one sector to the north west */
+/*
+ * mp_northwest - Move the unit one sector to the northwest
+ *
+ * Sets movement coordinates for northwest diagonal movement. This function
+ * implements the final diagonal direction in the hexagonal movement system,
+ * using the same column parity logic as northeast movement but with westward
+ * (negative X) direction. The coordinate calculation ensures proper hexagonal
+ * geometry is maintained.
+ *
+ * Hexagonal northwest movement coordinate transformation:
+ * - X decreases by 1 (moves west)
+ * - Y increases by 0 or 1 based on current column parity
+ * - Even columns: Y increases by 0
+ * - Odd columns: Y increases by 1
+ *
+ * This completes the six-directional movement system for hexagonal maps:
+ * north, south, northeast, northwest, southeast, southwest. Together with
+ * the restriction on direct east/west movement, this provides the complete
+ * hexagonal movement interface.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates based on map type
+ *   - Clears mp_noinp flag to signal new movement input
+ *   - Uses global coordinate variables (xoffset, xcurs, XREAL, YREAL)
+ *
+ * Notes:
+ *   - Completes the hexagonal six-directional movement system
+ *   - Uses same Y parity calculation as mp_northeast()
+ *   - Rectangular maps use simple diagonal coordinate adjustment
+ *   - Movement validation occurs in calling function, not here
+ */
 static int
 mp_northwest PARM_0(void)
 {
@@ -1748,7 +1930,41 @@ mp_northwest PARM_0(void)
   return(0);
 }
 
-/* MP_EXIT -- Indicate that movement is complete */
+/*
+ * mp_exit - Indicate that movement is complete and attempt to terminate
+ *
+ * Signals the movement interface that the player wants to end movement
+ * at the current location. This function validates whether movement can
+ * be safely terminated at the current sector by calling move_space(),
+ * which performs comprehensive location validation based on movement type.
+ *
+ * The function serves as the primary completion command for movement
+ * sequences, ensuring that units cannot be left in invalid locations
+ * (e.g., flying units over water, people in unowned territory).
+ *
+ * Movement termination validation includes:
+ * - Flying units: Cannot land on water, volcanoes (without fire magic), peaks
+ * - People movement: Must end in owned, non-sieged sectors
+ * - Teleportation: Cannot enter water, volcanoes, peaks, or hostile territory
+ * - Regular movement: Cannot end on water without bridges
+ *
+ * Parameters:
+ *   None (operates on global movement state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_done flag based on move_space() validation result
+ *   - May display error messages if termination is invalid
+ *   - Uses global mp_type for movement-specific validation
+ *
+ * Notes:
+ *   - Movement loop continues if mp_done remains FALSE
+ *   - Successful termination sets mp_done to TRUE, ending movement
+ *   - Error messages explain why termination failed
+ *   - Alternative to automatic termination when movement points exhausted
+ */
 static int
 mp_exit PARM_0(void)
 {
@@ -1757,7 +1973,42 @@ mp_exit PARM_0(void)
   return(0);
 }
 
-/* MP_HELP -- List the commands for the movement mode */
+/*
+ * mp_help - Display comprehensive help for movement mode commands
+ *
+ * Creates and displays a detailed help screen listing all available
+ * movement mode commands, their key bindings, and descriptions. This
+ * provides in-game documentation for the movement interface, helping
+ * players understand available commands and their functions.
+ *
+ * The help system displays:
+ * - All movement direction commands (north, south, northeast, etc.)
+ * - Movement control commands (exit, quit, help)
+ * - Display adjustment commands (view modes, highlighting)
+ * - Interface commands (options, screen refresh, focus shifting)
+ *
+ * The help display is generated dynamically from the current key
+ * bindings and function definitions, ensuring it stays synchronized
+ * with any configuration changes or customizations.
+ *
+ * Parameters:
+ *   None (operates on global key binding state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Creates and displays help screen using create_help()
+ *   - Sets redraw flag to DRAW_FULL for complete screen refresh
+ *   - Uses mparse_bindings for current key configuration
+ *   - Uses mparse_funcs for command descriptions
+ *
+ * Notes:
+ *   - Help screen overlays current movement display
+ *   - Full screen redraw required after help display
+ *   - Help content reflects current key binding configuration
+ *   - Essential for user discovery of movement interface features
+ */
 static int
 mp_help PARM_0(void)
 {
@@ -1768,7 +2019,55 @@ mp_help PARM_0(void)
   return(0);
 }
 
-/* MOVE_PARSE -- relocate a unit using an interface */
+/*
+ * move_parse - Main movement interface controller and command processor
+ *
+ * Implements the complete interactive movement interface for all unit types.
+ * This is the central function that coordinates movement input, validation,
+ * display updates, and unit relocation. It manages the movement loop,
+ * processes user commands, handles movement costs and restrictions, and
+ * provides real-time feedback during movement sequences.
+ *
+ * The function orchestrates several complex systems:
+ * - Movement initialization and type detection
+ * - Interactive command processing and key binding
+ * - Real-time display updates with movement costs
+ * - Movement validation and error handling
+ * - God mode unit positioning for administrative functions
+ * - Movement completion and unit relocation
+ *
+ * Movement types supported:
+ * - MOVE_ARMY: Land-based army movement with terrain restrictions
+ * - MOVE_NAVY: Naval movement limited to water and coastal areas
+ * - MOVE_CVN: Caravan movement with trade route considerations
+ * - MOVE_FLYARMY/MOVE_FLYCVN: Flying unit movement with landing restrictions
+ * - MOVE_PEOPLE: Population relocation to owned territory
+ * - MOVE_TELEPORT: Magical teleportation with diplomatic restrictions
+ * - MOVE_PATROL: Single-step patrol movement along walls
+ *
+ * Parameters:
+ *   type - Movement type constant (MOVE_ARMY, MOVE_NAVY, MOVE_CVN, etc.)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Initializes movement state variables and display systems
+ *   - Processes user input in interactive movement loop
+ *   - Updates screen display with movement information and costs
+ *   - Modifies unit positions and movement point totals
+ *   - May trigger god mode unit positioning interfaces
+ *   - Calls move_relocate() to finalize unit position changes
+ *   - Sets global redraw and movemode flags
+ *
+ * Notes:
+ *   - Central function for all interactive movement in the game
+ *   - Handles complex movement validation and error reporting
+ *   - Supports both hexagonal and rectangular map geometries
+ *   - Manages environmental hazards and diplomatic restrictions
+ *   - Essential for both normal gameplay and administrative functions
+ *   - Movement loop continues until mp_done flag is set by exit or completion
+ */
 void
 move_parse PARM_1 (int, type)
 {
@@ -1975,7 +2274,42 @@ move_parse PARM_1 (int, type)
   movemode = MOVE_NOMOVE;
 }
 
-/* MP_OPTIONS -- Quickie to enable the options for movement */
+/*
+ * mp_options - Access movement interface configuration options
+ *
+ * Provides access to the movement interface configuration system,
+ * allowing players to customize key bindings, display preferences,
+ * and other movement-related settings. This function bridges the
+ * movement interface with the general options configuration system.
+ *
+ * The options system allows customization of:
+ * - Key bindings for movement commands
+ * - Display modes and visual preferences
+ * - Movement interface behavior settings
+ * - Accessibility and user interface options
+ *
+ * This integration ensures that movement interface preferences
+ * can be configured and saved like other game settings, providing
+ * a consistent configuration experience across all game interfaces.
+ *
+ * Parameters:
+ *   None (operates on global configuration state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Invokes option_cmd() with movement-specific key system
+ *   - May modify mparse_bindings based on user configuration
+ *   - Configuration changes persist across game sessions
+ *   - Uses mparse_keysys for movement-specific option context
+ *
+ * Notes:
+ *   - Provides consistent interface with other game option systems
+ *   - Configuration changes take effect immediately
+ *   - Essential for accessibility and user customization
+ *   - Integrates movement interface with global configuration management
+ */
 static int
 mp_options PARM_0(void)
 {
@@ -2086,7 +2420,49 @@ KBIND_STRUCT mparse_klist[] = {
   { "9", mp_northeast }
 };
 
-/* ALIGN_MOVE_KEYS -- Align all of the movement keys */
+/*
+ * align_move_keys - Initialize movement interface key binding system
+ *
+ * Initializes the complete key binding system for the movement interface,
+ * setting up the mapping between keystrokes and movement functions. This
+ * function is called once during movement interface startup to establish
+ * the default key bindings and prepare the parsing system for user input.
+ *
+ * The initialization process:
+ * - Calculates the number of available key bindings from mparse_klist
+ * - Calculates the number of available functions from mparse_funcs
+ * - Initializes the mparse_keysys structure with binding counts
+ * - Sets up the mparse_bindings table for runtime key parsing
+ * - Establishes the connection between keys and their associated functions
+ *
+ * Key bindings include:
+ * - Directional movement keys (hjkl, arrow keys, numeric keypad)
+ * - Movement control keys (space for exit, Q for quit)
+ * - Display adjustment keys (highlighting, view modes)
+ * - Interface commands (help, options, refresh)
+ *
+ * The function uses a static initialization check to ensure the binding
+ * system is only initialized once, preventing memory leaks and maintaining
+ * consistent key mappings throughout the movement session.
+ *
+ * Parameters:
+ *   None (operates on global key binding structures)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Initializes mparse_bindings if not already initialized
+ *   - Sets up mparse_keysys with calculated binding and function counts
+ *   - Calls init_keys() to establish key-to-function mappings
+ *   - Uses mparse_klist for default key binding definitions
+ *
+ * Notes:
+ *   - Must be called before movement interface can process input
+ *   - Static initialization ensures single setup per program run
+ *   - Key bindings can be modified later through options system
+ *   - Essential foundation for all movement interface functionality
+ */
 void
 align_move_keys PARM_0(void)
 {
