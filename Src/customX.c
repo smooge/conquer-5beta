@@ -1,5 +1,39 @@
-/* simple routines to allow read and write a configuration file */
-/* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
+/*
+ * customX.c - Custom Game Configuration Management System
+ *
+ * This module provides configuration file processing and environment variable
+ * handling for the Conquer game. It enables users to customize game behavior,
+ * display settings, key bindings, and data directory locations through both
+ * environment variables and configuration files.
+ *
+ * The configuration system supports:
+ * - Environment variable parsing for quick option setting
+ * - Configuration file reading with include file support
+ * - User identity validation and security checks
+ * - Display customization (symbols, colors, zoom levels)
+ * - Key binding management
+ * - Data directory and nation name configuration
+ * - Boolean option flags for various game behaviors
+ *
+ * Security Features:
+ * - User identity validation against LOGIN constant
+ * - Privilege switching for secure file access
+ * - Include file depth limiting to prevent infinite recursion
+ * - Home directory expansion with proper path handling
+ *
+ * Configuration Sources (in order of precedence):
+ * 1. Environment variables (ENVIRON_OPTS for options)
+ * 2. Configuration files specified via command line or defaults
+ * 3. Compiled-in default values
+ *
+ * File Format: Text-based configuration with support for:
+ * - Boolean flags (prefixed with ! for negation)
+ * - Value assignments using = or : delimiters
+ * - Include directives for modular configuration
+ * - Comments and whitespace handling
+ * - Symbol customization for map display elements
+ *
+ * conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
  * code and it is our hope that you respect this.  We give permission
@@ -19,7 +53,58 @@
 #include "elevegX.h"
 #include "optionsX.h"
 
-/* READ_ENVIRON -- Parse the environment variable used by conquer */
+/*
+ * read_environ - Parse environment variables for game configuration
+ *
+ * Reads and parses the ENVIRON_OPTS environment variable to configure
+ * various game options, directory paths, and nation settings. This function
+ * provides the primary mechanism for users to customize game behavior
+ * without requiring configuration files.
+ *
+ * Environment Variables Processed:
+ * - ENVIRON_OPTS: Comma-separated option string with flags and settings
+ * - ENVIRON_DFLT: Default data directory path
+ * - ENVIRON_HELP: Help file directory path  
+ * - ENVIRON_EXEC: Executable directory path
+ *
+ * Option Flags (case-insensitive, use ! prefix to negate):
+ * - B: conq_allblanks (display all blanks)
+ * - b: conq_bottomlines (show bottom status lines)
+ * - E/e: dosysm_check (enable system mail checking)
+ * - G/g: conq_gaudy (enable gaudy/colorful display)
+ * - H/h: conq_mheaders (show message headers)
+ * - I/i: conq_infomode (enable information mode)
+ * - T/t: conq_beeper (enable terminal beeping)
+ * - W/w: conq_waterbottoms (show water bottom terrain)
+ * - X/x: conq_expert (enable expert mode interface)
+ *
+ * Special Settings:
+ * - Nation=NAME, Nationname=NAME, Name=NAME: Set nation name
+ * - Data=DIR, Datadir=DIR, Directory=DIR, Dir=DIR: Set data directory
+ *
+ * Security Features:
+ * - Validates user identity against LOGIN constant
+ * - Exits with FAIL if user validation fails
+ * - Provides clear error messages for identity problems
+ *
+ * Parameters:
+ *   None (void function)
+ *
+ * Returns:
+ *   void (exits program on critical errors)
+ *
+ * Side Effects:
+ *   - Sets global configuration variables
+ *   - Initializes directory paths from environment or defaults
+ *   - Exits program if user identity validation fails
+ *   - Prints error messages to fupdate on validation failure
+ *
+ * Notes:
+ *   - Must be called early in program initialization
+ *   - Critical security function - user validation prevents unauthorized access
+ *   - Environment parsing is case-sensitive for directory paths
+ *   - Option flags support both uppercase and lowercase variants
+ */
 void
 read_environ PARM_0(void)
 {
@@ -192,7 +277,46 @@ read_environ PARM_0(void)
   }
 }
 
-/* INIT_DATADIR -- Assign the value of datadir based on datadirname */
+/*
+ * init_datadir - Initialize data directory path from configuration
+ *
+ * Constructs the complete data directory path based on the datadirname
+ * setting and default directory paths. This function handles both absolute
+ * and relative path specifications, with platform-specific path construction
+ * for VMS and Unix-like systems.
+ *
+ * Path Resolution Logic:
+ * - If datadirname is empty: Use defaultdir as datadir
+ * - If datadirname is absolute (starts with /): Use datadirname directly  
+ * - If datadirname is relative: Combine defaultdir + "/" + datadirname
+ * - Special handling for VMS path conventions
+ *
+ * Platform Differences:
+ * - Unix/Linux: Uses "/" as path separator, detects absolute paths by leading "/"
+ * - VMS: Uses different path conventions, no absolute path detection
+ *
+ * Global Variables Modified:
+ * - datadir: Set to the complete resolved directory path
+ * - datadirname: Set to "[default]" if originally empty
+ *
+ * Parameters:
+ *   None (void function)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies global datadir string with resolved path
+ *   - Updates datadirname to "[default]" if no custom directory specified
+ *   - Uses sprintf for path construction on non-VMS systems
+ *   - Uses strcpy for simple assignment operations
+ *
+ * Notes:
+ *   - Must be called after read_environ or configuration file processing
+ *   - datadir is used throughout the program for locating game data files
+ *   - Path construction is platform-aware via VMS preprocessor conditionals
+ *   - Assumes defaultdir has been properly initialized before calling
+ */
 void
 init_datadir PARM_0(void)
 {
@@ -216,10 +340,75 @@ init_datadir PARM_0(void)
 #endif /* VMS */
 }
 
-/* depth checking */
+/*
+ * Include file depth tracking for recursion prevention
+ * 
+ * Static variable to prevent infinite recursion in configuration file
+ * include processing. Tracks the current depth of nested include files
+ * and provides warnings and limits to prevent stack overflow.
+ */
 static int cust_depth = 0;
 
-/* READ_CUSTOM -- This function reads in the list of conquer options */
+/*
+ * read_custom - Read and process configuration file with comprehensive option support
+ *
+ * Reads a configuration file and processes various game customization options
+ * including display settings, key bindings, option flags, and include file
+ * directives. Supports recursive include files with depth limiting for safety.
+ *
+ * Configuration File Format:
+ * - Text-based format with one directive per line
+ * - Comments and whitespace automatically stripped
+ * - Boolean options can be negated with ! prefix
+ * - Include files supported via "include: filename"
+ * - Symbol customization for map display elements
+ * - Key binding configuration through bind/rebind/unbind
+ *
+ * Supported Directives:
+ * 1. include: filename - Include another configuration file
+ * 2. contour type=c - Set elevation contour display symbols
+ * 3. vegetation type=c - Set vegetation display symbols  
+ * 4. designation type=c - Set sector designation symbols
+ * 5. zoom-level: level - Set default map zoom level
+ * 6. nation/name: name - Set player nation name
+ * 7. campaign/data/directory: path - Set data directory
+ * 8. display-mode: settings - Configure display mode
+ * 9. default-display: settings - Set default display configuration
+ * 10. Option flags (from opt_list array) - Various boolean game options
+ *
+ * Security Features:
+ * - Home directory expansion for ~/ paths
+ * - Privilege switching for secure file access (SWITCHID support)
+ * - Include depth limiting (max 10 levels, warning at 5)
+ * - Comprehensive error checking and reporting
+ *
+ * Error Handling:
+ * - File access errors return -1
+ * - Invalid syntax generates error messages via errormsg()
+ * - Unknown options reported with filename and line number
+ * - Include file errors handled gracefully
+ *
+ * Parameters:
+ *   f_str - Configuration file path (supports ~/ home directory expansion)
+ *
+ * Returns:
+ *   0 on success
+ *   -1 on file access error or excessive include depth
+ *
+ * Side Effects:
+ *   - Modifies global configuration variables based on file contents
+ *   - Increments/decrements cust_depth for recursion tracking
+ *   - May call keysys_setup, display_setup, dflt_disp_setup functions
+ *   - Prints error messages via errormsg() for invalid syntax
+ *   - Switches user privileges temporarily for file access
+ *
+ * Notes:
+ *   - Supports both VMS and Unix path conventions
+ *   - Include files are processed recursively with the same parser
+ *   - Symbol assignments validate against known type arrays
+ *   - Option processing uses the opt_list array for validation
+ *   - Thread-safe static depth tracking prevents infinite recursion
+ */
 int
 read_custom PARM_1(char *, f_str)
 {
