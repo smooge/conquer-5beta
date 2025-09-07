@@ -1,4 +1,30 @@
-/* This file is simply an extension of dataX.c and contains magical data */
+/*
+ * datamagX.c - Magic System Data Tables
+ *
+ * This file is an extension of dataX.c containing all magical system data
+ * definitions. It provides complete data tables for the three categories of
+ * magical powers (Military, Civilian, Wizardry) and all available spells.
+ *
+ * Structure Overview:
+ * - milpow_list[]: Military magic powers affecting combat and warfare
+ * - civpow_list[]: Civilian magic powers affecting economy and society  
+ * - wizpow_list[]: Wizardry magic powers affecting magical abilities
+ * - mclass_list[]: Magic class descriptors organizing the power categories
+ * - spell_list[]: Complete spell definitions with casting requirements
+ * - spell_number: Total count of available spells
+ *
+ * Magic System Architecture:
+ * - Each power has prerequisites, bute effects, and magical dependencies
+ * - Powers are organized into three distinct categories for game balance
+ * - Spells have casting costs, success rates, and restriction flags
+ * - All data is statically defined for game balance and consistency
+ *
+ * Dependencies:
+ * - dataX.h: Core data structure definitions
+ * - magicX.h: Magic system constants and MAGIC_STRUCT/MCLASS_STRUCT
+ * - spellsX.h: Spell system constants and SPELL_STRUCT
+ * - butesX.h: Bute (national attribute) constants
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -21,7 +47,39 @@
 #include "magicX.h"
 #include "spellsX.h"
 
-/* The list of military magic powers -- defines in magicX.h */
+/*
+ * milpow_list - Military Magic Powers Data Table
+ *
+ * Complete definitions for all military-focused magical powers that affect
+ * combat, warfare, movement, and military capabilities. Each entry defines
+ * the power's name, description, game effects, prerequisites, and dependencies.
+ *
+ * Data Structure: MAGIC_STRUCT array (defined in magicX.h)
+ * Array Size: 12 military magic powers
+ *
+ * Power Categories:
+ * - Combat Enhancement: Archery, Armor, Captain, Ninja, Warlord, Warrior
+ * - Movement Powers: Avian, Equine  
+ * - Monster Control: Dragon, Ogre, Orc
+ * - Engineering: Sapper
+ *
+ * Field Structure per Entry:
+ * - name: Power identifier and display name
+ * - desc: Short description of the power's nature
+ * - effects: Detailed game mechanical effects
+ * - bute_type: Which national attribute is affected (BUTE_* constants)
+ * - bute_value: Magnitude of the bute effect
+ * - flags: Special behavior flags (currently unused, all 0x0L)
+ * - prereq: Required magical prerequisites (MM_* monster magic constants)
+ * - civreq: Required civilian magic prerequisites (MC_* constants)
+ * - wizreq: Required wizardry magic prerequisites (MW_* constants)
+ *
+ * Balance Notes:
+ * - Military powers focus on combat bonuses and tactical advantages
+ * - Most powers require BUTE_REPUTATION, BUTE_MORALE, or BUTE_TERROR
+ * - Some powers have prerequisites creating power progression trees
+ * - Movement powers use BUTE_COMMRANGE for consistency
+ */
 MAGIC_STRUCT milpow_list[] = {
   { "Archery",
       "The national military gains skill with bows and arrows",
@@ -85,7 +143,42 @@ MAGIC_STRUCT milpow_list[] = {
       0x0L, 0x0L, 0x0L }
 };
 
-/* the list of civilian magical powers -- defines in magicX.h */
+/*
+ * civpow_list - Civilian Magic Powers Data Table
+ *
+ * Complete definitions for all civilian-focused magical powers that affect
+ * economy, society, population, resource production, and national development.
+ * These powers enhance non-military aspects of nation management.
+ *
+ * Data Structure: MAGIC_STRUCT array (defined in magicX.h)
+ * Array Size: 19 civilian magic powers
+ *
+ * Power Categories:
+ * - Economic: Accountant, Jeweler, Marine, Metalcraft, Miner, Sailor
+ * - Production: Farming, Botany, Woodcraft, Architect
+ * - Environmental: Amphibian, Dervish, Urban
+ * - Social: Democracy, Religion, Socialism, Slaver
+ * - Population: Breeder
+ * - Infrastructure: Roads
+ *
+ * Field Structure per Entry:
+ * - name: Power identifier and display name
+ * - desc: Short description of the power's nature
+ * - effects: Detailed game mechanical effects and percentage bonuses
+ * - bute_type: Which national attribute is affected (BUTE_* constants)
+ * - bute_value: Magnitude of the bute effect (positive or negative)
+ * - flags: Special behavior flags (currently unused, all 0x0L)
+ * - prereq: Required magical prerequisites (currently unused)
+ * - civreq: Required civilian magic prerequisites (MC_* constants)
+ * - wizreq: Required wizardry magic prerequisites (currently unused)
+ *
+ * Balance Notes:
+ * - Civilian powers provide economic and social advantages
+ * - Many powers offer 20% efficiency bonuses to related activities
+ * - Some powers have trade-offs (e.g., Democracy increases revolts)
+ * - Prerequisites create logical skill progression trees
+ * - Environmental powers enable survival in hostile terrain types
+ */
 MAGIC_STRUCT civpow_list[] = {
   { "Accountant",
       "Governmental officials actually learn addition, increasing revenue",
@@ -184,7 +277,44 @@ MAGIC_STRUCT civpow_list[] = {
       0x0L, MC_FARMING | MC_BOTANY, 0x0L }
 };
 
-/* the list of wizardry magical powers -- defines in magicX.h */
+/*
+ * wizpow_list - Wizardry Magic Powers Data Table
+ *
+ * Complete definitions for all wizardry-focused magical powers that affect
+ * spell casting, magical abilities, elemental mastery, and arcane knowledge.
+ * These powers enhance magical capabilities and unlock advanced spells.
+ *
+ * Data Structure: MAGIC_STRUCT array (defined in magicX.h)
+ * Array Size: 19 wizardry magic powers
+ *
+ * Power Categories:
+ * - Elemental Mastery: Air, Earth, Fire, Water, Weather
+ * - Arcane Knowledge: Wyzard, Sorcerer, Alchemy, Druidism
+ * - Vision & Perception: Vision, See All, Know All
+ * - Deception & Stealth: Illusion, Hidden, The Void
+ * - Manipulation: Sending, Summon
+ * - Necromancy: Vampire
+ * - Environmental: Destroyer
+ *
+ * Field Structure per Entry:
+ * - name: Power identifier and display name
+ * - desc: Short description of the power's nature
+ * - effects: Detailed game mechanical effects and spell enhancements
+ * - bute_type: Which national attribute is affected (BUTE_* constants)
+ * - bute_value: Magnitude of the bute effect
+ * - flags: Special behavior flags (currently unused, all 0x0L)
+ * - prereq: Required magical prerequisites (currently unused)
+ * - civreq: Required civilian magic prerequisites (currently unused)
+ * - wizreq: Required wizardry magic prerequisites (MW_* constants)
+ *
+ * Balance Notes:
+ * - Wizardry powers focus on magical enhancement and spell access
+ * - Most powers affect BUTE_WIZSKILL, BUTE_KNOWLEDGE, or BUTE_SPELLPTS
+ * - Prerequisites create complex magical advancement trees
+ * - Elemental powers provide specialized spell bonuses
+ * - Vision powers counter deception magic creating strategic balance
+ * - High-tier powers like Know All and The Void require multiple prerequisites
+ */
 MAGIC_STRUCT wizpow_list[] = {
   { "Alchemy",
       "Magical chemistry leads to molecular transmogrification",
@@ -283,7 +413,37 @@ MAGIC_STRUCT wizpow_list[] = {
       0x0L, 0x0L, 0x0L }
 };
 
-/* Now the magic class descriptions */
+/*
+ * mclass_list - Magic Class Organization Table
+ *
+ * Organizational structure that groups the three types of magical powers
+ * into coherent categories. Each class provides access to a different
+ * set of magical abilities with distinct strategic purposes.
+ *
+ * Data Structure: MCLASS_STRUCT array (defined in magicX.h)
+ * Array Size: MAG_NUMBER (3 magic classes)
+ *
+ * Magic Classes:
+ * 1. Military - Combat and warfare focused magical powers
+ * 2. Civilian - Economic and social magical powers  
+ * 3. Wizardry - Arcane and spell-casting magical powers
+ *
+ * Field Structure per Entry:
+ * - name: Class identifier and display name
+ * - number: Count of powers available in this class
+ * - list: Pointer to the power array for this class
+ *
+ * Usage:
+ * - Used by magic system to organize power selection interfaces
+ * - Enables iteration through all powers in a specific category
+ * - Provides count information for UI and validation systems
+ * - Maintains separation between different magical disciplines
+ *
+ * Design Notes:
+ * - Array sizing uses sizeof calculations for maintainability
+ * - Direct references to static power arrays ensure data consistency
+ * - Fixed array size MAG_NUMBER ensures compile-time validation
+ */
 MCLASS_STRUCT mclass_list[MAG_NUMBER] = {
   { "Military",
       sizeof(milpow_list)/sizeof(MAGIC_STRUCT),
@@ -296,22 +456,60 @@ MCLASS_STRUCT mclass_list[MAG_NUMBER] = {
       wizpow_list }
 };
 
-/* The information on all of the spells
+/*
+ * spell_list - Complete Spell Definitions Table
  *
- *  The list of different spell classes is:
- *      O = Offensive combat spell
- *      D = Defensive combat spell
- *      U = Spell to affect a military unit
- *      u = Spell to affect only an army unit
- *      L = Spell to affect only a leader unit
- *      S = Spell to affect the current sector
- *      M = Spell to affect a monster unit
- *      R = Raw materials are affected
+ * Comprehensive database of all castable spells in the game, including
+ * their effects, costs, success rates, target restrictions, and magical
+ * prerequisites. Each spell has specific targeting rules and outcomes.
  *
- *  Cost in spell points to cast the spells; For those
- *  of type U, the cost is men affected per spell point
+ * Data Structure: SPELL_STRUCT array (defined in spellsX.h)
+ * Array Size: 9 spells
  *
- * Defines are in the file spellsX.h.
+ * Spell Target Categories:
+ * - O = Offensive combat spell
+ * - D = Defensive combat spell  
+ * - U = Spell to affect a military unit (all unit types)
+ * - u = Spell to affect only an army unit (not leaders/monsters)
+ * - L = Spell to affect only a leader unit
+ * - S = Spell to affect the current sector
+ * - M = Spell to affect a monster unit
+ * - R = Raw materials are affected
+ *
+ * Field Structure per Entry:
+ * - name: Spell identifier and display name
+ * - shortname: Abbreviated name for UI display
+ * - description: What the spell does mechanically
+ * - success_msg: Message displayed when spell succeeds (may include %s/%d format)
+ * - failure_msg: Message displayed when spell fails
+ * - version: Spell version/priority (1=highest, higher numbers=later casting)
+ * - target_type: Single character defining valid targets (see categories above)
+ * - restrictions: SI_* flags defining casting restrictions (from spellsX.h)
+ * - men_per_sp: For 'U' type spells, men affected per spell point spent
+ * - spell_pts: Base spell point cost to cast
+ * - success_rate: Percentage chance of success (0-100)
+ * - flags: Special behavior flags (currently unused, all 0x0L)
+ * - prereq: Required magical prerequisites (currently unused)
+ * - wizreq: Required wizardry magic prerequisites (MW_* constants)
+ *
+ * Spell Categories by Function:
+ * - Enhancement: Enhance (combat), Heal (health restoration)
+ * - Movement: Flight, Teleport
+ * - Area Effects: Quake (earthquake), Scare (frighten civilians)
+ * - Summoning: Send (attack monster), Summon (friendly monster)
+ * - Utility: Transmute (change materials), Transfer (magic energy)
+ *
+ * Casting Restrictions (SI_* flags):
+ * - SI_ANYCAST: Any unit can cast
+ * - SI_SPELLCASTER: Only units with spellcasting ability
+ * - SI_FULLCASTER: Only full spellcasters (leaders with high magic)
+ * - SI_NONMONSTER: Cannot be cast by monster units
+ *
+ * Balance Notes:
+ * - Spell costs scale with power and utility
+ * - Success rates balance risk vs reward
+ * - Prerequisites create magical advancement trees
+ * - Target restrictions prevent overpowered combinations
  */
 SPELL_STRUCT spell_list[] = {
   { "Enhance", "Enhance",
@@ -396,5 +594,22 @@ SPELL_STRUCT spell_list[] = {
       0x0L, 0x0L, 0x0L }
 };
 
-/* sizings */
+/*
+ * spell_number - Total Count of Available Spells
+ *
+ * Automatically calculated count of spells in the spell_list array.
+ * Used by the magic system for bounds checking, UI display, and
+ * iteration through all available spells.
+ *
+ * Calculation: Uses sizeof to dynamically determine array length,
+ * ensuring the count stays accurate if spells are added or removed.
+ *
+ * Value: Currently 9 spells total
+ *
+ * Usage:
+ * - Spell validation and bounds checking
+ * - UI spell list generation and display
+ * - Magic system initialization
+ * - Preventing array overrun in spell iteration
+ */
 int spell_number = (sizeof(spell_list)/sizeof(SPELL_STRUCT));
