@@ -56,31 +56,74 @@ Specific game mechanics and content:
 31. ✅ **mailA.c** - In-game messaging (13 functions) - COMPLETED!
 32. **miscA.c** ✅ (Complete - 7 functions documented: miscellaneous utilities)
 
-### Priority 5: Remaining Interface and Utilities (Session 33-50)
-Lower priority interface and utility modules:
+### Priority 5: Remaining Interface and Utilities (32 files total)
+Organized by strategic importance and system dependencies:
 
-33. **customG.c** - Custom interface elements
-34. **caravanG.c** - Caravan interface
-35. **enlistG.c** - Enlistment interface
-36. **emailG.c** - Email interface
-37. **ieditG.c** - Item editing interface
-38. **jointG.c** - Joint operation interface
-39. **keybindG.c** - Key binding interface
-40. **mailG.c** - Mail interface
-41. **miscG.c** - Miscellaneous interface
-42. **moveG.c** - Movement interface
-43. **ntninfoG.c** - Nation info interface
-44. **pagerG.c** - Paging interface
-45. **regionG.c** - Region interface
-46. **sectorG.c** - Sector interface
-47. **xferG.c** - Transfer interface
-48. **time_ckG.c** - Time check utilities
-49. **customX.c** - Custom utilities
-50. **vms.c** - VMS-specific code
+### Priority 5A: Core Utilities (High Impact) - Sessions 33-39
+Core utility modules that extend fundamental functionality:
 
-### Utility Files (As Needed)
-- **getopt.c** - Command line parsing (standard library)
-- Remaining *X.c files - Various utilities
+33. **miscX.c** - Core miscellaneous utilities (likely many helper functions)
+34. **moveX.c** - Movement system utilities
+35. **hexmapX.c** - Hexagonal map system utilities
+36. **magicX.c** - Magic system utilities
+37. **selectX.c** - Selection system utilities
+38. **sectorX.c** - Sector management utilities
+39. **unitsX.c** - Unit management utilities
+
+### Priority 5B: Data Management Extensions - Sessions 40-43
+Supporting data systems and specialized data handling:
+
+40. **mailX.c** - Mail system utilities
+41. **datamilX.c** - Military data management
+42. **datamagX.c** - Magic data management
+43. **customX.c** - Custom game utilities
+
+### Priority 5C: User Interface Extensions - Sessions 44-54
+Interface modules that extend the UI system:
+
+44. **customG.c** - Custom interface elements
+45. **caravanG.c** - Caravan management interface
+46. **enlistG.c** - Unit enlistment interface
+47. **emailG.c** - Email interface
+48. **ieditG.c** - Item editing interface
+49. **jointG.c** - Joint operations interface
+50. **keybindG.c** - Key binding configuration
+51. **mailG.c** - Mail interface
+52. **miscG.c** - Miscellaneous interface
+53. **moveG.c** - Movement interface
+54. **ntninfoG.c** - Nation information interface
+
+### Priority 5D: Secondary Interface - Sessions 55-60
+Lower priority interface modules:
+
+55. **pagerG.c** - Paging interface
+56. **regionG.c** - Region interface
+57. **sectorG.c** - Sector interface
+58. **xferG.c** - Transfer interface
+59. **time_ckG.c** - Time checking utilities
+60. **dataG.c** - Data display interface
+61. **ioG.c** - I/O interface
+62. **iodataG.c** - I/O data interface
+
+### Priority 5E: System/Legacy Files - Sessions 63-64
+Platform-specific and legacy code:
+
+63. **vms.c** - VMS platform-specific code
+64. **getopt.c** - Command line parsing (standard library implementation)
+
+### Documentation Strategy for Priority 5
+
+**Rationale for Organization:**
+
+1. **Priority 5A (Core Utilities)** - These likely contain widely-used helper functions that support the systems we've already documented. Starting here provides maximum context for understanding system integration.
+
+2. **Priority 5B (Data Management)** - These extend the data systems we've documented, handling specialized data operations.
+
+3. **Priority 5C (UI Extensions)** - These build on the user interface systems already documented, adding specific interface functionality.
+
+4. **Priority 5D (Secondary Interface)** - Lower priority interface modules that provide auxiliary functionality.
+
+5. **Priority 5E (System/Legacy)** - Platform-specific and standard library code that should be documented last.
 
 ## Session Workflow per File
 
@@ -103,6 +146,10 @@ Lower priority interface and utility modules:
 ## Progress Tracking
 
 ### Completed Files ✅
+
+#### Priority 1-4 Complete (32 files documented) ✅
+
+**Priority 1: Core Game Engine (8/8)**
 1. **miscA.c** - Session completed 2025-09-05 (7 functions documented)
 2. **mainA.c** - Session completed 2025-09-05 (2 functions documented: fname_char, main)
 3. **dataA.c** - Session completed 2025-09-05 (0 functions, 3 global variables + 1 array documented)
@@ -112,6 +159,8 @@ Lower priority interface and utility modules:
 7. **updateA.c** - Session completed 2025-09-05 (14 functions documented: complete turn processing system)
 8. **createA.c** - Session completed 2025-09-05 (16 functions documented: complete world generation system)
 9. **configA.c** - Session completed 2025-09-05 (9 functions documented: complete configuration system)
+
+**Priority 2: I/O and Data Management (9/9)**
 10. **ioX.c** - Session completed 2025-09-05 (13+ key functions documented: comprehensive I/O system)
 11. **iodataX.c** - Session completed 2025-09-05 (17 functions documented: complete data file I/O system)
 12. **dataX.c** - Session completed 2025-09-06 (0 functions, comprehensive data structure documentation: game balance tables)
@@ -120,6 +169,8 @@ Lower priority interface and utility modules:
 15. **convertX.c** - Session completed 2025-09-06 (16 functions documented: comprehensive data conversion and string utilities)
 16. **executeX.c** - Session completed 2025-09-06 (10 functions documented: comprehensive command execution system)
 17. **computeX.c** - Session completed 2025-09-06 (20 functions documented: comprehensive economic computation engine)
+
+**Priority 3: User Interface (8/8)**
 18. **mainG.c** - Session completed 2025-09-06 (3 functions documented: main game interface and command processing)
 19. **displayG.c** - Session completed 2025-09-06 (18 major functions documented: map display and UI rendering system)
 20. **infoG.c** - Session completed 2025-09-06 (12 major functions documented: information display and reporting system)
@@ -128,6 +179,8 @@ Lower priority interface and utility modules:
 23. **armyG.c** - Session completed 2025-09-07 (13 functions documented: complete army interface and manipulation system)
 24. **navyG.c** - Session completed 2025-09-07 (14 functions documented: complete naval interface and fleet management system)
 25. **magicG.c** - Session completed 2025-09-07 (25 functions documented: complete magic system interface)
+
+**Priority 4: Game Content (8/8)**
 26. **monsterA.c** - Session completed 2025-09-07 (9 functions documented: complete monster/NPC behavior system)
 27. **npcA.c** - Session completed 2025-09-07 (6 functions documented: complete NPC AI and management system)
 28. **sectorA.c** - Session completed 2025-09-07 (19 functions documented: complete sector ownership and siege system)
@@ -135,6 +188,10 @@ Lower priority interface and utility modules:
 30. **jointA.c** - Session completed 2025-09-07 (6 functions documented: complete shared game functionality and multi-player coordination)
 31. **mailA.c** - Session completed 2025-09-07 (13 functions documented: complete in-game messaging and news system)
 32. **magicA.c** - Session completed 2025-09-07 (0 functions documented: prototype/placeholder file with comprehensive explanation)
+
+#### Priority 5: Remaining Interface and Utilities (0/32 files) 🚧
+
+**Next target**: miscX.c (Priority 5A - Core Utilities)
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -151,7 +208,11 @@ Lower priority interface and utility modules:
 ### Current Target
 **Priority 4 Progress: 8/8 files complete** ✅ **COMPLETE!**
 **Priority 4 Status**: All Priority 4 files documented successfully!
-**Next Target**: Priority 5 (Remaining Interface and Utilities)
+
+**Next Target**: Priority 5A - Core Utilities (High Impact)
+**Starting File**: miscX.c - Core miscellaneous utilities
+**Priority 5 Progress**: 0/32 files complete
+**Strategy**: Begin with high-impact utility files that support already-documented systems
 
 ### Session Metrics Goal
 - Target: 1 file per session
