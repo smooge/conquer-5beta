@@ -24,6 +24,35 @@ FILE *mailfp = NULL;
 /* pointer to the current mail message */
 RMAIL_PTR cur_message = NULL;
 
+/*
+ * mail_header - Write mail message header to current mail file
+ *
+ * Writes a standardized mail header to the current mail file including
+ * sender information, recipient nickname, status, timestamp, and subject line.
+ * Uses default values from configuration when parameters are NULL.
+ *
+ * Parameters:
+ *   nnstr - Sender name string (NULL uses CQ_MAIL_NAME default)
+ *   nkstr - Nickname string (NULL uses CQ_MAIL_NICK default)
+ *   subj - Subject line (NULL or empty uses "[none]")
+ *   dstr - Date string (NULL generates current game date)
+ *   statval - Message status value (MSTAT_* constants)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Writes header data to global mailfp file pointer
+ *   - Uses global TURN variable for date generation
+ *   - Calls roman_number() for year formatting
+ *
+ * Notes:
+ *   - Requires mailfp to be open and valid
+ *   - Header format: :BEGIN:, name, nickname, status, date, subject
+ *   - Each field ends with colon and newline
+ *   - Generates Roman numeral years and month names for timestamps
+ *   - Essential for mail system message formatting
+ */
 /* MAIL_HEADER -- Send a mail header to the current target */
 void
 mail_header PARM_5(char *, nnstr, char *, nkstr, char *, subj, char *, dstr, int, statval)
@@ -68,6 +97,32 @@ mail_header PARM_5(char *, nnstr, char *, nkstr, char *, subj, char *, dstr, int
   }
 }
 
+/*
+ * init_mail - Initialize mail message storage structure
+ *
+ * Initializes the current mail message structure by clearing all fields
+ * to safe default values. Sets recipient list to empty, status to none,
+ * and all string pointers to NULL for proper cleanup.
+ *
+ * Parameters:
+ *   None (operates on global cur_message)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Modifies global cur_message structure
+ *   - Sets all recipient slots to ABSMAXNTN (empty)
+ *   - Sets status to MSTAT_NONE
+ *   - Nullifies all string and linked list pointers
+ *
+ * Notes:
+ *   - Requires cur_message to be allocated but not necessarily initialized
+ *   - Does not deallocate existing memory - use free_mail() first if needed
+ *   - Prepares structure for new message creation
+ *   - Essential for mail system initialization and cleanup
+ *   - ABSMAXNTN used as sentinel value for empty recipient slots
+ */
 /* INIT_MAIL -- Initialize the storage structure for the current message */
 void
 init_mail PARM_0(void)
@@ -95,6 +150,33 @@ init_mail PARM_0(void)
   cur_message->prev = NULL;
 }
 
+/*
+ * free_mail - Deallocate all memory for current mail message
+ *
+ * Completely deallocates the current mail message structure including
+ * all dynamically allocated strings, text content linked list, and the
+ * message structure itself. Safely handles NULL pointers and sets
+ * cur_message to NULL when complete.
+ *
+ * Parameters:
+ *   None (operates on global cur_message)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Deallocates sender, nickname, date, and subject strings
+ *   - Deallocates entire text content linked list (MAILD_PTR chain)
+ *   - Deallocates cur_message structure itself
+ *   - Sets cur_message to NULL
+ *
+ * Notes:
+ *   - Safe to call with cur_message == NULL (no-op)
+ *   - Checks each string pointer before calling free()
+ *   - Iterates through text linked list deallocating each node
+ *   - Essential for preventing memory leaks in mail system
+ *   - Should be called before program exit or message replacement
+ */
 /* FREE_MAIL -- Deallocate all of the current mail memory in use */
 void
 free_mail PARM_0(void)
@@ -130,6 +212,32 @@ free_mail PARM_0(void)
   cur_message = NULL;
 }
 
+/*
+ * kill_mail - Remove current mail message from linked list and deallocate
+ *
+ * Removes the current mail message from its position in a doubly-linked
+ * list by updating previous and next pointers, then deallocates all
+ * associated memory using free_mail(). Maintains list integrity.
+ *
+ * Parameters:
+ *   None (operates on global cur_message)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Updates next and previous message pointers to maintain list integrity
+ *   - Calls free_mail() to deallocate all message memory
+ *   - Sets cur_message to NULL
+ *
+ * Notes:
+ *   - Safe to call with cur_message == NULL (no-op)
+ *   - Handles first, middle, and last messages in list correctly
+ *   - Updates both forward and backward link pointers
+ *   - Clears removed message's links before deallocation
+ *   - Essential for mail list management and memory cleanup
+ *   - Used when deleting messages from mail queue
+ */
 /* KILL_MAIL -- Remove the currently pointed to mail message from the list */
 void
 kill_mail PARM_0(void)
@@ -151,6 +259,35 @@ kill_mail PARM_0(void)
   free_mail();
 }
 
+/*
+ * deliver_mail - Send current mail message to all specified recipients
+ *
+ * Delivers the current mail message to all nations listed in the recipient
+ * array by writing to their individual mail files. Handles both regular
+ * nation mail and special newspaper delivery with different formatting.
+ *
+ * Parameters:
+ *   None (operates on global cur_message)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Creates or appends to mail files for each recipient nation
+ *   - Writes mail headers and content to files
+ *   - Uses global mailfp for file operations
+ *   - May write error messages to fupdate file
+ *
+ * Notes:
+ *   - Requires cur_message and cur_message->text to be valid
+ *   - Iterates through MAX_ADR recipient slots (ABSMAXNTN = empty)
+ *   - Regular mail: uses mail_header() for standard formatting
+ *   - Newspaper: uses special formatting with "5." prefixes
+ *   - File naming: nation_name.msgtag for mail, nation_name.turn# for news
+ *   - Handles blank line suppression and sender attribution
+ *   - Essential for mail system message distribution
+ *   - Opens/closes mail files for each recipient separately
+ */
 /* DELIVER_MAIL -- Send the current mail message to the indicated countries */
 void
 deliver_mail PARM_0(void)
