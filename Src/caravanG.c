@@ -1,4 +1,42 @@
-/* This file contains routines for manipulation of caravan units */
+/*
+ * caravanG.c - Caravan Management Interface and Operations
+ *
+ * This module provides comprehensive caravan unit management functionality
+ * including creation, destruction, movement, cargo handling, status management,
+ * and advanced operations like merging and splitting caravan units.
+ *
+ * Key Functionality:
+ * - Caravan lifecycle management (creation, destruction, disbanding)
+ * - Cargo transfer operations with cities, navies, sectors, and other caravans
+ * - Unit combination and splitting operations with proportional resource allocation
+ * - Status and speed adjustment with movement cost calculations
+ * - Supply management with resource consumption and territorial restrictions
+ * - Repair operations requiring supply centers and material costs
+ * - Extended command interface for interactive caravan management
+ *
+ * The module implements sophisticated cargo transfer mechanics that handle
+ * movement synchronization between units, resource availability validation,
+ * and user confirmation for potentially destructive operations. Special
+ * handling is provided for magic-enhanced units and territorial supply restrictions.
+ *
+ * Caravan units represent mobile trade and transport capability, carrying
+ * people and materials across the game world. They can be combined for efficiency
+ * or split for tactical distribution, with all operations preserving game
+ * balance through movement costs and resource requirements.
+ *
+ * Integration:
+ * - Uses dataG.h for game state and interface definitions
+ * - Coordinates with cityX.h for supply center operations
+ * - Integrates with navyX.h for naval cargo transfer
+ * - Utilizes worldX.h for sector and terrain validation
+ * - Implements caravanX.h caravan-specific functionality
+ *
+ * Security:
+ * - Validates unit ownership and territorial access
+ * - Prevents invalid operations on magically enhanced units
+ * - Ensures resource availability before consumption
+ * - Implements god mode bypass for administrative operations
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -25,7 +63,38 @@
 #include "statusX.h"
 #include "caravanX.h"
 
-/* DISB_CVN -- Destroy a caravan */
+/*
+ * disb_cvn - Disband and destroy a caravan unit
+ *
+ * Destroys the specified caravan unit, returning its crew to the local population
+ * and attempting to return supplies to the sector. Validates ownership and
+ * cargo status before proceeding with destruction.
+ *
+ * The function performs comprehensive resource recovery:
+ * - Returns crew members to sector population
+ * - Attempts to redistribute supplies to sector storage
+ * - Adds portion of crew to city recruiting pool if present
+ * - Handles supply loss warnings if sector cannot store resources
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure to disband (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Destroys the caravan unit permanently
+ *   - Modifies sector population and resources
+ *   - Updates city recruiting pools if applicable
+ *   - Triggers hex recalculation for display updates
+ *   - May display user confirmation dialogs
+ *
+ * Notes:
+ *   - Requires caravan to be in owned territory (unless god mode)
+ *   - Caravan must be completely unloaded before disbanding
+ *   - Prompts for confirmation unless expert mode is enabled
+ *   - Thread-unsafe due to global state modifications
+ */
 void
 disb_cvn PARM_1 (CVN_PTR, v1_ptr)
 {
@@ -119,7 +188,37 @@ disb_cvn PARM_1 (CVN_PTR, v1_ptr)
   cvn_ptr = chold_ptr;
 }
 
-/* CHANGE_VSPEED -- Adjust the movement rate of a caravan unit */
+/*
+ * change_vspeed - Adjust the movement speed of a caravan unit
+ *
+ * Changes the caravan's movement speed setting, applying movement point
+ * penalties for speed increases during the current turn. Speed changes
+ * affect future movement capability and current turn mobility.
+ *
+ * The function implements movement cost mechanics:
+ * - Reduces current movement points when changing speed (non-god mode)
+ * - Deducts 10 movement points, minimum reduction to 0
+ * - Updates unit status to reflect new speed setting
+ * - Bypasses movement costs in god mode
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure (must not be NULL)
+ *   new_speed - New speed setting to apply to unit
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies caravan movement points and status
+ *   - Updates global caravan state tracking
+ *   - May reduce current turn movement capability
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Movement penalties apply only in normal (non-god) mode
+ *   - Speed changes take effect immediately
+ *   - Thread-unsafe due to global state modifications
+ */
 static void
 change_vspeed PARM_2(CVN_PTR, v1_ptr, int, new_speed)
 {
@@ -145,7 +244,45 @@ change_vspeed PARM_2(CVN_PTR, v1_ptr, int, new_speed)
   VADJSTAT;
 }
 
-/* COMB_CVNS -- Merge the second cvn into the first */
+/*
+ * comb_cvns - Merge the second caravan unit into the first
+ *
+ * Combines two caravan units into a single larger unit, merging all resources,
+ * crew, and cargo proportionally. Handles speed synchronization and validates
+ * unit compatibility before proceeding with the merge operation.
+ *
+ * The function implements sophisticated merging logic:
+ * - Validates units are in same sector and compatible for merging
+ * - Synchronizes movement speeds with movement point penalties
+ * - Proportionally combines crew, people, and supply levels
+ * - Merges all material cargo from both units
+ * - Destroys the second unit after successful merge
+ *
+ * Compatibility requirements:
+ * - Both units must be in the same sector
+ * - Units must have compatible statuses (not on special missions)
+ * - Magic enhancement status must match between units
+ * - Neither unit can be in a non-combinable state
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to primary caravan (receives merged resources)
+ *   v2_ptr - Pointer to secondary caravan (destroyed after merge)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies first caravan size and all resource values
+ *   - Destroys second caravan unit permanently
+ *   - Updates movement points based on speed synchronization
+ *   - May display user confirmation dialogs
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Prompts for confirmation unless expert mode enabled
+ *   - Speed synchronization may reduce movement points
+ *   - Thread-unsafe due to global state modifications
+ */
 static void
 comb_cvns PARM_2 (CVN_PTR, v1_ptr, CVN_PTR, v2_ptr)
 {
@@ -288,7 +425,43 @@ comb_cvns PARM_2 (CVN_PTR, v1_ptr, CVN_PTR, v2_ptr)
   cvn_ptr = NULL;
 }
 
-/* CVN_TRANSPORT -- Load/Unload the given caravan unit */
+/*
+ * cvn_transport - Manage cargo transfer operations for caravan units
+ *
+ * Provides comprehensive cargo transfer interface allowing caravans to exchange
+ * materials with cities, naval fleets, other caravans, or sector storage.
+ * Handles movement synchronization, user selection, and transfer validation.
+ *
+ * The function supports multiple transfer targets:
+ * - Cities: Exchange with supply center storage
+ * - Naval fleets: Coordinate cargo with ships in same sector
+ * - Other caravans: Direct unit-to-unit material transfer
+ * - Sector storage: Drop/pickup from sector resource pools
+ *
+ * Transfer mechanics:
+ * - Synchronizes movement points between mobile units
+ * - Validates unit compatibility and location requirements
+ * - Provides interactive selection for multiple available targets
+ * - Implements god mode for administrative cargo operations
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan for transfer (NULL triggers unit selection)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies caravan and target unit cargo
+ *   - Synchronizes movement points between participating units
+ *   - Activates interactive transfer mode interface
+ *   - May enable/disable god mode for admin operations
+ *
+ * Notes:
+ *   - Handles both automated and interactive unit selection
+ *   - Water sectors require naval targets (no sector storage)
+ *   - Movement synchronization prevents exploitation of cargo transfers
+ *   - Thread-unsafe due to global state modifications and user interaction
+ */
 void
 cvn_transport PARM_1(CVN_PTR, v1_ptr)
 {
@@ -585,7 +758,37 @@ cvn_transport PARM_1(CVN_PTR, v1_ptr)
   }
 }
 
-/* CHANGE_VSTATUS -- Adjust the status of a cvn unit */
+/*
+ * change_vstatus - Adjust the operational status of a caravan unit
+ *
+ * Changes the caravan's operational status (patrol, move, guard, etc.) with
+ * appropriate movement point penalties for status changes during the current
+ * turn. Status changes affect unit behavior and available commands.
+ *
+ * The function implements status change mechanics:
+ * - Validates new status is different from current status
+ * - Applies movement point penalty for status changes (non-god mode)
+ * - Deducts 10 movement points, minimum reduction to 0
+ * - Updates unit status immediately
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure (must not be NULL)
+ *   new_stat - New status value to apply to unit
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Modifies caravan status and movement points
+ *   - Updates global caravan state tracking
+ *   - May reduce current turn movement capability
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Movement penalties apply only in normal (non-god) mode
+ *   - Status changes take effect immediately
+ *   - Thread-unsafe due to global state modifications
+ */
 static void
 change_vstatus PARM_2(CVN_PTR, v1_ptr, int, new_stat)
 {
@@ -608,7 +811,45 @@ change_vstatus PARM_2(CVN_PTR, v1_ptr, int, new_stat)
   }
 }
 
-/* SPLIT_CVN -- Create a new caravan unit as specified */
+/*
+ * split_cvn - Create a new caravan by splitting an existing unit
+ *
+ * Divides an existing caravan into two separate units, proportionally
+ * distributing all resources, crew, and cargo between the original and
+ * new caravan. The new unit inherits all characteristics from the original.
+ *
+ * The function implements proportional resource splitting:
+ * - Creates new caravan unit with specified number of wagons
+ * - Distributes materials based on size ratio between units
+ * - Copies all unit characteristics (status, crew, supplies, location)
+ * - Reduces original unit size by the amount split off
+ * - Validates split size to ensure both units remain viable
+ *
+ * Split validation:
+ * - Original unit must have at least 2 wagons
+ * - Split size must be less than original size
+ * - Unit must not be in a non-splittable status
+ * - Player must not exceed maximum caravan limit
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan to split (must not be NULL)
+ *   number - Number of wagons for new unit (-1 prompts user input)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates new caravan unit in global unit list
+ *   - Modifies original caravan size and cargo
+ *   - Updates caravan sorting and identification
+ *   - May display user input prompts
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Prompts for split size if number parameter is -1
+ *   - New unit inherits exact location and characteristics
+ *   - Thread-unsafe due to global state modifications
+ */
 static void
 split_cvn PARM_2(CVN_PTR, v1_ptr, int, number)
 {
@@ -698,7 +939,46 @@ split_cvn PARM_2(CVN_PTR, v1_ptr, int, number)
   cvn_sort();
 }
 
-/* SUPPLY_CVN -- Attempt to dole out supplies to the caravan unit */
+/*
+ * supply_cvn - Manage supply level changes for caravan units
+ *
+ * Adjusts the caravan's supply level by consuming or returning resources
+ * from the current sector. Handles territorial restrictions, resource
+ * availability validation, and user confirmation for supply operations.
+ *
+ * The function implements comprehensive supply mechanics:
+ * - Calculates resource costs for supply level changes
+ * - Validates resource availability in current sector
+ * - Handles territorial supply restrictions (own territory required)
+ * - Supports both increasing and decreasing supply levels
+ * - Implements special handling for magically enhanced units
+ *
+ * Supply restrictions:
+ * - Normal units require owned territory for resupply
+ * - Magic-enhanced units can only resupply from specific sectors
+ * - Resource availability must meet calculated costs
+ * - Optional user confirmation for supply transactions
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure (must not be NULL)
+ *   level - Target supply level (0 to MAXSUPPLIES * 2)
+ *   doquery - Whether to prompt user for confirmation
+ *
+ * Returns:
+ *   TRUE if operation was blocked/cancelled, FALSE if completed successfully
+ *
+ * Side Effects:
+ *   - Modifies caravan supply level and sector resources
+ *   - Updates sector material storage
+ *   - May display user confirmation dialogs
+ *   - Handles resource consumption/redistribution
+ *
+ * Notes:
+ *   - Supports both supply increase and decrease operations
+ *   - MAYGIVEBACK compilation flag controls supply return capability
+ *   - Territory restrictions enforced for non-god players
+ *   - Thread-unsafe due to global state modifications
+ */
 int
 supply_cvn PARM_3(CVN_PTR, v1_ptr, int, level, int, doquery)
 {
@@ -859,7 +1139,44 @@ supply_cvn PARM_3(CVN_PTR, v1_ptr, int, level, int, doquery)
   return(hold);
 }
 
-/* CVN_REPAIR -- Attempt to repair a caravan */
+/*
+ * cvn_repair - Repair a damaged caravan unit at a supply center
+ *
+ * Restores a caravan's efficiency to 100% by consuming repair materials
+ * from a supply center in the current sector. Calculates repair costs
+ * and validates resource availability before proceeding.
+ *
+ * The function implements supply center repair mechanics:
+ * - Requires caravan to be located at a supply center (city)
+ * - Calculates material costs based on caravan damage
+ * - Validates supply center has sufficient repair materials
+ * - Consumes materials from city storage upon completion
+ * - Sets caravan to repair status with movement restrictions
+ *
+ * Repair requirements:
+ * - Caravan must be at a supply center (city location)
+ * - City must have sufficient repair materials available
+ * - User confirmation required unless expert mode enabled
+ * - Repair operation consumes turn movement (non-god mode)
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure to repair (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets caravan efficiency to 100%
+ *   - Consumes repair materials from city storage
+ *   - Sets caravan status to repair (ST_REPAIR)
+ *   - Zeroes caravan movement points for current turn
+ *
+ * Notes:
+ *   - Requires supply center location for repair operations
+ *   - Material costs calculated by cvn_redocosts() function
+ *   - Repair status prevents movement until next turn
+ *   - Thread-unsafe due to global state modifications
+ */
 void
 cvn_repair PARM_1(CVN_PTR, v1_ptr)
 {
@@ -944,7 +1261,42 @@ cvn_repair PARM_1(CVN_PTR, v1_ptr)
   }
 }
 
-/* VSTAT_OK -- Is the given caravan status okay? */
+/*
+ * vstat_ok - Validate whether caravan can change to specified status
+ *
+ * Checks if the current caravan can legally change to the specified status,
+ * considering current state, unit restrictions, and game rules. Provides
+ * optional error messaging for invalid status changes.
+ *
+ * The function validates status change legality:
+ * - Ensures caravan exists and is accessible
+ * - Prevents redundant status changes (already in target status)
+ * - Bypasses all restrictions in god mode
+ * - Checks for unalterable status conditions
+ *
+ * Validation rules:
+ * - Units in certain statuses cannot change (nochange_stat)
+ * - Status change must be different from current status
+ * - God mode players can make any status change
+ * - Some statuses may have additional restrictions
+ *
+ * Parameters:
+ *   new_stat - Target status to validate for change
+ *   verbal - Whether to display error messages for invalid changes
+ *
+ * Returns:
+ *   TRUE if status change is valid, FALSE if blocked
+ *
+ * Side Effects:
+ *   - May display error messages if verbal parameter is TRUE
+ *   - No state modifications (read-only validation)
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Relies on global cvn_ptr for current caravan context
+ *   - Used by command interface to enable/disable options
+ *   - Thread-safe (read-only operation)
+ */
 static int
 vstat_ok PARM_2(int, new_stat, int, verbal)
 {
@@ -983,7 +1335,42 @@ vstat_ok PARM_2(int, new_stat, int, verbal)
   return(TRUE);
 }
 
-/* VSPEED_OK -- Is the given caravan speed possible for the unit? */
+/*
+ * vspeed_ok - Validate whether caravan can change to specified speed
+ *
+ * Checks if the current caravan can legally change to the specified movement
+ * speed, considering current movement points, unit status, and game mechanics.
+ * Provides optional error messaging for invalid speed changes.
+ *
+ * The function validates speed change legality:
+ * - Ensures caravan exists and is accessible
+ * - Prevents speed changes for stopped/immobile units
+ * - Restricts speed decreases when movement is too low
+ * - Prevents redundant speed changes (already at target speed)
+ *
+ * Speed change rules:
+ * - Units in nomove status cannot change speed
+ * - Speed decreases require sufficient movement points (>25)
+ * - Current speed must differ from target speed
+ * - No restrictions in god mode
+ *
+ * Parameters:
+ *   new_speed - Target speed to validate for change
+ *   verbal - Whether to display error messages for invalid changes
+ *
+ * Returns:
+ *   TRUE if speed change is valid, FALSE if blocked
+ *
+ * Side Effects:
+ *   - May display error messages if verbal parameter is TRUE
+ *   - No state modifications (read-only validation)
+ *
+ * Notes:
+ *   - Static function for internal module use only
+ *   - Relies on global cvn_ptr for current caravan context
+ *   - Movement threshold (25) prevents late-turn speed exploitation
+ *   - Thread-safe (read-only operation)
+ */
 static int
 vspeed_ok PARM_2(int, new_speed, int, verbal)
 {
@@ -1018,7 +1405,44 @@ vspeed_ok PARM_2(int, new_speed, int, verbal)
   return(TRUE);
 }
 
-/* EXT_CVNINFO -- Provide extended information about the caravan */
+/*
+ * ext_cvninfo - Display comprehensive caravan unit information
+ *
+ * Presents detailed information about the specified caravan including
+ * size, efficiency, crew, location, status, cargo, and supply costs.
+ * Provides complete unit overview for player decision-making.
+ *
+ * The function displays multi-line caravan summary:
+ * - Basic stats: size (wagons), efficiency, total crew
+ * - Operational info: status, speed, movement left, movement ability
+ * - Location data: coordinates, special traits (leading, spelled, healing)
+ * - Cargo manifest: people and all material types carried
+ * - Supply information: current level and per-turn costs
+ *
+ * Information categories:
+ * - Unit identification and basic characteristics
+ * - Current operational status and movement capability
+ * - Location and special unit traits/enhancements
+ * - Complete cargo inventory with quantities
+ * - Supply level and resource consumption rates
+ *
+ * Parameters:
+ *   v1_ptr - Pointer to caravan structure to display (must not be NULL)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area and displays information
+ *   - Waits for user keypress before returning
+ *   - No game state modifications
+ *
+ * Notes:
+ *   - Uses 5-line display format for comprehensive information
+ *   - Calculates display values using game coordinate functions
+ *   - Integrates with supply cost calculation system
+ *   - Thread-safe display operation
+ */
 void
 ext_cvninfo PARM_1(CVN_PTR, v1_ptr)
 {
@@ -1113,7 +1537,51 @@ ext_cvninfo PARM_1(CVN_PTR, v1_ptr)
   presskey();
 }
 
-/* EXT_CVNCMD -- Perform an extended caravan operation */
+/*
+ * ext_cvncmd - Execute extended caravan command interface
+ *
+ * Provides comprehensive interactive command interface for caravan management
+ * including information display, unit operations, status changes, and
+ * administrative functions. Supports both selector-based and direct ID access.
+ *
+ * The function implements full caravan command system:
+ * - Information display and unit statistics
+ * - Unit combination, merging, and splitting operations
+ * - Status and speed adjustments with validation
+ * - Supply management and repair operations
+ * - Cargo transfer coordination
+ * - Unit renumbering and destruction
+ *
+ * Command categories:
+ * - Info commands: detailed unit information display
+ * - Unit operations: combine, merge, split, divide operations
+ * - Status management: speed and operational status changes
+ * - Maintenance: supply, repair, renumber, disband
+ * - Cargo operations: transfer interface activation
+ *
+ * Interface modes:
+ * - Selector mode (cvan == -1): Uses unit selector for target selection
+ * - Direct mode (cvan >= 0): Operates on specified caravan ID
+ * - God mode support: Administrative operations bypass restrictions
+ *
+ * Parameters:
+ *   cvan - Caravan ID for direct operation (-1 uses selector interface)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays interactive command menu with available options
+ *   - Executes selected command with appropriate validation
+ *   - May modify caravan state based on command selection
+ *   - Handles unit selection and navigation
+ *
+ * Notes:
+ *   - Validates command availability based on unit state
+ *   - Highlights available commands and dims unavailable options
+ *   - Integrates with all caravan management subsystems
+ *   - Thread-unsafe due to global state and user interaction
+ */
 void
 ext_cvncmd PARM_1 (int, cvan)
 {
