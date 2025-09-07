@@ -2164,6 +2164,34 @@ wall_patrol PARM_2(int, cntry, ARMY_PTR, a1_ptr)
   return(TRUE);
 }
 
+/*
+ * set_armycosts - Calculate unit recruitment costs by type and size
+ *
+ * Computes the material costs required to recruit a specified number of units
+ * of a given type. Applies nation-specific modifiers such as sapper discounts,
+ * mercenary cost adjustments, and magical cost modifications.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (for power checks and modifiers)
+ *   cost_ptr - Array to store calculated costs (must not be NULL)
+ *   type - Unit type index (0 to num_armytypes-1)
+ *   size - Number of units to recruit (must be >= 0)
+ *
+ * Returns:
+ *   None (results stored in cost_ptr array)
+ *
+ * Side Effects:
+ *   - Modifies cost_ptr array with calculated material costs
+ *   - Uses global ntn_ptr for sapper and mercenary calculations
+ *   - Temporarily switches nation context for mercenary cost rates
+ *
+ * Notes:
+ *   - Base costs: talons, metals from unit type, food from supply level
+ *   - Sapper units get 50% discount on talons/metals if nation has sapper power
+ *   - Mercenary units use dynamic cost rates based on market conditions
+ *   - Applies sector and magical cost adjustments
+ *   - Essential for recruitment planning and resource management
+ */
 /* SET_ARMYCOSTS -- Set the costs of the given unit of given size */
 void
 set_armycosts PARM_4(NTN_PTR, n1_ptr, itemtype *, cost_ptr,
@@ -2211,6 +2239,36 @@ set_armycosts PARM_4(NTN_PTR, n1_ptr, itemtype *, cost_ptr,
   mgk_cost_adjust(1, cost_ptr);
 }
 
+/*
+ * set_upgcosts - Calculate unit upgrade costs for transforming unit types
+ *
+ * Computes the material costs required to upgrade an existing army unit to
+ * a new unit type. Considers differences in recruitment costs, support costs,
+ * training requirements, and unit-specific modifiers.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (for power checks and modifiers)
+ *   a1_ptr - Pointer to army unit being upgraded (must not be NULL)
+ *   cost_ptr - Array to store calculated upgrade costs (must not be NULL)
+ *   newtype - Target unit type index (0 to num_armytypes-1)
+ *
+ * Returns:
+ *   None (results stored in cost_ptr array)
+ *
+ * Side Effects:
+ *   - Modifies cost_ptr array with calculated upgrade costs
+ *   - Temporarily modifies a1_ptr->unittype during cost calculations
+ *   - Restores original unittype after calculations
+ *
+ * Notes:
+ *   - Only charges difference in recruitment costs between old and new types
+ *   - Half-men units: only half upgrade, affecting cost calculations
+ *   - Training units (a_needtrain) have lower upgrade costs (50% vs 20%)
+ *   - Includes differential support costs between old and new types
+ *   - Sapper units get 50% discount if nation has sapper power
+ *   - Applies sector and magical cost adjustments
+ *   - Essential for unit advancement and military planning
+ */
 /* SET_UPGCOSTS -- Set the to upgrade to the given unit of given size */
 void
 set_upgcosts PARM_4(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr,
@@ -2297,6 +2355,35 @@ set_upgcosts PARM_4(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr,
   mgk_cost_adjust(1, cost_ptr);
 }
 
+/*
+ * max_numunit - Calculate maximum number of units that can be recruited
+ *
+ * Determines the maximum number of units of a specified type that can be
+ * recruited based on available resources, population, spell points (for monsters),
+ * and recruitment costs. Handles both normal units and monster summoning.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (must not be NULL)
+ *   c1_ptr - Pointer to city for recruitment (NULL for remote recruitment)
+ *   utype - Unit type index (0 to num_armytypes-1)
+ *   spts - Spell points available (for monster summoning)
+ *
+ * Returns:
+ *   Maximum number of units that can be recruited, 0 if impossible
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Monster units: limited by spell points and power requirements
+ *   - Normal units: limited by population, materials, and recruitment costs
+ *   - Mercenary units: limited by global mercenary availability
+ *   - Half-men units: double population efficiency (2 units per person)
+ *   - Remote recruitment: requires spy network and resource availability
+ *   - Shrine bonuses reduce monster summoning costs
+ *   - Returns 1 for monsters if spell points sufficient, 0 otherwise
+ *   - Essential for recruitment planning and strategic resource allocation
+ */
 /* MAX_NUMUNIT -- Return the value of the number of men possible */
 long
 max_numunit PARM_4(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype, int, spts)
@@ -2391,6 +2478,34 @@ max_numunit PARM_4(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype, int, spts)
   return(hold);
 }
 
+/*
+ * utype_mayuse - Check if a nation can use a specific unit type
+ *
+ * Validates whether a nation has the required magical powers and abilities
+ * to recruit or use a specific unit type. Different unit types require
+ * different combinations of military, wizardry, and civilian powers.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation to check (must not be NULL unless god)
+ *   utype - Unit type index to validate (0 to num_armytypes-1)
+ *
+ * Returns:
+ *   >0 if nation can use unit type
+ *   0 if nation cannot use unit type
+ *   <0 for monsters: power deficit (more powers needed)
+ *
+ * Side Effects:
+ *   - None (read-only power validation)
+ *
+ * Notes:
+ *   - God nations can use any unit type
+ *   - Normal units: require exact power matches for military/wizardry/civilian
+ *   - Monster units: use complex power counting system
+ *   - Monsters with summon power: different cost calculation
+ *   - Returns power deficit for monsters (negative = missing powers)
+ *   - Returns power surplus for monsters with summon (positive = easier)
+ *   - Essential for recruitment validation and unit availability
+ */
 /* UTYPE_MAYUSE -- Check if the given unit type may be used by the nation */
 int
 utype_mayuse PARM_2(NTN_PTR, n1_ptr, int, utype)
@@ -2447,6 +2562,35 @@ utype_mayuse PARM_2(NTN_PTR, n1_ptr, int, utype)
   return(0);
 }
 
+/*
+ * utype_ok - Validate unit type availability for recruitment or upgrade
+ *
+ * Comprehensive validation function that checks if a unit type can be
+ * recruited or upgraded in the current context. Validates powers, resources,
+ * population, and upgrade requirements with optional error reporting.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (must not be NULL)
+ *   c1_ptr - Pointer to city for recruitment (may be NULL)
+ *   utype - Unit type index to validate (0 to num_armytypes-1)
+ *   upg_men - Number of men being upgraded (>0 for upgrades)
+ *   eout - If TRUE, display error messages to user
+ *
+ * Returns:
+ *   TRUE if unit type is available and affordable, FALSE otherwise
+ *
+ * Side Effects:
+ *   - May display error messages if eout is TRUE
+ *   - Uses global string buffer for error message formatting
+ *
+ * Notes:
+ *   - God nations bypass all restrictions
+ *   - Validates unit type availability using utype_mayuse
+ *   - For upgrades: checks minimum unit requirements and costs
+ *   - For recruitment: checks population and resource availability
+ *   - Provides user-friendly error messages for different failure conditions
+ *   - Essential for user interface validation and command processing
+ */
 /* UTYPE_OK -- Check if the given unit type is okay for the current city */
 int
 utype_ok PARM_5(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype,
@@ -2541,6 +2685,29 @@ utype_ok PARM_5(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype,
   return(TRUE);
 }
 
+/*
+ * navy_carrying - Check if a naval unit is carrying cargo or passengers
+ *
+ * Determines whether a naval unit is currently carrying any cargo, materials,
+ * passengers, or army units. Used to validate movement, combat, and unloading
+ * operations for naval units.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to naval unit (must not be NULL)
+ *
+ * Returns:
+ *   TRUE if navy is carrying anything, FALSE if empty
+ *
+ * Side Effects:
+ *   - None (read-only cargo check)
+ *
+ * Notes:
+ *   - Checks for civilian passengers (people field)
+ *   - Checks for army units onboard (armynum field)
+ *   - Checks all material types for cargo
+ *   - Essential for naval movement and combat restrictions
+ *   - Used to prevent certain actions while carrying cargo
+ */
 /* NAVY_CARRYING -- Return TRUE if the given unit has something onboard */
 int
 navy_carrying PARM_1(NAVY_PTR, n1_ptr)
@@ -2562,6 +2729,29 @@ navy_carrying PARM_1(NAVY_PTR, n1_ptr)
   return(FALSE);
 }
 
+/*
+ * cvn_carrying - Check if a caravan unit is carrying cargo or passengers
+ *
+ * Determines whether a caravan unit is currently carrying any cargo, materials,
+ * or passengers. Used to validate movement, combat, and unloading operations
+ * for caravan units.
+ *
+ * Parameters:
+ *   c1_ptr - Pointer to caravan unit (must not be NULL)
+ *
+ * Returns:
+ *   TRUE if caravan is carrying anything, FALSE if empty
+ *
+ * Side Effects:
+ *   - None (read-only cargo check)
+ *
+ * Notes:
+ *   - Checks for civilian passengers (people field)
+ *   - Checks all material types for cargo
+ *   - Does not check for army units (caravans don't transport armies)
+ *   - Essential for caravan movement and combat restrictions
+ *   - Used to prevent certain actions while carrying cargo
+ */
 /* CVN_CARRYING -- Return TRUE if the given unit has something onboard */
 int
 cvn_carrying PARM_1(CVN_PTR, c1_ptr)
@@ -2582,6 +2772,30 @@ cvn_carrying PARM_1(CVN_PTR, c1_ptr)
   return(FALSE);
 }
 
+/*
+ * upg_class - Check if a unit class allows upgrades (static helper)
+ *
+ * Determines whether units of a specific class can be upgraded to higher
+ * tiers within the same class. Certain special unit classes cannot be
+ * upgraded due to their unique nature.
+ *
+ * Parameters:
+ *   class - Unit class to check (AC_* constants)
+ *
+ * Returns:
+ *   TRUE if class allows upgrades, FALSE otherwise
+ *
+ * Side Effects:
+ *   - None (read-only class validation)
+ *
+ * Notes:
+ *   - Leaders (AC_LEADER): cannot upgrade (unique individuals)
+ *   - Monsters (AC_MONSTER): cannot upgrade (summoned creatures)
+ *   - Mercenaries (AC_MERCS): cannot upgrade (hired units)
+ *   - Unique units (AC_UNIQUE): cannot upgrade (special units)
+ *   - All other classes: can upgrade to higher tiers
+ *   - Used by may_upgrade to validate upgrade possibilities
+ */
 /* UPG_CLASS -- Return TRUE or FALSE if the class is upgradable */
 static int
 upg_class PARM_1(int, class)
@@ -2602,6 +2816,33 @@ upg_class PARM_1(int, class)
   return(TRUE);
 }
 
+/*
+ * may_upgrade - Check if an army unit can be upgraded to a higher tier
+ *
+ * Validates whether an army unit of the specified type can be upgraded,
+ * considering unit class restrictions, available upgrade targets, nation
+ * powers, and resource requirements.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (must not be NULL)
+ *   c1_ptr - Pointer to city for resource checks (must not be NULL)
+ *   utype - Current unit type to check for upgrades
+ *   men - Number of men in the unit (must be > 0)
+ *
+ * Returns:
+ *   TRUE if unit can be upgraded, FALSE otherwise
+ *
+ * Side Effects:
+ *   - Sets global_int to unit type during processing
+ *
+ * Notes:
+ *   - Only normal units (a_isnormal) can be upgraded
+ *   - Unit class must allow upgrades (leaders, monsters, mercs cannot)
+ *   - Must find a valid higher-tier unit of the same class
+ *   - Target upgrade must pass utype_ok validation (powers, resources)
+ *   - Searches linearly through higher unit types for same class
+ *   - Essential for upgrade command validation
+ */
 /* MAY_UPGRADE -- Is the army unit able to be upgraded? */
 int
 may_upgrade PARM_4(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype, int, men)
@@ -2644,6 +2885,35 @@ may_upgrade PARM_4(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype, int, men)
   return(FALSE);
 }
 
+/*
+ * heal_rate - Calculate natural healing rate for an army unit
+ *
+ * Computes the percentage of health an army unit recovers per turn through
+ * natural healing, considering terrain, weather, nation powers, unit status,
+ * and environmental factors. Base rate modified by multiple factors.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation (for power bonuses)
+ *   a1_ptr - Pointer to army unit (must not be NULL)
+ *
+ * Returns:
+ *   Healing percentage per turn (0-50+), 0 if no healing possible
+ *
+ * Side Effects:
+ *   - None (read-only calculation)
+ *
+ * Notes:
+ *   - Base rate: 10% (5% after final division by 2)
+ *   - Undead units and magically healed units: 0% healing
+ *   - Military powers (warrior, captain, warlord): +1% each
+ *   - Water terrain: -3% (or -1% with sailor power)
+ *   - Mountain terrain: -1% per elevation level above hills
+ *   - Vegetation effects: good (+1%), harsh (-2% to -10%)
+ *   - Season effects: winter (-5%), summer (-1%), spring (+1%)
+ *   - Status bonuses: fortified (x2), reserve (x3), garrison (+2)
+ *   - Environmental powers reduce harsh terrain penalties
+ *   - Essential for unit recovery and strategic planning
+ */
 /* HEAL_RATE -- The percentage of health healed for an army unit */
 int
 heal_rate PARM_2(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr)
@@ -2749,6 +3019,32 @@ heal_rate PARM_2(NTN_PTR, n1_ptr, ARMY_PTR, a1_ptr)
   return (hold/2);
 }
 
+/*
+ * armies_in_sector - Count army units belonging to a nation in a sector
+ *
+ * Counts the total number of army units belonging to the specified nation
+ * that are located in the given sector coordinates. Used for tactical
+ * analysis, movement planning, and sector capacity calculations.
+ *
+ * Parameters:
+ *   natn - Nation ID to count units for (1 to MAXNTN-1)
+ *   xloc - X coordinate of sector to examine
+ *   yloc - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   Number of army units found in the sector, 0 if none or invalid params
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - Only counts units belonging to the specified nation
+ *   - Validates map coordinates before searching
+ *   - Validates nation ID before accessing nation data
+ *   - Iterates through nation's army list checking locations
+ *   - Used for tactical display and movement validation
+ *   - Essential for determining sector congestion
+ */
 /* ARMIES_IN_SECTOR -- Report the number of army units in a sector */
 int
 armies_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
@@ -2787,6 +3083,31 @@ armies_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
   return(army_count);
 }
 
+/*
+ * navies_in_sector - Count naval units belonging to a nation in a sector
+ *
+ * Counts the total number of naval units belonging to the specified nation
+ * (or all nations if UNOWNED specified) that are located in the given sector
+ * coordinates. Used for naval tactical analysis and movement planning.
+ *
+ * Parameters:
+ *   natn - Nation ID to count for (1 to MAXNTN-1), or UNOWNED for all
+ *   xloc - X coordinate of sector to examine
+ *   yloc - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   Number of naval units found in the sector, 0 if none
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - If natn is UNOWNED, counts naval units from all nations
+ *   - Only counts naval units at exact coordinates
+ *   - Does not validate map coordinates (assumes valid input)
+ *   - Used for naval congestion analysis and tactical planning
+ *   - Essential for determining naval capacity in ports
+ */
 /* NAVIES_IN_SECTOR -- Report the number of naval units in a sector */
 int
 navies_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
@@ -2822,6 +3143,31 @@ navies_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
   return(navy_count);
 }
 
+/*
+ * cvns_in_sector - Count caravan units belonging to a nation in a sector
+ *
+ * Counts the total number of caravan units belonging to the specified nation
+ * (or all nations if UNOWNED specified) that are located in the given sector
+ * coordinates. Used for trade route analysis and movement planning.
+ *
+ * Parameters:
+ *   natn - Nation ID to count for (1 to MAXNTN-1), or UNOWNED for all
+ *   xloc - X coordinate of sector to examine
+ *   yloc - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   Number of caravan units found in the sector, 0 if none
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - If natn is UNOWNED, counts caravan units from all nations
+ *   - Only counts caravan units at exact coordinates
+ *   - Does not validate map coordinates (assumes valid input)
+ *   - Used for trade congestion analysis and route planning
+ *   - Essential for determining caravan capacity in trading centers
+ */
 /* CVNS_IN_SECTOR -- Report the number of caravans in a sector */
 int
 cvns_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
@@ -2857,6 +3203,30 @@ cvns_in_sector PARM_3 (int, natn, int, xloc, int, yloc)
   return(cvn_count);
 }
 
+/*
+ * units_in_sector - Count all unit types for a nation in a sector
+ *
+ * Counts the total number of all unit types (armies, navies, and caravans)
+ * belonging to the specified nation in the given sector. Provides a
+ * comprehensive view of nation presence in a sector.
+ *
+ * Parameters:
+ *   natn - Nation ID to count for (1 to MAXNTN-1), or UNOWNED for all
+ *   x - X coordinate of sector to examine
+ *   y - Y coordinate of sector to examine
+ *
+ * Returns:
+ *   Total number of all unit types in the sector
+ *
+ * Side Effects:
+ *   - None (read-only counting operation)
+ *
+ * Notes:
+ *   - Aggregates results from armies_in_sector, navies_in_sector, cvns_in_sector
+ *   - Used for comprehensive sector analysis and capacity planning
+ *   - Essential for determining total nation presence in a location
+ *   - Helpful for strategic planning and resource allocation
+ */
 /* UNITS_IN_SECTOR -- return the number of armies, caravans, and
                       navies in a sector for a nation.           */
 int
@@ -2871,6 +3241,36 @@ units_in_sector PARM_3 (int, natn, int, x, int, y)
   return(hold);
 }
 
+/*
+ * make_madunit - Create a hostile army unit at specified location
+ *
+ * Creates a new army unit with attack status and magical enhancements,
+ * typically used for spawning hostile creatures, random encounters, or
+ * automated defensive units. Assigns to savage nations if owner invalid.
+ *
+ * Parameters:
+ *   own - Nation ID to own the unit (1 to MAXNTN-1, or <0 for auto-assign)
+ *   atype - Unit type to create
+ *   asize - Size/strength of the unit
+ *   axloc - X coordinate for unit placement
+ *   ayloc - Y coordinate for unit placement
+ *
+ * Returns:
+ *   FALSE if unit created successfully, TRUE if creation failed
+ *
+ * Side Effects:
+ *   - Creates new army unit in specified nation
+ *   - Temporarily switches nation context during creation
+ *   - Modifies global army sorting and unit lists
+ *
+ * Notes:
+ *   - If owner invalid, searches for first savage nation
+ *   - Unit starts with ST_ATTACK status and magical enhancements
+ *   - Non-monster nations get standard supply settings
+ *   - Restores original nation context after creation
+ *   - Essential for random encounters and automated spawning
+ *   - "Mad" units are typically hostile to player nations
+ */
 /* MAKE_MADUNIT -- Create an army of given type size and location */
 int
 make_madunit PARM_5(int, own, int, atype, int, asize, int, axloc, int, ayloc)
@@ -2921,6 +3321,31 @@ make_madunit PARM_5(int, own, int, atype, int, asize, int, axloc, int, ayloc)
   return(FALSE);
 }
 
+/*
+ * resetnumbers - Clear unit numbering scheme for current context
+ *
+ * Clears the unit numbering scheme for either the current nation or the
+ * global default scheme, freeing all allocated numbering structures.
+ * Used to reset custom unit numbering preferences.
+ *
+ * Parameters:
+ *   None (operates on global ntn_ptr context)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Frees all unit numbering structures
+ *   - Clears nation's numbering list or global default list
+ *   - Deallocates memory for numbering preferences
+ *
+ * Notes:
+ *   - If ntn_ptr is NULL, clears global default numbering scheme
+ *   - If ntn_ptr is valid, clears nation-specific numbering scheme
+ *   - Safely handles empty lists and NULL pointers
+ *   - Essential for resetting unit identification preferences
+ *   - Used when players want to return to default numbering
+ */
 /* RESETNUMBERS -- Clear out the default numbering scheme */
 void
 resetnumbers PARM_0(void)
@@ -2943,6 +3368,32 @@ resetnumbers PARM_0(void)
   }
 }
 
+/*
+ * startnumber - Parse and assign custom unit numbering from string
+ *
+ * Parses a string specification for custom unit numbering and assigns the
+ * starting number for a unit class or specific unit type. Supports both
+ * class-wide numbering ("all_infantry 100") and specific type numbering.
+ *
+ * Parameters:
+ *   str - String specification ("type_name number" format)
+ *   estr - Error prefix string for error messages
+ *
+ * Returns:
+ *   Assigned slot number on success, 0 on error
+ *
+ * Side Effects:
+ *   - Creates or updates numbering scheme entries
+ *   - Sets global_int and global_long for caller use
+ *   - May display error messages
+ *
+ * Notes:
+ *   - Format: "unit_type number" or "all_class_name number"
+ *   - "all_" prefix indicates class-wide numbering
+ *   - Number must be 1 to MAX_IDTYPE
+ *   - Validates unit types and class names
+ *   - Essential for custom unit identification schemes
+ */
 /* STARTNUMBER -- Assign a starting number using the given string */
 int
 startnumber PARM_2(char *, str, char *, estr)
@@ -2990,6 +3441,31 @@ startnumber PARM_2(char *, str, char *, estr)
   return(slot);
 }
 
+/*
+ * unum_copydefault - Copy global default numbering scheme to current nation
+ *
+ * Copies the global default unit numbering scheme to the current nation's
+ * personal numbering scheme. Used when a nation wants to adopt the global
+ * defaults as their starting point for customization.
+ *
+ * Parameters:
+ *   None (operates on global ntn_ptr context)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Clears current nation's numbering scheme
+ *   - Creates new numbering entries based on global defaults
+ *   - Allocates memory for numbering structures
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr (current nation context)
+ *   - First clears existing nation numbering scheme
+ *   - Iterates through global default list copying entries
+ *   - Used when nations want to start from global defaults
+ *   - Essential for numbering scheme inheritance
+ */
 /* UNUM_COPYDEFAULT -- Copy the default numbering scheme */
 void
 unum_copydefault PARM_0(void)
@@ -3006,6 +3482,34 @@ unum_copydefault PARM_0(void)
   }
 }
 
+/*
+ * newslotnumber - Create or update a unit numbering scheme entry
+ *
+ * Creates a new numbering scheme entry or updates an existing one with the
+ * specified base number, identifier, and numbering type. Manages the linked
+ * list of numbering preferences for the current context.
+ *
+ * Parameters:
+ *   base - Starting number to assign (1 to MAX_IDTYPE)
+ *   idnum - Unit type or class identifier
+ *   numtype - Numbering type (0=all, 1=class, 2=specific type)
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Creates new numbering entry if not found
+ *   - Updates existing entry if found
+ *   - Modifies global or nation-specific numbering lists
+ *
+ * Notes:
+ *   - If ntn_ptr is NULL, operates on global default scheme
+ *   - If ntn_ptr is valid, operates on nation-specific scheme
+ *   - Type 0: universal numbering (all units)
+ *   - Type 1: class-specific numbering (idnum = class)
+ *   - Type 2: unit-specific numbering (idnum = unit type)
+ *   - Maintains sorted linked list for efficient lookup
+ */
 /* NEWSLOTNUMBER -- set the default number to the given value */
 void
 newslotnumber PARM_3(int, base, int, idnum, int, numtype)
@@ -3058,6 +3562,29 @@ newslotnumber PARM_3(int, base, int, idnum, int, numtype)
   }
 }
 
+/*
+ * unit_basenum - Determine the starting number for a unit type
+ *
+ * Looks up the appropriate starting number for a unit type based on the
+ * current numbering scheme. Follows priority order: specific type numbers
+ * override class numbers, which override universal numbers.
+ *
+ * Parameters:
+ *   utype - Unit type to look up numbering for
+ *
+ * Returns:
+ *   Starting number for the unit type, 1 if no specific number found
+ *
+ * Side Effects:
+ *   - None (read-only lookup)
+ *
+ * Notes:
+ *   - Uses nation-specific scheme if available, else global default
+ *   - Priority: type-specific (2) > class-specific (1) > universal (0)
+ *   - Higher type values override lower type values
+ *   - Falls back to 1 if no matching numbering scheme found
+ *   - Essential for automatic unit numbering assignment
+ */
 /* UNIT_BASENUM -- Determine the base unit number of a unit */
 int
 unit_basenum PARM_1(int, utype)
@@ -3102,6 +3629,32 @@ unit_basenum PARM_1(int, utype)
   return (hold);
 }
 
+/*
+ * army_renum - Renumber an army unit and update all references
+ *
+ * Changes the ID number of the current army unit and updates all references
+ * to the old ID throughout the game data structures. Ensures referential
+ * integrity across armies, navies, and items.
+ *
+ * Parameters:
+ *   newnum - New ID number to assign to the army unit
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Updates army unit's ID number
+ *   - Updates leader references in other army units
+ *   - Updates army references in naval units
+ *   - Updates army references in item structures
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr and army_ptr
+ *   - If unit is a leader, updates follower leader references
+ *   - If unit is onboard ships, updates naval cargo references
+ *   - If unit has items, updates item ownership references
+ *   - Essential for maintaining data consistency during renumbering
+ */
 /* ARMY_RENUM -- Renumber the current army unit in the current nation */
 void
 army_renum PARM_1(int, newnum)
