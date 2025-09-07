@@ -754,7 +754,40 @@ em_prekill PARM_0(void)
   return(0);
 }
 
-/* EM_KILL -- Remove all of the line to the right */
+/*
+ * em_kill - Kill (delete) text from cursor to end of line
+ *
+ * Implements Unix-style "kill to end of line" functionality by deleting
+ * all text from the current cursor position to the end of the current line.
+ * The behavior is mode-aware and handles different data structures for each
+ * editing mode.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_TOLINE: Removes all recipients from current position to end
+ *   EM_S_SUBJECT: Truncates subject line at cursor position
+ *   EM_S_BODY: Truncates current line at cursor, or removes empty line
+ *
+ * Special Case Handling:
+ *   - Body mode: If cursor is at position 0 on empty line with next line,
+ *     removes the entire empty line and advances to next line
+ *   - Properly manages linked list structure for line removal
+ *   - Ensures proper memory cleanup for removed lines
+ *
+ * Returns:
+ *   0 on success (always successful)
+ *
+ * Side Effects:
+ *   - Modifies text content in current editing mode
+ *   - May remove entire lines in body mode
+ *   - Updates cur_line pointer when line is removed
+ *   - Frees memory for removed line structures
+ *   - May update recipient list and file locks
+ *
+ * Notes:
+ *   - Complements em_prekill() for complete line editing functionality
+ *   - Essential for efficient text editing operations
+ *   - Handles boundary conditions and memory management gracefully
+ */
 static int
 em_kill PARM_0(void)
 {
@@ -804,7 +837,42 @@ em_kill PARM_0(void)
   return(0);
 }
 
-/* EM_UP -- Go up one line */
+/*
+ * em_up - Move cursor up one line or to previous editing mode
+ *
+ * Implements upward navigation in the mail editor with mode-aware behavior.
+ * The function either moves up one line within the current mode or transitions
+ * to the previous editing mode when at boundaries.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_BODY: Moves to previous line in message body
+ *     - Sets cur_line to previous line if available
+ *     - If at first line, transitions to EM_S_SUBJECT mode
+ *     - Resets char_position to 0 when changing modes
+ *
+ *   EM_S_SUBJECT: Transitions to EM_S_TOLINE (recipient editing)
+ *     - Decrements email_status to move to previous mode
+ *     - Resets char_position to 0 for beginning of recipient list
+ *
+ *   EM_S_TOLINE: Cannot move up (already at top)
+ *     - Emits audible beep to indicate boundary condition
+ *     - No state changes occur
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - May change cur_line pointer in body mode
+ *   - May change email_status (editing mode)
+ *   - Resets char_position when changing modes
+ *   - May emit beep for boundary conditions
+ *
+ * Notes:
+ *   - Part of comprehensive cursor navigation system
+ *   - Coordinates with em_down() for bidirectional movement
+ *   - Essential for multi-modal editing interface
+ *   - Handles mode transitions smoothly
+ */
 static int
 em_up PARM_0(void)
 {
@@ -836,7 +904,44 @@ em_up PARM_0(void)
   return(0);
 }
 
-/* EM_DOWN -- Go down one line */
+/*
+ * em_down - Move cursor down one line or to next editing mode
+ *
+ * Implements downward navigation in the mail editor with mode-aware behavior.
+ * The function either moves down one line within the current mode or transitions
+ * to the next editing mode when at boundaries.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_BODY: Moves to next line in message body
+ *     - Advances cur_line to next line if available
+ *     - If at last line, emits beep to indicate boundary
+ *     - No mode changes occur in body mode
+ *
+ *   EM_S_TOLINE/EM_S_SUBJECT: Transitions to next editing mode
+ *     - Increments email_status to advance to next mode
+ *     - When entering EM_S_BODY, sets cur_line to first text line
+ *     - Resets char_position to 0 for new mode positioning
+ *
+ * Special Handling:
+ *   - When transitioning into body mode, properly initializes cur_line
+ *   - Ensures cur_line points to cur_message->text for body editing
+ *   - Maintains consistent cursor positioning across mode changes
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - May change cur_line pointer when entering body mode
+ *   - May change email_status (editing mode)
+ *   - Resets char_position when changing modes
+ *   - May emit beep for boundary conditions in body mode
+ *
+ * Notes:
+ *   - Part of comprehensive cursor navigation system
+ *   - Coordinates with em_up() for bidirectional movement
+ *   - Essential for sequential editing workflow
+ *   - Handles mode initialization properly
+ */
 static int
 em_down PARM_0(void)
 {
@@ -865,7 +970,50 @@ em_down PARM_0(void)
   return(0);
 }
 
-/* EM_FORWARD -- Go forward one character */
+/*
+ * em_forward - Move cursor forward one character with intelligent navigation
+ *
+ * Implements forward character navigation in the mail editor with intelligent
+ * boundary handling. When reaching the end of content in any mode, automatically
+ * transitions to the next logical editing position.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_TOLINE: Navigate through recipient list
+ *     - Advances through recipient array until EM_MAXLOCKS or ABSMAXNTN
+ *     - When reaching end of recipients, calls em_down() and em_tobol()
+ *     - Seamlessly transitions to subject line editing
+ *
+ *   EM_S_SUBJECT: Navigate through subject line text
+ *     - Advances through subject string characters
+ *     - When reaching end of subject, calls em_down() and em_tobol()
+ *     - Seamlessly transitions to message body editing
+ *
+ *   EM_S_BODY: Navigate through message body text
+ *     - Advances through current line characters
+ *     - When reaching end of line, attempts to move to next line
+ *     - If no next line available, emits beep for boundary condition
+ *
+ * Intelligent Transitions:
+ *   - Automatically moves to next editing mode when appropriate
+ *   - Positions cursor at beginning of new content area
+ *   - Maintains user workflow continuity across mode boundaries
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - May change char_position for normal forward movement
+ *   - May change email_status through em_down() calls
+ *   - May change cur_line through em_down() calls
+ *   - May emit beep for boundary conditions
+ *   - Calls em_tobol() for proper positioning after transitions
+ *
+ * Notes:
+ *   - Part of comprehensive cursor navigation system
+ *   - Coordinates with em_backward() for bidirectional movement
+ *   - Essential for natural text editing flow
+ *   - Enhances user experience with smart transitions
+ */
 static int
 em_forward PARM_0(void)
 {
@@ -905,7 +1053,53 @@ em_forward PARM_0(void)
   return(0);
 }
 
-/* EM_BACKWARD -- Go backward one character */
+/*
+ * em_backward - Move cursor backward one character with intelligent navigation
+ *
+ * Implements backward character navigation in the mail editor with intelligent
+ * boundary handling. When reaching the beginning of content in any mode,
+ * automatically transitions to the previous logical editing position.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_TOLINE: Navigate backward through recipient list
+ *     - Moves backward through recipient positions
+ *     - Handles boundary conditions for invalid/empty recipients
+ *     - When at position 0, emits beep (cannot go further back)
+ *
+ *   EM_S_SUBJECT: Navigate backward through subject line text
+ *     - Moves backward through subject characters
+ *     - Handles cursor beyond string length gracefully
+ *     - When at position 0, calls em_up() and em_toeol()
+ *     - Seamlessly transitions to end of recipient list
+ *
+ *   EM_S_BODY: Navigate backward through message body text
+ *     - Moves backward through current line characters
+ *     - Handles cursor beyond line length gracefully
+ *     - When at position 0, calls em_up() and em_toeol()
+ *     - Seamlessly transitions to end of subject line
+ *
+ * Intelligent Cursor Handling:
+ *   - Automatically corrects cursor position if beyond string/line end
+ *   - Ensures cursor remains within valid character bounds
+ *   - Provides smooth transitions between editing modes
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - May change char_position for normal backward movement
+ *   - May change email_status through em_up() calls
+ *   - May change cur_line through em_up() calls
+ *   - May emit beep for boundary conditions
+ *   - Calls em_toeol() for proper positioning after transitions
+ *   - Automatically corrects invalid cursor positions
+ *
+ * Notes:
+ *   - Part of comprehensive cursor navigation system
+ *   - Coordinates with em_forward() for bidirectional movement
+ *   - Essential for natural text editing flow
+ *   - Handles edge cases and invalid positions gracefully
+ */
 static int
 em_backward PARM_0(void)
 {
@@ -953,7 +1147,54 @@ em_backward PARM_0(void)
   return(0);
 }
 
-/* EM_NEWLINE -- Break the line at the current point, creating a new line */
+/*
+ * em_newline - Create new line or advance to next editing mode
+ *
+ * Implements newline functionality in the mail editor with mode-aware behavior.
+ * In recipient and subject modes, advances to the next editing mode. In body mode,
+ * creates a new line by splitting the current line at the cursor position.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_TOLINE/EM_S_SUBJECT: Simple mode advancement
+ *     - Calls em_down() to advance to next editing mode
+ *     - No line creation or text manipulation
+ *
+ *   EM_S_BODY: Complex line splitting and creation
+ *     - Validates and corrects cursor position if beyond line end
+ *     - Allocates memory for new line structure and data
+ *     - Splits current line content at cursor position
+ *     - Updates linked list pointers for proper insertion
+ *     - Positions cursor at beginning of new line
+ *
+ * Memory Management:
+ *   - Allocates MAILD_STRUCT for new line node
+ *   - Allocates character buffer based on email_collim
+ *   - Handles allocation errors with appropriate error messages
+ *   - Calls abrt() on memory allocation failure (fatal error)
+ *
+ * Linked List Maintenance:
+ *   - Properly inserts new line into doubly-linked list
+ *   - Updates next/prev pointers for current and new lines
+ *   - Handles both middle insertion and end insertion cases
+ *   - Maintains list integrity throughout operation
+ *
+ * Returns:
+ *   0 on success (always returns 0, aborts on memory error)
+ *
+ * Side Effects:
+ *   - May call em_down() for mode transitions
+ *   - Allocates memory for new line structures in body mode
+ *   - Modifies linked list structure in body mode
+ *   - Updates cur_line to point to newly created line
+ *   - Resets char_position to 0 after line creation
+ *   - May call abrt() on memory allocation failure
+ *
+ * Notes:
+ *   - Essential for text editing functionality in body mode
+ *   - Provides natural line break behavior
+ *   - Handles memory management with proper error checking
+ *   - Maintains data structure integrity
+ */
 static int
 em_newline PARM_0(void)
 {
@@ -1005,7 +1246,68 @@ em_newline PARM_0(void)
   return(0);
 }
 
-/* EMAIL_ADDCHAR -- Add the given character to the output */
+/*
+ * email_addchar - Add character to current editing position with mode-aware processing
+ *
+ * Implements comprehensive character input processing for the mail editor with
+ * mode-specific behavior and intelligent input handling. This is the central
+ * character processing function that handles all text input across different
+ * editing modes.
+ *
+ * Mode-Specific Behavior:
+ *   EM_S_TOLINE: Interactive recipient name input
+ *     - Limits recipients to EM_MAXLOCKS maximum
+ *     - Handles space/comma as name completion triggers
+ *     - Calls get_country() for interactive nation selection
+ *     - Validates nation existence and handles errors
+ *     - Manages file locking for valid recipients
+ *
+ *   EM_S_SUBJECT: Subject line text editing
+ *     - Respects email_subjlim character limit
+ *     - Handles tab expansion to spaces (8-character stops)
+ *     - Supports both insert and overwrite modes
+ *     - Filters non-printable characters with beep feedback
+ *     - Manages string termination for newly added characters
+ *
+ *   EM_S_BODY: Message body text editing
+ *     - Respects email_collim character limit per line
+ *     - Handles tab expansion to spaces (8-character stops)
+ *     - Supports both insert and overwrite modes
+ *     - Filters non-printable characters with beep feedback
+ *     - Manages string termination for newly added characters
+ *
+ * Insert/Overwrite Mode Handling:
+ *   - Checks EM_S_INSERTON flag in email_status
+ *   - Insert mode: Calls em_insertchar() to shift existing content
+ *   - Overwrite mode: Directly replaces character at cursor position
+ *   - Handles end-of-line detection for proper insertion behavior
+ *
+ * Character Processing:
+ *   - Tab characters: Expands to spaces at 8-character boundaries
+ *   - Space characters: Handled specially for proper spacing
+ *   - Printable characters: Added directly to content
+ *   - Non-printable/invalid: Rejected with beep feedback
+ *
+ * Parameters:
+ *   inp_ch - Input character to process and add
+ *
+ * Side Effects:
+ *   - May modify recipient list and file locks (EM_S_TOLINE)
+ *   - May modify subject string content (EM_S_SUBJECT)
+ *   - May modify current line content (EM_S_BODY)
+ *   - Updates char_position for successful character additions
+ *   - May call em_insertchar() for insert mode operations
+ *   - May call get_country() for interactive input
+ *   - May emit beep for invalid input or limit violations
+ *   - May display error messages for invalid nations
+ *
+ * Notes:
+ *   - Central input processing function for all modes
+ *   - Handles complex recipient selection workflow
+ *   - Supports both insert and overwrite editing paradigms
+ *   - Essential for all text input functionality
+ *   - Maintains data integrity across all editing modes
+ */
 static void
 email_addchar PARM_1(int, inp_ch)
 {
@@ -1158,7 +1460,49 @@ email_addchar PARM_1(int, inp_ch)
   }
 }
 
-/* EM_HELP -- Show some documentation */
+/*
+ * em_help - Display mail editor help documentation
+ *
+ * Provides comprehensive help documentation for the mail editor by creating
+ * an interactive help system. Displays all available mail editor commands,
+ * their key bindings, and descriptions in a user-friendly format.
+ *
+ * Help System Integration:
+ *   - Uses create_help() function from the game's help system
+ *   - Displays "Conquer Mail Editor Command List" as the title
+ *   - Shows email_bindings key binding mappings
+ *   - Shows email_funcs function descriptions
+ *   - Uses email_keysys.num_parse for the number of commands
+ *
+ * Documentation Coverage:
+ *   - All mail editor navigation commands
+ *   - Text editing and manipulation functions
+ *   - Mode switching and control operations
+ *   - Send/quit/exit functionality
+ *   - Insert/overwrite mode operations
+ *   - Line editing capabilities
+ *
+ * User Experience:
+ *   - Provides contextual help within the mail editor
+ *   - Allows users to learn commands without leaving the editor
+ *   - Essential for discoverability of mail editor features
+ *   - Supports both novice and experienced users
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - Temporarily displays help screen overlay
+ *   - May clear/modify screen display during help presentation
+ *   - Returns to mail editor after help is dismissed
+ *   - No permanent state changes to mail editor
+ *
+ * Notes:
+ *   - Essential for user accessibility and learning
+ *   - Integrates with game's standard help system
+ *   - Provides complete command reference
+ *   - Supports user workflow without interruption
+ */
 static int
 em_help PARM_0(void)
 {
@@ -1168,14 +1512,109 @@ em_help PARM_0(void)
   return(0);
 }
 
-/* EMS_SUBJ -- Show the subject */
+/*
+ * ems_subj - Display subject line at specified screen position
+ *
+ * Renders the subject line of the current mail message at the specified
+ * screen line with proper formatting and width constraints. This is a
+ * display helper function used by email_show() to present the subject
+ * line consistently.
+ *
+ * Display Formatting:
+ *   - Prefixes subject with "Subject: " label
+ *   - Constrains display width to COLS - 9 characters
+ *   - Uses mvprintw() for precise screen positioning
+ *   - Handles subject line truncation if too long for screen
+ *
+ * Screen Integration:
+ *   - Positions output at specified line, column 0
+ *   - Respects terminal width limitations
+ *   - Provides consistent formatting across different terminal sizes
+ *   - Part of the overall mail message display system
+ *
+ * Parameters:
+ *   line - Screen line number where subject should be displayed
+ *
+ * Side Effects:
+ *   - Modifies screen content at specified line
+ *   - May truncate long subject lines to fit screen width
+ *   - Updates cursor position to end of displayed text
+ *
+ * Notes:
+ *   - Used exclusively by email_show() for display consistency
+ *   - Handles terminal width variations gracefully
+ *   - Essential for mail editor screen layout
+ *   - Maintains consistent "Subject: " labeling
+ */
 static void
 ems_subj PARM_1(int, line)
 {
   mvprintw(line, 0, "Subject: %.*s", COLS - 9, cur_message->subj);
 }
 
-/* EMAIL_SHOW -- Display the current message */
+/*
+ * email_show - Display complete mail message with mode-aware cursor positioning
+ *
+ * Implements comprehensive mail message display with intelligent layout and
+ * cursor positioning. This is the primary display function for the mail editor,
+ * handling all visual aspects of message presentation including recipients,
+ * subject, and body content.
+ *
+ * Display Components:
+ *   To: Line Construction:
+ *     - Builds formatted recipient list with nation names
+ *     - Handles line wrapping for long recipient lists
+ *     - Manages cursor positioning within recipient display
+ *     - Shows continuation lines with proper indentation
+ *
+ *   Subject Line Display:
+ *     - Uses ems_subj() for consistent formatting
+ *     - Calculates cursor position for subject editing mode
+ *     - Integrates with overall message layout
+ *
+ *   Message Body Display:
+ *     - Renders linked list of message lines
+ *     - Handles scrolling for large messages ("...cont..." / "...more...")
+ *     - Calculates optimal display window based on screen size
+ *     - Maintains cursor position tracking for body editing
+ *
+ * Cursor Position Management:
+ *   - Calculates exact screen coordinates (xpos, ypos) for cursor
+ *   - Mode-aware positioning logic:
+ *     * EM_S_TOLINE: Position within recipient list display
+ *     * EM_S_SUBJECT: Position within subject line (offset by 9)
+ *     * EM_S_BODY: Position within message body content
+ *   - Handles line wrapping and multi-line displays
+ *
+ * Screen Layout Optimization:
+ *   - Dynamically calculates available screen space
+ *   - Adjusts content display based on terminal size
+ *   - Implements intelligent scrolling for large content
+ *   - Reserves space for status/error lines at bottom
+ *
+ * Interactive Elements:
+ *   - Shows context-appropriate prompts and instructions
+ *   - Displays help hint for key bindings ("ESC-?" for Bindings)
+ *   - Provides mode-specific user guidance
+ *   - Maintains consistent error bar usage
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - Completely redraws mail editor screen
+ *   - Updates cursor position to calculated coordinates
+ *   - Calls refresh() to update display
+ *   - May display scrolling indicators for large content
+ *   - Updates error bar with context information
+ *
+ * Notes:
+ *   - Central display function called from main editing loop
+ *   - Essential for all visual feedback in mail editor
+ *   - Handles complex layout calculations efficiently
+ *   - Provides seamless user experience across all modes
+ *   - Critical for editor usability and navigation
+ */
 static int
 email_show PARM_0(void)
 {
@@ -1301,7 +1740,74 @@ email_show PARM_0(void)
   return(0);
 }
 
-/* EMAIL_PREP -- Perform initialization of the mail message */
+/*
+ * email_prep - Initialize mail message structure and acquire necessary resources
+ *
+ * Performs comprehensive initialization of the mail message structure and
+ * acquires all necessary resources for mail editing. This function ensures
+ * that all components of the mail editor are properly initialized before
+ * editing begins.
+ *
+ * Recipient Management:
+ *   - Initializes em_locks[] array to -1 (unlocked state)
+ *   - Processes existing recipients in cur_message->to_whom[]
+ *   - Attempts to acquire file locks for each existing recipient
+ *   - Removes recipients that cannot be locked (sets to ABSMAXNTN)
+ *   - Ensures multi-user safety through proper file locking
+ *
+ * Sender Information Setup:
+ *   - Allocates and initializes sender name field
+ *   - Sets sender to current nation name (nationname)
+ *   - Handles memory allocation errors with appropriate error messages
+ *   - Essential for message attribution and delivery
+ *
+ * Nickname Assignment:
+ *   - Allocates and initializes nickname field
+ *   - Special handling for deity (UNOWNED country):
+ *     * Randomly selects from: "The All Knowing", "The All Mighty", "The All Powerful"
+ *     * Provides mystical persona for system messages
+ *   - For normal nations: Uses nation leader name (ntn_ptr->leader)
+ *   - Enhances message personalization and game immersion
+ *
+ * Subject Line Initialization:
+ *   - Allocates subject buffer based on email_subjlim
+ *   - Initializes to empty string for new messages
+ *   - Preserves existing subject content for message editing
+ *   - Ensures proper memory allocation and bounds
+ *
+ * Message Body Structure:
+ *   - Creates initial text line structure if none exists
+ *   - Allocates MAILD_STRUCT for linked list management
+ *   - Allocates character buffer based on email_collim
+ *   - Initializes empty first line for new messages
+ *   - Sets up proper doubly-linked list structure
+ *
+ * Key Binding System:
+ *   - Ensures email_bindings is initialized
+ *   - Calls email_init() if bindings are not yet set up
+ *   - Essential for proper mail editor command processing
+ *
+ * Error Handling:
+ *   - Comprehensive memory allocation error checking
+ *   - Calls abrt() on critical memory allocation failures
+ *   - Ensures system stability under low memory conditions
+ *   - Provides appropriate error messages for user feedback
+ *
+ * Side Effects:
+ *   - Allocates memory for message components
+ *   - Acquires file locks for recipient mail files
+ *   - Modifies cur_message structure extensively
+ *   - May call abrt() on memory allocation failure
+ *   - May call email_init() for key binding setup
+ *   - Sets global_int to FALSE for proper nation input handling
+ *
+ * Notes:
+ *   - Must be called before any mail editing operations
+ *   - Essential for proper mail editor initialization
+ *   - Handles both new message creation and existing message editing
+ *   - Critical for multi-user safety and data integrity
+ *   - Provides foundation for all mail editor functionality
+ */
 static void
 email_prep PARM_0(void)
 {
@@ -1615,7 +2121,64 @@ em_spawnedit PARM_0(void)
   return(0);
 }
 
-/* EMAIL_PARSE -- Main interface for sending mail; message in cur_message */
+/*
+ * email_parse - Main mail editor interface and event loop
+ *
+ * Implements the complete mail editor interface by providing the main editing
+ * loop and coordinating all mail editor functionality. This is the primary
+ * entry point for interactive mail composition and editing.
+ *
+ * Initialization Phase:
+ *   - Sets email_done to FALSE for editing loop control
+ *   - Calculates email_collim based on terminal width and nation name length
+ *   - Sets MAIL_SENDING flag in mail_ind for system state tracking
+ *   - Initializes email_status to EM_S_TOLINE (recipient editing mode)
+ *   - Applies current email_mode settings to status
+ *   - Calls email_prep() for complete message initialization
+ *   - Clears screen for clean editing environment
+ *
+ * Main Event Loop:
+ *   - Continuously displays current message state via email_show()
+ *   - Processes user input through parse_keys() with email_bindings
+ *   - Handles both function key commands and character input
+ *   - Distinguishes between command sequences and character input
+ *   - Provides error feedback for unknown key bindings
+ *   - Continues until email_done flag is set by exit/send commands
+ *
+ * Input Processing Logic:
+ *   - parse_keys() returns NULL for character input, function pointer for commands
+ *   - Character input: Passed to email_addchar() for mode-specific processing
+ *   - Command input: Function executed directly via function pointer
+ *   - Multi-character sequences: Displayed as unknown if not bound to functions
+ *   - Single characters: Processed as text input for current editing mode
+ *
+ * Cleanup and Resource Management:
+ *   - Calls email_close() after editing loop completion
+ *   - Ensures all file locks are released
+ *   - Frees all allocated message memory
+ *   - Resets display system for return to main game interface
+ *
+ * Screen Management:
+ *   - Maintains consistent screen layout throughout editing
+ *   - Provides real-time visual feedback for all operations
+ *   - Handles screen clearing and redrawing efficiently
+ *   - Manages cursor positioning across different editing modes
+ *
+ * Side Effects:
+ *   - Modifies global mail editor state extensively
+ *   - Changes mail_ind flags for system state tracking
+ *   - May send mail messages if user chooses to send
+ *   - Acquires and releases file locks for recipients
+ *   - Completely manages screen display during editing
+ *   - Sets email_done flag when editing is complete
+ *
+ * Notes:
+ *   - Central orchestration function for entire mail editor
+ *   - Essential for all interactive mail composition
+ *   - Provides complete user interface for mail editing
+ *   - Handles all aspects of mail editor lifecycle
+ *   - Critical for game's communication system
+ */
 void
 email_parse PARM_0(void)
 {
@@ -1666,7 +2229,46 @@ email_parse PARM_0(void)
   email_close();
 }
 
-/* EM_OPTIONS -- Quickie command to allow the setting of options */
+/*
+ * em_options - Access mail editor configuration options
+ *
+ * Provides access to mail editor configuration and customization options
+ * through the game's standard option system. Allows users to modify mail
+ * editor behavior, key bindings, and preferences during editing sessions.
+ *
+ * Option System Integration:
+ *   - Calls option_cmd() with mail editor-specific parameters
+ *   - Passes email_keysys for key binding system context
+ *   - Passes email_bindings for current binding configuration
+ *   - Integrates with game's unified option management system
+ *
+ * Available Configurations:
+ *   - Key binding modifications and customizations
+ *   - Mail editor behavior preferences
+ *   - Display and interface options
+ *   - Input handling customizations
+ *
+ * User Experience:
+ *   - Accessible during mail editing without losing current message
+ *   - Provides immediate option changes without restart
+ *   - Integrates seamlessly with mail editor workflow
+ *   - Maintains consistent option interface with rest of game
+ *
+ * Returns:
+ *   0 on success (always returns 0)
+ *
+ * Side Effects:
+ *   - May modify email_bindings based on user selections
+ *   - May change mail editor behavior preferences
+ *   - May update key binding configurations
+ *   - Temporarily displays option interface overlay
+ *
+ * Notes:
+ *   - Essential for mail editor customization
+ *   - Provides user control over editor behavior
+ *   - Integrates with game's comprehensive option system
+ *   - Supports user workflow customization
+ */
 static int
 em_options PARM_0(void)
 {
