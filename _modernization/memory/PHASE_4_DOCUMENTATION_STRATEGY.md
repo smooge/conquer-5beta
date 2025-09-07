@@ -66,8 +66,8 @@ Core utility modules that extend fundamental functionality:
 34. ✅ **moveX.c** - Movement system utilities (3 functions documented: ALREADY COMPLETE)
 35. ✅ **hexmapX.c** - Hexagonal map system utilities (2 functions documented: COMPLETED)
 36. ✅ **magicX.c** - Magic system utilities (11 functions documented: COMPLETED)
-37. **selectX.c** - Selection system utilities
-38. **sectorX.c** - Sector management utilities
+37. ✅ **selectX.c** - Selection system utilities (13 functions documented: COMPLETED)
+38. ✅ **sectorX.c** - Sector management utilities (30+ functions documented: COMPLETED)
 39. **unitsX.c** - Unit management utilities
 
 ### Priority 5B: Data Management Extensions - Sessions 40-43
@@ -191,9 +191,9 @@ Platform-specific and legacy code:
 
 #### Priority 5: Remaining Interface and Utilities (3/32 files) 🚧
 
-**Session Progress**: Priority 5A - 4/7 files complete (57% of high-impact utilities done!)
-**Files Completed This Session**: magicX.c (11 functions documented)
-**Next target**: selectX.c (Priority 5A - Core Utilities)
+**Session Progress**: Priority 5A - 6/7 files complete (86% of high-impact utilities done!)
+**Files Completed This Session**: sectorX.c (30+ functions documented)
+**Next target**: unitsX.c (Priority 5A - Core Utilities)
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -212,8 +212,8 @@ Platform-specific and legacy code:
 **Priority 4 Status**: All Priority 4 files documented successfully!
 
 **Next Target**: Priority 5A - Core Utilities (High Impact)
-**Current File**: selectX.c - Selection system utilities
-**Priority 5 Progress**: 4/32 files complete (miscX.c, moveX.c already documented; hexmapX.c, magicX.c completed)
+**Current File**: unitsX.c - Unit management utilities
+**Priority 5 Progress**: 6/32 files complete (miscX.c, moveX.c already documented; hexmapX.c, magicX.c, selectX.c, sectorX.c completed)
 **Strategy**: Continue with high-impact utility files that support already-documented systems
 
 ### Session Metrics Goal
