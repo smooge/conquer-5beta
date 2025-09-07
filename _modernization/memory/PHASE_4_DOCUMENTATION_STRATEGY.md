@@ -47,9 +47,9 @@ Game interface and display systems:
 ### Priority 4: Game Content (Session 25-32)
 Specific game mechanics and content:
 
-25. **magicA.c** - Magic system logic
+25. **magicA.c** - Magic system logic (minimal content - 17 lines, header only)
 26. ✅ **monsterA.c** - Monster/NPC behavior (9 functions) - COMPLETED! 
-27. **npcA.c** - NPC management
+27. ✅ **npcA.c** - NPC management (6 functions) - COMPLETED!
 28. **sectorA.c** - Sector management
 29. **adduserA.c** - User registration
 30. **jointA.c** - Multi-player coordination
@@ -129,6 +129,7 @@ Lower priority interface and utility modules:
 24. **navyG.c** - Session completed 2025-09-07 (14 functions documented: complete naval interface and fleet management system)
 25. **magicG.c** - Session completed 2025-09-07 (25 functions documented: complete magic system interface)
 26. **monsterA.c** - Session completed 2025-09-07 (9 functions documented: complete monster/NPC behavior system)
+27. **npcA.c** - Session completed 2025-09-07 (6 functions documented: complete NPC AI and management system)
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -140,8 +141,8 @@ Lower priority interface and utility modules:
 **All Priority 3 User Interface files have been documented!**
 
 ### Current Target
-**Priority 4 Progress: 1/8 files complete**
-**Next file**: `magicA.c` (magic system logic), `npcA.c` (NPC management), or `sectorA.c` (sector management)
+**Priority 4 Progress: 2/8 files complete**
+**Next file**: `sectorA.c` (sector management), `adduserA.c` (user registration), or `jointA.c` (multi-player coordination)
 
 ### Session Metrics Goal
 - Target: 1 file per session
