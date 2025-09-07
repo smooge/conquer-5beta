@@ -1,10 +1,10 @@
 # Phase 4 Documentation - Current Status
 
 **Last Updated**: 2025-09-07
-**Current Phase**: Priority 4 (Game Content) - COMPLETE! ✅
+**Current Phase**: Priority 5A (Core Utilities) - IN PROGRESS 🚧
 
 ## Session Summary
-Verified that miscA.c is already fully documented with comprehensive function documentation. All 7 functions in miscA.c have proper documentation format including parameters, return values, side effects, and implementation notes. Priority 4 is now COMPLETE!
+Completed magicX.c documentation as first file in Priority 5A (Core Utilities). Documented all 11 functions in the magic system utilities module including power enhancement/removal functions, validation logic, random power generation, and terrain-based combat bonuses. This file handles the core mechanics of the magic system's stat modification and power management.
 
 ## Current Progress
 
@@ -50,27 +50,34 @@ Verified that miscA.c is already fully documented with comprehensive function do
 - Identified that actual magic functionality is implemented elsewhere in codebase
 - Created clean git commit: Complete documentation for magicA.c placeholder file
 
+### Priority 5A: Core Utilities (4/7 files completed) 🚧
+1. ✅ **miscX.c** - Core miscellaneous utilities (12 functions documented: ALREADY COMPLETE)
+2. ✅ **moveX.c** - Movement system utilities (3 functions documented: ALREADY COMPLETE)
+3. ✅ **hexmapX.c** - Hexagonal map system utilities (2 functions documented: COMPLETED)
+4. ✅ **magicX.c** - Magic system utilities (11 functions documented: COMPLETED!)
+5. **selectX.c** - Selection system utilities
+6. **sectorX.c** - Sector management utilities
+7. **unitsX.c** - Unit management utilities
+
 ## Next Session Preparation
-- **PRIORITY 4 COMPLETE!** ✅ All Priority 4 files completed
-- **Achievement**: 32 files documented, 390+ functions analyzed across 4 complete priorities
-- **Next Phase**: Ready to begin Priority 5 (Remaining Interface and Utilities)
-- **Status**: Major milestone achieved - all core game systems documented!
+- **PRIORITY 5A PROGRESS**: 4/7 files completed! ✅
+- **Achievement**: 33 files documented, 400+ functions analyzed across 4+ priorities
+- **Current Status**: Priority 5A (Core Utilities) in progress - 57% complete!
+- **Next Target**: selectX.c - Selection system utilities
 
 ## Technical Notes
-magicA.c represents a prototype/placeholder file for magic system logic with:
-- 0 functions: Prototype file with no implementation - placeholder for future development
-- File structure: Copyright header, single include statement, and explanatory documentation
-- Development artifact: Appears to be planned but never implemented magic system logic
-- Magic system distribution: Actual functionality implemented in other files:
-  * magicG.c - User interface (25 functions documented)
-  * magicX.c - Utilities and supporting functions
-  * Related spell functionality across other game modules
-- Status: Non-essential component - game's magic system is functional through other implementations
-- Purpose: Placeholder for potential future server-side magic processing logic
-- Documentation: Added comprehensive explanation of file status and relationship to other magic components
+magicX.c contains comprehensive magic system utilities with:
+- 11 functions: Complete magic power management system
+- Power enhancement/removal: 6 static functions handle stat modifications for military, civilian, and wizardry powers
+- Public interface: 5 functions provide power addition, removal, validation, random generation, and terrain bonuses
+- Magic mechanics: Complex power interactions, stat bonuses, terrain advantages, race restrictions, overflow/underflow logic
+- Combat integration: Terrain-based magical bonuses affect tactical combat calculations
+- System design: Well-architected separation between internal stat modification and public power management
+- Magic categories: Military (combat bonuses), civilian (reproduction/movement), wizardry (specialized bonuses)
+- Validation system: Comprehensive prerequisite checking and race limitation enforcement
 
-Previous sessions: monsterA.c (9 functions), npcA.c (6 functions), sectorA.c (19 functions), adduserA.c (22 functions), jointA.c (6 functions), mailA.c (13 functions) - Monster behavior, NPC AI, warfare systems, nation creation, shared functionality, and messaging systems
+Previous Priority 4 sessions: monsterA.c (9 functions), npcA.c (6 functions), sectorA.c (19 functions), adduserA.c (22 functions), jointA.c (6 functions), mailA.c (13 functions), magicA.c (0 functions - placeholder) - Monster behavior, NPC AI, warfare systems, nation creation, shared functionality, messaging systems, and magic placeholders
 
-## Files Documented: 32 total, 390+ functions  
-**PRIORITY 4 GAME CONTENT COMPLETE!** ✅
-8/8 Priority 4 files complete. Ready for Priority 5!
+## Files Documented: 33 total, 400+ functions  
+**PRIORITIES 1-4 COMPLETE!** ✅ **PRIORITY 5A IN PROGRESS!** 🚧
+4/7 Priority 5A files complete. Next: selectX.c!
