@@ -636,10 +636,11 @@ At the beginning of each project, Claude must create a `_modernization/` directo
 1. Create `_modernization/` directory in the project root
 2. Create `_modernization/scripts/` subdirectory for automation scripts created during sessions
 3. Create `_modernization/claude/reports/` subdirectory for analysis and planning documents
-4. Create `_modernization/memory/` subdirectory for session progress snapshots
-5. **All automation scripts created by Claude sessions must be stored in `_modernization/scripts/` and added to git**
-6. **Scripts must be immediately useful and follow the standardized naming convention**
-7. All analysis documents must be stored in `_modernization/claude/reports/` including:
+4. Create `_modernization/claude/sessions/` subdirectory for session logs
+5. Create `_modernization/memory/` subdirectory for session progress snapshots
+6. **All automation scripts created by Claude sessions must be stored in `_modernization/scripts/` and added to git**
+7. **Scripts must be immediately useful and follow the standardized naming convention**
+8. All analysis documents must be stored in `_modernization/claude/reports/` including:
    - `_modernization/claude/reports/SYSTEM_ANALYSIS.md`
    - `_modernization/claude/reports/C2023_MODERNIZATION.md`
    - `_modernization/claude/reports/SECURITY_FIXES.md`
@@ -652,7 +653,7 @@ When the user indicates it's time to end a session, Claude must:
 2. Include completed tasks, current status, and next steps
 3. Document any important decisions or discoveries made during the session
 4. Ensure the memory file provides sufficient context for future sessions
-5. **Git commit session memory files and session logs**: Always remember to `git add` and `git commit` the session memory files in `_modernization/memory/` and session logs in `_modernization/claude/reports/` at the end of each session to preserve context and progress tracking
+5. **Git commit session memory files and session logs**: Always remember to `git add` and `git commit` the session memory files in `_modernization/memory/` and session logs in `_modernization/claude/sessions/` at the end of each session to preserve context and progress tracking
 
 ### Formal Session Termination
 **When the user formally quits a session**, Claude must automatically execute this sequence:
@@ -667,7 +668,7 @@ Create a comprehensive session summary including:
 - **Blockers/Issues**: Any unresolved problems or concerns
 
 #### 2. Session Log Export
-Export the conversation to a structured file named `SESSION_LOG_[YYYYMMDD]_[HHMMSS].md` to the directory `_modernization/claude/reports/` with format:
+Export the conversation to a structured file named `SESSION_LOG_[YYYYMMDD]_[HHMMSS].md` to the directory `_modernization/claude/sessions/` with format:
 
 ```markdown
 # Claude Code Session Log

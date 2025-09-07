@@ -35,11 +35,11 @@ File operations and data persistence:
 ### Priority 3: User Interface (Session 17-24)
 Game interface and display systems:
 
-17. **mainG.c** - Main game interface
+17. **mainG.c** ✅ (Complete - 3 functions documented: main game interface and command processing)
 18. **displayG.c** ✅ (Complete - 18 major functions documented: map display and UI rendering system)
-19. **infoG.c** - Information display
+19. **infoG.c** ✅ (Complete - 12 major functions documented: information display and reporting system)
 20. **selectG.c** ✅ (Complete - 16 major functions documented: unit selection and navigation system)
-21. **hexmapG.c** 🚧 (In Progress - 11 of 32 functions documented: hexagonal map display system)
+21. **hexmapG.c** ✅ (Complete - 32 functions documented: complete hexagonal map display system)
 22. **armyG.c** - Army interface
 23. **navyG.c** - Navy interface
 24. **magicG.c** - Magic system interface
@@ -122,8 +122,9 @@ Lower priority interface and utility modules:
 17. **computeX.c** - Session completed 2025-09-06 (20 functions documented: comprehensive economic computation engine)
 18. **mainG.c** - Session completed 2025-09-06 (3 functions documented: main game interface and command processing)
 19. **displayG.c** - Session completed 2025-09-06 (18 major functions documented: map display and UI rendering system)
-20. **selectG.c** - Session completed 2025-09-06 (16 major functions documented: unit selection and navigation system)
-21. **hexmapG.c** - Session completed 2025-09-06 (32 functions documented: complete hexagonal map display system)
+20. **infoG.c** - Session completed 2025-09-06 (12 major functions documented: information display and reporting system)
+21. **selectG.c** - Session completed 2025-09-06 (16 major functions documented: unit selection and navigation system)
+22. **hexmapG.c** - Session completed 2025-09-06 (32 functions documented: complete hexagonal map display system)
 
 ### PRIORITY 1 COMPLETE! 🎉
 **All Priority 1 Core Game Engine files have been documented!**
@@ -132,8 +133,8 @@ Lower priority interface and utility modules:
 **All Priority 2 I/O and Data Management files have been documented!**
 
 ### Current Target
-**HEXMAPG.C COMPLETE!** ✅ All 32 functions documented
-**Next file**: `infoG.c` (information display system)
+**Priority 3 Progress: 5/8 files complete**
+**Next file**: `armyG.c` (army interface system)
 
 ### Session Metrics Goal
 - Target: 1 file per session
