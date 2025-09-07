@@ -19,7 +19,33 @@
 #include "racesX.h"
 #include "elevegX.h"
 
-/* MIL_UPPOW -- Go upward with military powers */
+/*
+ * mil_uppow - Apply military magic power enhancements to current nation
+ *
+ * Increases nation combat statistics based on the specific military power
+ * being added. Each military power type provides different combat bonuses
+ * including attack, defense, and movement enhancements.
+ *
+ * Parameters:
+ *   powerval - Military magic power identifier (MM_* constants)
+ *              Must be a valid military magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies current nation's aplus (attack bonus percentage)
+ *   - Modifies current nation's dplus (defense bonus percentage)
+ *   - Modifies current nation's maxmove (maximum movement points)
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Static function, only called internally by add_powers()
+ *   - Powers include warrior/captain/warlord (+10% combat), archery (+5% attack/+10% defense),
+ *     equine/avian (+4 movement), sapper (+10% defense), armor (+10% defense/-2 movement),
+ *     ninja (+5% attack)
+ *   - Movement changes have minimum limits to prevent invalid values
+ */
 static void
 mil_uppow PARM_1(long, powerval)
 {
@@ -68,7 +94,35 @@ mil_uppow PARM_1(long, powerval)
   }
 }
 
-/* CIV_UPPOW -- Increase civilian statistics */
+/*
+ * civ_uppow - Apply civilian magic power enhancements to current nation
+ *
+ * Increases nation civilian statistics based on the specific civilian power
+ * being added. Civilian powers primarily affect reproduction rates, with
+ * overflow effects redirected to combat or movement bonuses when reproduction
+ * limits are reached.
+ *
+ * Parameters:
+ *   powerval - Civilian magic power identifier (MC_* constants)
+ *              Must be a valid civilian magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies current nation's repro (reproduction rate percentage)
+ *   - Modifies current nation's aplus/dplus when reproduction overflows
+ *   - Modifies current nation's maxmove for certain powers
+ *   - Uses global ntn_ptr and race_info array
+ *
+ * Notes:
+ *   - Static function, only called internally by add_powers()
+ *   - Powers include religion/urban (+2% repro), breeder (+2% repro/-5% combat),
+ *     democracy (+10% combat/+2 movement/+1% repro), socialism (+1% repro),
+ *     roads (+4 movement)
+ *   - Reproduction has race-specific limits; overflow converts to other bonuses
+ *   - Complex overflow logic redirects excess reproduction benefits
+ */
 static void
 civ_uppow PARM_1(long, powerval)
 {
@@ -139,7 +193,31 @@ civ_uppow PARM_1(long, powerval)
   }
 }
 
-/* WIZ_UPPOW -- Increase wizardry statistics */
+/*
+ * wiz_uppow - Apply wizardry magic power enhancements to current nation
+ *
+ * Increases nation combat statistics based on the specific wizardry power
+ * being added. Wizardry powers provide focused combat bonuses, either
+ * enhancing attack or defense capabilities.
+ *
+ * Parameters:
+ *   powerval - Wizardry magic power identifier (MW_* constants)
+ *              Must be a valid wizardry magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies current nation's aplus (attack bonus) for vision-based powers
+ *   - Modifies current nation's dplus (defense bonus) for illusion-based powers
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Static function, only called internally by add_powers()
+ *   - Illusion/hidden/void powers provide +5% defense bonus
+ *   - Vision/seeall powers provide +5% attack bonus
+ *   - Most wizardry powers don't affect base nation statistics
+ */
 static void
 wiz_uppow PARM_1(long, powerval)
 {
@@ -162,7 +240,32 @@ wiz_uppow PARM_1(long, powerval)
   }
 }
 
-/* MIL_DOWNPOW -- Decrease military statistics */
+/*
+ * mil_downpow - Remove military magic power enhancements from current nation
+ *
+ * Decreases nation combat statistics by reversing the effects of military
+ * powers being removed. This function undoes the exact bonuses that were
+ * applied by mil_uppow() for the corresponding power.
+ *
+ * Parameters:
+ *   powerval - Military magic power identifier (MM_* constants)
+ *              Must be a valid military magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Reduces current nation's aplus (attack bonus percentage)
+ *   - Reduces current nation's dplus (defense bonus percentage)
+ *   - Modifies current nation's maxmove (reverses movement changes)
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Static function, only called internally by kill_powers()
+ *   - Exactly reverses the effects of mil_uppow() for each power type
+ *   - Movement changes have minimum limits to prevent invalid values
+ *   - Armor power reversal increases movement (+2) to offset original penalty
+ */
 static void
 mil_downpow PARM_1(long, powerval)
 {
@@ -214,7 +317,33 @@ mil_downpow PARM_1(long, powerval)
   }
 }
 
-/* CIV_DOWNPOW -- Decrease civilian statistics */
+/*
+ * civ_downpow - Remove civilian magic power enhancements from current nation
+ *
+ * Decreases nation civilian statistics by reversing the effects of civilian
+ * powers being removed. Handles complex underflow logic when reproduction
+ * rates fall below minimum thresholds.
+ *
+ * Parameters:
+ *   powerval - Civilian magic power identifier (MC_* constants)
+ *              Must be a valid civilian magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Reduces current nation's repro (reproduction rate percentage)
+ *   - Modifies current nation's aplus/dplus when reproduction underflows
+ *   - Modifies current nation's maxmove for certain powers
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Static function, only called internally by kill_powers()
+ *   - Reverses the effects of civ_uppow() for each power type
+ *   - Complex underflow logic when reproduction goes below minimum (5%)
+ *   - Underflow effects are taken from combat or movement stats
+ *   - Breeder power removal adds back combat bonuses before reducing reproduction
+ */
 static void
 civ_downpow PARM_1(long, powerval)
 {
@@ -279,7 +408,30 @@ civ_downpow PARM_1(long, powerval)
   }
 }
 
-/* WIZ_DOWNPOW -- Increase wizardry statistics */
+/*
+ * wiz_downpow - Remove wizardry magic power enhancements from current nation
+ *
+ * Decreases nation combat statistics by reversing the effects of wizardry
+ * powers being removed. This function undoes the exact bonuses that were
+ * applied by wiz_uppow() for the corresponding power.
+ *
+ * Parameters:
+ *   powerval - Wizardry magic power identifier (MW_* constants)
+ *              Must be a valid wizardry magic power type
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Reduces current nation's aplus (attack bonus) for vision-based powers
+ *   - Reduces current nation's dplus (defense bonus) for illusion-based powers
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Static function, only called internally by kill_powers()
+ *   - Exactly reverses the effects of wiz_uppow() for each power type
+ *   - Comment says "Increase" but function actually decreases (removes bonuses)
+ */
 static void
 wiz_downpow PARM_1(long, powerval)
 {
@@ -302,7 +454,36 @@ wiz_downpow PARM_1(long, powerval)
   }
 }
 
-/* ADD_POWERS -- Provide enhancment from list of magic powers */
+/*
+ * add_powers - Add magic powers to current nation with stat enhancements
+ *
+ * Adds specified magic powers to the current nation and applies their
+ * corresponding statistical enhancements. Processes a bitmask of powers,
+ * checking each bit position for new powers that the nation doesn't already
+ * possess, then applies the appropriate bonuses.
+ *
+ * Parameters:
+ *   powtype - Magic power category (MAG_MILITARY, MAG_CIVILIAN, MAG_WIZARDRY)
+ *             Must be valid index (0 <= powtype < MAG_NUMBER)
+ *   powlist - Bitmask of powers to add (each bit represents one power)
+ *             Can be 0 (no-op) or combination of power flags
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Adds new powers to ntn_ptr->powers[powtype] using ADDMAGIC macro
+ *   - Applies stat bonuses by calling appropriate *_uppow() functions
+ *   - Skips powers the nation already possesses
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Public interface for adding magic powers to nations
+ *   - Validates input parameters before processing
+ *   - Uses bit shifting to iterate through power positions
+ *   - Only applies bonuses for newly acquired powers, not existing ones
+ *   - Thread safety depends on ntn_ptr global state management
+ */
 void
 add_powers PARM_2(int, powtype, long, powlist)
 {
@@ -343,7 +524,36 @@ add_powers PARM_2(int, powtype, long, powlist)
   ADDMAGIC(ntn_ptr->powers[powtype], powlist);
 }
 
-/* KILL_POWERS -- Remove enhancment from list of magic powers */
+/*
+ * kill_powers - Remove magic powers from current nation with stat reductions
+ *
+ * Removes specified magic powers from the current nation and reverses their
+ * corresponding statistical enhancements. Processes a bitmask of powers,
+ * checking each bit position for existing powers that the nation possesses,
+ * then removes the appropriate bonuses.
+ *
+ * Parameters:
+ *   powtype - Magic power category (MAG_MILITARY, MAG_CIVILIAN, MAG_WIZARDRY)
+ *             Must be valid index (0 <= powtype < MAG_NUMBER)
+ *   powlist - Bitmask of powers to remove (each bit represents one power)
+ *             Can be 0 (no-op) or combination of power flags
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Removes powers from ntn_ptr->powers[powtype] using KILLMAGIC macro
+ *   - Removes stat bonuses by calling appropriate *_downpow() functions
+ *   - Only affects powers the nation currently possesses
+ *   - Uses global ntn_ptr for the current nation
+ *
+ * Notes:
+ *   - Public interface for removing magic powers from nations
+ *   - Validates input parameters before processing
+ *   - Uses bit shifting to iterate through power positions
+ *   - Only removes bonuses for powers the nation actually has
+ *   - Companion function to add_powers() with reverse effects
+ */
 void
 kill_powers PARM_2(int, powtype, long, powlist)
 {
@@ -384,7 +594,34 @@ kill_powers PARM_2(int, powtype, long, powlist)
   KILLMAGIC(ntn_ptr->powers[powtype], powlist);
 }
 
-/* MAGIC_OK -- Is the new magic power possible, for the given class? */
+/*
+ * magic_ok - Check if a specific magic power can be acquired by current nation
+ *
+ * Validates whether the current nation can acquire a specific magic power
+ * by checking prerequisites, race restrictions, and existing powers. Used
+ * to enforce magic system rules and prevent invalid power acquisitions.
+ *
+ * Parameters:
+ *   magic_type - Magic power category (MAG_MILITARY, MAG_CIVILIAN, MAG_WIZARDRY)
+ *                Must be valid magic type index
+ *   new_mint   - Power index within the category (0-based bit position)
+ *                Converted to power flag via (1L << new_mint)
+ *
+ * Returns:
+ *   TRUE (non-zero) if the power can be acquired
+ *   FALSE (0) if the power cannot be acquired
+ *
+ * Side Effects:
+ *   - None (read-only validation function)
+ *   - Uses global ntn_ptr and race_info array
+ *
+ * Notes:
+ *   - Checks if power is already possessed (returns FALSE)
+ *   - Checks race-specific power limitations using race_info
+ *   - Verifies all prerequisite powers are met across all magic categories
+ *   - Uses MAGIC macro for bitmask testing
+ *   - Critical for maintaining magic system balance and progression
+ */
 int
 magic_ok PARM_2(int, magic_type, int, new_mint)
 {
@@ -414,7 +651,33 @@ magic_ok PARM_2(int, magic_type, int, new_mint)
   return(FALSE);
 }
 
-/* RAND_MAGIC -- Assign a random magical power; return power if successful */
+/*
+ * rand_magic - Generate and validate a random magic power for current nation
+ *
+ * Attempts to generate a random valid magic power that the current nation
+ * can acquire. Uses repeated random selection with validation until a valid
+ * power is found or maximum attempts are reached. Useful for random magic
+ * rewards and power generation.
+ *
+ * Parameters:
+ *   magic_type - Magic power category (MAG_MILITARY, MAG_CIVILIAN, MAG_WIZARDRY)
+ *                Must be valid magic type index
+ *
+ * Returns:
+ *   Power bitmask (1L << power_index) if successful power was found
+ *   0L if no valid power could be generated within attempt limit
+ *
+ * Side Effects:
+ *   - None (does not modify nation state, only generates candidates)
+ *   - Uses rand_val() for random number generation
+ *
+ * Notes:
+ *   - Maximum 500 attempts to find valid power (prevents infinite loops)
+ *   - Uses magic_ok() to validate each candidate power
+ *   - Returns actual power bitmask, not the index
+ *   - May return 0L if nation has acquired all available powers for the type
+ *   - Depends on proper random number generator initialization
+ */
 long
 rand_magic PARM_1( int, magic_type )
 {
@@ -447,7 +710,38 @@ rand_magic PARM_1( int, magic_type )
   return(0L);
 }
   
-/* MGK_SCTVAL -- Magical combat bonus for a given sector */
+/*
+ * mgk_sctval - Calculate magical combat bonus for nation in specific sector
+ *
+ * Computes the combat bonus percentage that a nation receives from their
+ * magic powers when fighting in a specific map sector. Different terrain
+ * types and elevations provide advantages to nations with appropriate magic
+ * powers, creating strategic terrain considerations.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation structure (can be different from global ntn_ptr)
+ *            Must not be NULL for meaningful results
+ *   x      - Map x-coordinate of the sector
+ *   y      - Map y-coordinate of the sector
+ *            Coordinates must be valid map positions
+ *
+ * Returns:
+ *   Integer combat bonus percentage (can be positive, negative, or zero)
+ *   0 if nation pointer is NULL or coordinates are off-map
+ *
+ * Side Effects:
+ *   - None (read-only calculation function)
+ *   - Uses global sct[][] map array for terrain data
+ *
+ * Notes:
+ *   - Vegetation bonuses: desert/ice (+20 dervish/destroyer), forest (+20 druid/+5 botanist),
+ *     swamp (+5 water), jungle (+30 amphibian)
+ *   - Altitude bonuses: water (+30 water/+20 marine/+10 sailor/-10 earth),
+ *     mountain (+20 earth)
+ *   - Bonuses stack if nation has multiple relevant powers
+ *   - Critical for tactical combat calculations in terrain-dependent battles
+ *   - Uses MAGIC macro to test for specific power possession
+ */
 int
 mgk_sctval PARM_3(NTN_PTR, n1_ptr, int, x, int, y)
 {
