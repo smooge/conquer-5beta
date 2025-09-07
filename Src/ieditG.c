@@ -38,7 +38,34 @@ extern ITEM_PTR item_Pptr, item_Iptr;
 extern NTN_PTR ntn_Pptr, ntn_Iptr;
 extern int cntryI, cntryP;
 
-/* GOD_CVNEDIT -- Adjust a caravan in god mode */
+/*
+ * god_cvnedit - God mode caravan editing interface
+ *
+ * Provides comprehensive editing capabilities for caravan units when operating
+ * in god mode. Offers full control over all caravan attributes including
+ * location, speed, materials, crew, efficiency, and status. Features input
+ * validation and error checking for all modifications.
+ *
+ * Parameters:
+ *   line - Screen line position for displaying editing options
+ *   cvnnum - Caravan ID number to edit
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies caravan properties based on user selections
+ *   - Updates game state and triggers necessary recalculations
+ *   - May call external command handlers for complex operations
+ *   - Updates display and provides user feedback
+ *
+ * Notes:
+ *   - Only available in god mode - provides unrestricted editing
+ *   - Validates all user inputs and provides appropriate error messages
+ *   - Supports relocation with both current and previous location adjustment
+ *   - Integrates with external command system via ext_cvncmd()
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 god_cvnedit PARM_2(int, line, int, cvnnum)
 {
@@ -324,7 +351,36 @@ god_cvnedit PARM_2(int, line, int, cvnnum)
   }
 }
 
-/* GOD_NAVYEDIT -- Adjust a navy in god mode */
+/*
+ * god_navyedit - God mode navy editing interface
+ *
+ * Comprehensive editing interface for naval fleets in god mode. Provides
+ * unrestricted control over all naval unit attributes including ship
+ * compositions, location, speed, materials, crew, and efficiency. Features
+ * detailed ship type management and complete fleet configuration.
+ *
+ * Parameters:
+ *   line - Screen line position for displaying editing options
+ *   navynum - Navy/fleet ID number to edit
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies naval unit properties based on user selections
+ *   - Updates fleet composition and ship counts
+ *   - Triggers game state recalculations and validation
+ *   - May invoke external naval command handlers
+ *   - Updates display and provides comprehensive user feedback
+ *
+ * Notes:
+ *   - God mode exclusive - bypasses normal game restrictions
+ *   - Manages complex ship composition with light/medium/heavy variants
+ *   - Supports full fleet relocation with previous location tracking
+ *   - Validates ship count limits and composition constraints
+ *   - Integrates with external command system via ext_navycmd()
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 god_navyedit PARM_2(int, line, int, navynum)
 {
@@ -624,7 +680,39 @@ god_navyedit PARM_2(int, line, int, navynum)
   }
 }
 
-/* GOD_ARMYEDIT -- Adjust an army in god mode */
+/*
+ * god_armyedit - God mode army editing interface
+ *
+ * Comprehensive army unit editing interface for god mode operations. Provides
+ * unrestricted control over all army attributes including unit type, size,
+ * location, speed, efficiency, health/spell points, and status. Features
+ * leader-specific and regular unit handling with appropriate validation.
+ *
+ * Parameters:
+ *   line - Screen line position for displaying editing options
+ *   choice - Context flag (INFO_ARMY for individual units, INFO_GRPARM for group)
+ *   armynum - Army unit ID number to edit
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies army unit properties based on user selections
+ *   - Updates unit type, size, location, and combat attributes
+ *   - Manages leader health vs regular unit efficiency differently
+ *   - Triggers game state recalculations and army sorting
+ *   - May invoke external army command handlers
+ *   - Updates display and provides user feedback
+ *
+ * Notes:
+ *   - God mode exclusive with unrestricted editing capabilities
+ *   - Differentiates between leader units and regular troops
+ *   - Supports full relocation with previous location tracking
+ *   - Validates movement constraints based on unit status
+ *   - Handles group vs individual army context appropriately
+ *   - Integrates with external command system via ext_armycmd()
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 god_armyedit PARM_3 (int, line, int, choice, int, armynum)
 {
@@ -979,7 +1067,41 @@ god_armyedit PARM_3 (int, line, int, choice, int, armynum)
   }
 }
 
-/* EDIT_INFO -- Allow the user to alter some of the information */
+/*
+ * edit_info - Main information editing interface for game units and entities
+ *
+ * Central editing interface that provides comprehensive modification capabilities
+ * for various game entities including armies, navies, caravans, cities, and
+ * diplomatic relations. Routes editing operations to appropriate specialized
+ * handlers and manages user interface flow. Supports both regular user and
+ * god mode operations with different privilege levels.
+ *
+ * Parameters:
+ *   line - Screen line position for displaying editing options
+ *   choice - Entity type identifier (INFO_ARMY, INFO_NAVY, INFO_CVN, INFO_CITY,
+ *           INFO_ITEM, INFO_NTN, INFO_DIP, INFO_GRPARM for grouped armies)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Routes to specialized editing functions based on entity type
+ *   - Creates, modifies, or disbands units as requested
+ *   - Updates diplomatic relationships and statuses
+ *   - Manages page pointers and display navigation
+ *   - Provides user feedback and error messages
+ *   - Clears screen areas and manages display layout
+ *
+ * Notes:
+ *   - Primary entry point for all information editing operations
+ *   - Differentiates between god mode and regular user capabilities
+ *   - Handles complex unit creation with validation and default values
+ *   - Manages diplomatic status changes with constraint checking
+ *   - Supports army group editing vs individual unit editing contexts
+ *   - Integrates with external command systems for advanced operations
+ *   - Provides comprehensive input validation and error handling
+ *   - Uses PARM_X macro for K&R style function parameters
+ */
 void
 edit_info PARM_2 (int, line, int, choice)
 {
