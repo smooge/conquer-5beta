@@ -1060,7 +1060,36 @@ find_resources PARM_3(int, xloc, int, yloc, int, insect_only)
   return(item_tptr);
 }
 
-/* TR_CONSUME -- Perform the syphoning off of materials */
+/*
+ * tr_consume - Perform proportional material consumption from supply centers
+ *
+ * Static helper function that removes resources from supply centers based on
+ * proportional need calculations. Handles special talon/jewel conversion for
+ * monetary calculations and optionally tracks consumption in extra tracking
+ * arrays. Used by take_resources() to implement proportional resource
+ * distribution across multiple supply sources.
+ *
+ * Parameters:
+ *   need_ptr - Array of required material amounts per total supply
+ *   stash_ptr - Array of available materials to consume from
+ *   extra_ptr - Optional tracking array for consumption amounts (may be NULL)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Decrements stash_ptr arrays by proportional consumption amounts
+ *   - If extra_ptr provided, decrements it and clamps to zero
+ *   - Handles talon consumption with automatic jewel conversion (10:1 ratio)
+ *   - Uses global ITEMT_MTRLS array for proportional calculations
+ *
+ * Notes:
+ *   - Talons consume from both talon and jewel reserves (10 jewels = 1 talon)
+ *   - Other materials consume directly from their respective reserves
+ *   - Consumption is proportional to availability vs. total need
+ *   - Extra tracking helps maintain separate accounting for cities vs navies
+ *   - Critical function for resource redistribution during construction
+ */
 static void
 tr_consume PARM_3(itemtype *, need_ptr, itemtype *, stash_ptr,
 		  itemtype *, extra_ptr)
@@ -1114,7 +1143,39 @@ tr_consume PARM_3(itemtype *, need_ptr, itemtype *, stash_ptr,
   }
 }
 
-/* TAKE_RESOURCES -- Remove resources from neighoring areas */
+/*
+ * take_resources - Remove resources from neighboring supply centers for construction
+ *
+ * Proportionally consumes materials from all cities, navies, and caravans within
+ * supply range of the specified location. First validates that sufficient resources
+ * are available before beginning consumption. Used for construction projects to
+ * distribute material costs across multiple supply sources based on their relative
+ * contributions to the total available pool.
+ *
+ * Parameters:
+ *   xloc - X coordinate of location consuming resources
+ *   yloc - Y coordinate of location consuming resources  
+ *   take_ptr - Item structure specifying required material amounts
+ *   insect - TRUE to limit range to same sector only (siege conditions)
+ *
+ * Returns:
+ *   TRUE - Insufficient resources available, no consumption occurred
+ *   FALSE - Resources successfully consumed from supply centers
+ *
+ * Side Effects:
+ *   - Calls find_resources() to validate total availability first
+ *   - Proportionally decrements materials from cities, navies, caravans
+ *   - Uses tr_consume() to handle proportional consumption calculations
+ *   - Frees temporary item_tptr allocation before returning
+ *
+ * Notes:
+ *   - Cities: Uses r10_region() for range, consumes from c_mtrls and i_mtrls
+ *   - Navies: Must be in supply status, range based on NVSPLYDIST
+ *   - Caravans: Must be in supply status, same range calculations as navies
+ *   - Naval units must match terrain type (water vs land) of target location
+ *   - Siege conditions (insect=TRUE) limit all ranges to zero (same sector)
+ *   - Critical validation prevents consumption beyond available resources
+ */
 int
 take_resources PARM_4(int, xloc, int, yloc, ITEM_PTR, take_ptr, int, insect)
 {
@@ -1241,7 +1302,39 @@ take_resources PARM_4(int, xloc, int, yloc, ITEM_PTR, take_ptr, int, insect)
   return(FALSE);
 }
 
-/* SEND_RESOURCES -- Redistribute materials to nearby supply centers */
+/*
+ * send_resources - Redistribute materials to nearby supply centers
+ *
+ * Distributes resources from a source location to all cities within supply
+ * range, proportional to each city's weight in the total supply network. Used
+ * for resource redistribution during sector destruction, unit disbanding, or
+ * resource transfers. Only cities can receive redistributed materials (not
+ * navies or caravans).
+ *
+ * Parameters:
+ *   xloc - X coordinate of source location (wrapped to map bounds)
+ *   yloc - Y coordinate of source location
+ *   give_ptr - Item structure containing materials to distribute
+ *   insect - TRUE to limit range to same sector only (siege conditions)
+ *
+ * Returns:
+ *   TRUE - No supply centers within range or invalid parameters
+ *   FALSE - Resources successfully distributed to supply centers
+ *
+ * Side Effects:
+ *   - Adds materials to c_mtrls arrays of cities within range
+ *   - Uses proportional distribution based on city weights
+ *   - Wraps xloc coordinate to handle map boundaries
+ *
+ * Notes:
+ *   - Only distributes to cities (not navies or caravans)
+ *   - Uses SUM_WEIGHTS() to calculate total distribution weight
+ *   - Each city receives: (city_weight * materials) / total_weight
+ *   - Range calculated via r10_region() for each city
+ *   - Siege conditions (insect=TRUE) limit range to zero (same sector)
+ *   - Early exit if no supply centers have positive weight
+ *   - Handles coordinate wrapping for X axis automatically
+ */
 int
 send_resources PARM_4(int, xloc, int, yloc, ITEM_PTR, give_ptr, int, insect)
 {
@@ -1376,7 +1469,35 @@ fort_val PARM_2(int, x, int, y)
   return(value);
 }
 
-/* DEFENSE_VAL -- Compute the defensive value for a sector */
+/*
+ * defense_val - Compute terrain-based defensive value for a sector
+ *
+ * Calculates the natural defensive bonus provided by a sector's terrain
+ * features (elevation and vegetation). These bonuses are used in combat
+ * calculations to provide defensive advantages to troops based on their
+ * position. Different terrain types provide different levels of defensive
+ * benefit, with mountains and jungles offering the highest protection.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector
+ *   y - Y coordinate of the sector
+ *
+ * Returns:
+ *   int - Total defensive value from terrain (0 or positive integer)
+ *
+ * Side Effects:
+ *   - Sets global sct_tptr for sector access
+ *   - Read-only operation on sector data
+ *
+ * Notes:
+ *   - Elevation bonuses: Mountain +40, Valley +30, Hill +20, others +0
+ *   - Vegetation bonuses: Jungle/Swamp +30, Forest +20, Wood +10, others +0
+ *   - Bonuses are cumulative (elevation + vegetation)
+ *   - Does not include fortification bonuses (see fort_val())
+ *   - Water sectors still receive vegetation-based bonuses if applicable
+ *   - Used in conjunction with fort_val() for total defensive calculations
+ *   - Critical component of the combat system's defensive mechanics
+ */
 int
 defense_val PARM_2(int, x, int, y)
 {
@@ -1424,7 +1545,34 @@ defense_val PARM_2(int, x, int, y)
   return(value);
 }
 
-/* GETMETAL -- Assign a metal value to a given sector */
+/*
+ * getmetal - Assign random metal trade good and value to a sector
+ *
+ * Randomly selects a metal-type trade good and assigns it to a sector along
+ * with a randomized mineral value. Used during world generation to populate
+ * sectors with metal resources for mining operations. Only assigns trade
+ * goods to sectors that don't already have one assigned.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to modify
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets sptr->tradegood to a random metal type or leaves unchanged
+ *   - Sets sptr->minerals to a randomized value based on trade good value
+ *   - Early exit if sector already has a trade good assigned
+ *
+ * Notes:
+ *   - Only operates on sectors with tradegood == TG_NONE
+ *   - Uses rand_tgood(TG_METALS, 0) to select random metal type
+ *   - Mineral value randomized around base trade good value (±33%)
+ *   - Minimum value is (base_value + 2) / 3 to ensure reasonable minimums
+ *   - Used during initial world generation and resource discovery
+ *   - Creates exploitable metal resources for metalmine construction
+ *   - Part of the economic foundation for metal-based production chains
+ */
 void
 getmetal PARM_1(SCT_PTR, sptr)
 {
@@ -1451,7 +1599,35 @@ getmetal PARM_1(SCT_PTR, sptr)
   }
 }
 
-/* GETJEWEL -- Assign value and type to a sector's jewels */
+/*
+ * getjewel - Assign random jewel trade good and value to a sector
+ *
+ * Randomly selects a jewel-type trade good and assigns it to a sector along
+ * with a randomized mineral value. Used during world generation to populate
+ * sectors with precious stone resources for jewelmine operations. Only assigns
+ * trade goods to sectors that don't already have one assigned.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to modify
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets sptr->tradegood to a random jewel type or leaves unchanged
+ *   - Sets sptr->minerals to a randomized value based on trade good value
+ *   - Early exit if sector already has a trade good assigned
+ *
+ * Notes:
+ *   - Only operates on sectors with tradegood == TG_NONE
+ *   - Uses rand_tgood(TG_JEWELS, 0) to select random jewel type
+ *   - Mineral value randomized around base trade good value (±33%)
+ *   - Minimum value is (base_value + 2) / 3 to ensure reasonable minimums
+ *   - Used during initial world generation and resource discovery
+ *   - Creates exploitable jewel resources for jewelmine construction
+ *   - Part of the economic foundation for luxury goods and magical components
+ *   - Identical algorithm to getmetal() but for jewel-type trade goods
+ */
 void
 getjewel PARM_1(SCT_PTR, sptr)
 {
@@ -1478,7 +1654,36 @@ getjewel PARM_1(SCT_PTR, sptr)
   }
 }
 
-/* GETSPELL -- Assign magic spell enchantment sectors */
+/*
+ * getspell - Assign random spell trade good and magical value to a sector
+ *
+ * Randomly selects a spell-type trade good and assigns it to a sector along
+ * with a randomized mineral value representing magical potency. Used during
+ * world generation to populate sectors with magical resources for shrine
+ * operations and spell research. Only assigns trade goods to sectors that
+ * don't already have one assigned.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to modify
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets sptr->tradegood to a random spell type or leaves unchanged
+ *   - Sets sptr->minerals to a randomized value based on trade good value
+ *   - Early exit if sector already has a trade good assigned
+ *
+ * Notes:
+ *   - Only operates on sectors with tradegood == TG_NONE
+ *   - Uses rand_tgood(TG_SPELLS, 0) to select random spell type
+ *   - Mineral value randomized around base trade good value (±33%)
+ *   - Minimum value is (base_value + 2) / 3 to ensure reasonable minimums
+ *   - Used during initial world generation and magical resource discovery
+ *   - Creates exploitable magical resources for shrine construction
+ *   - Part of the magical system's foundation for spell research and casting
+ *   - Identical algorithm to getmetal/getjewel but for spell-type trade goods
+ */
 void
 getspell PARM_1( SCT_PTR, sptr )
 {
@@ -1506,7 +1711,39 @@ getspell PARM_1( SCT_PTR, sptr )
   }
 }
 
-/* TG_OK -- TRUE if a trade good can be seen by the given nation */
+/*
+ * tg_ok - Determine if a trade good can be exploited/seen by a nation
+ *
+ * Complex validation function that checks whether a nation has the necessary
+ * technology, attributes, and sector development to detect and exploit a
+ * sector's trade good resources. Combines sector designation requirements,
+ * nation attribute thresholds, and habitability checks to determine resource
+ * accessibility for production purposes.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector containing the trade good to check
+ *   nation - Nation index to test for trade good accessibility
+ *
+ * Returns:
+ *   TRUE - Nation can detect and exploit the trade good
+ *   FALSE - Nation lacks requirements to use the trade good
+ *
+ * Side Effects:
+ *   - Read-only operation on sector and nation data
+ *   - Accesses global world.np array for nation attribute data
+ *
+ * Notes:
+ *   - Always returns TRUE for UNOWNED nation or NULL nation pointers
+ *   - Automatically passes if sector designation matches trade good requirements
+ *   - City designations can exploit any trade good requiring lower designations
+ *   - Farm designations are interchangeable for agricultural trade goods
+ *   - Metal trade goods require sufficient MINING + METALWORK attributes
+ *   - Jewel trade goods require sufficient MINING + JEWELWORK attributes
+ *   - Spell trade goods validation is disabled (#ifdef NOTDONE)
+ *   - All trade goods require basic sector habitability (tofood > 0)
+ *   - Attribute threshold: (attr1 + attr2)/2 + 2 >= trade_good_value * 1.5
+ *   - Critical for determining mine and shrine placement viability
+ */
 int
 tg_ok PARM_2( SCT_PTR, sptr, int, nation )
 {
@@ -1693,7 +1930,36 @@ towood PARM_2(SCT_PTR, sptr, int, cntry)
   return( woodvalue );
 }
 
-/* IS_HABITABLE -- Determine if a sector can be lived in */
+/*
+ * is_habitable - Determine if a sector can support human habitation
+ *
+ * Tests whether a sector's terrain conditions (elevation and vegetation) allow
+ * for basic human settlement and population growth. Used as a fundamental
+ * check for construction placement, population movement, and sector development
+ * validation. Excludes extreme terrain that cannot support life or construction.
+ *
+ * Parameters:
+ *   x - X coordinate of the sector to test
+ *   y - Y coordinate of the sector to test
+ *
+ * Returns:
+ *   TRUE - Sector can support human habitation and construction
+ *   FALSE - Sector terrain is too extreme for habitation
+ *
+ * Side Effects:
+ *   - Read-only operation on sector data
+ *   - Accesses global sct array directly
+ *
+ * Notes:
+ *   - Water (ELE_WATER) and mountain peaks (ELE_PEAK) are uninhabitable
+ *   - Habitable vegetation: Barren, Light Vegetation, Good, Wood, Forest
+ *   - Uninhabitable vegetation: Desert, Ice, Tundra, Jungle, Swamp, None
+ *   - Used for basic construction validation before detailed checks
+ *   - Does not consider magical powers that might enable extreme terrain use
+ *   - Simpler than tofood() - only checks basic survivability
+ *   - Foundation check for population centers and most constructions
+ *   - Critical filter in site selection algorithms
+ */
 int
 is_habitable PARM_2( int, x, int, y )
 {
@@ -1722,7 +1988,33 @@ is_habitable PARM_2( int, x, int, y )
   return(tval);
 }
 
-/* JEWEL_VALUE -- Return the value of the jewels in the sector */
+/*
+ * jewel_value - Extract jewel production value from sector trade good
+ *
+ * Simple extraction function that returns the mineral value of a sector if
+ * it contains jewel-type trade goods, or zero otherwise. Used for jewelmine
+ * production calculations and economic evaluations. Part of the resource
+ * value extraction system for determining sector productivity.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to evaluate
+ *
+ * Returns:
+ *   int - Jewel mineral value if sector has jewel trade good, 0 otherwise
+ *
+ * Side Effects:
+ *   - Read-only operation on sector data
+ *   - No modifications to sector or global state
+ *
+ * Notes:
+ *   - Uses tg_isjewel() to validate trade good type
+ *   - Returns sptr->minerals value for valid jewel trade goods
+ *   - Returns 0 for non-jewel trade goods or empty sectors
+ *   - Used by production calculations in sector_produce()
+ *   - Critical for jewelmine designation validation and output
+ *   - Part of unified resource value extraction API
+ *   - Companion functions: metal_value(), magic_value()
+ */
 int
 jewel_value PARM_1(SCT_PTR, sptr)
 {
@@ -1737,7 +2029,34 @@ jewel_value PARM_1(SCT_PTR, sptr)
   return(hold);
 }
 
-/* MAGIC_VALUE -- Return the value of the spells in the sector */
+/*
+ * magic_value - Extract magical production value from sector trade good
+ *
+ * Simple extraction function that returns the mineral value of a sector if
+ * it contains spell-type trade goods, or zero otherwise. Used for shrine
+ * production calculations and magical research evaluations. Part of the
+ * resource value extraction system for determining magical sector productivity.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to evaluate
+ *
+ * Returns:
+ *   int - Magical mineral value if sector has spell trade good, 0 otherwise
+ *
+ * Side Effects:
+ *   - Read-only operation on sector data
+ *   - No modifications to sector or global state
+ *
+ * Notes:
+ *   - Uses tg_isspell() to validate trade good type
+ *   - Returns sptr->minerals value for valid spell trade goods
+ *   - Returns 0 for non-spell trade goods or empty sectors
+ *   - Used by production calculations in sector_produce() (when implemented)
+ *   - Critical for shrine designation validation and magical output
+ *   - Part of unified resource value extraction API
+ *   - Companion functions: metal_value(), jewel_value()
+ *   - Supports magical system for spell research and casting
+ */
 int
 magic_value PARM_1(SCT_PTR, sptr)
 {
@@ -1752,7 +2071,34 @@ magic_value PARM_1(SCT_PTR, sptr)
   return(hold);
 }
 
-/* METAL_VALUE -- Return the value of the metals in the sector */
+/*
+ * metal_value - Extract metal production value from sector trade good
+ *
+ * Simple extraction function that returns the mineral value of a sector if
+ * it contains metal-type trade goods, or zero otherwise. Used for metalmine
+ * production calculations and economic evaluations. Part of the resource
+ * value extraction system for determining sector productivity.
+ *
+ * Parameters:
+ *   sptr - Pointer to sector structure to evaluate
+ *
+ * Returns:
+ *   int - Metal mineral value if sector has metal trade good, 0 otherwise
+ *
+ * Side Effects:
+ *   - Read-only operation on sector data
+ *   - No modifications to sector or global state
+ *
+ * Notes:
+ *   - Uses tg_ismetal() to validate trade good type
+ *   - Returns sptr->minerals value for valid metal trade goods
+ *   - Returns 0 for non-metal trade goods or empty sectors
+ *   - Used by production calculations in sector_produce()
+ *   - Critical for metalmine designation validation and output
+ *   - Part of unified resource value extraction API
+ *   - Companion functions: jewel_value(), magic_value()
+ *   - Foundation for metal-based construction and economic systems
+ */
 int
 metal_value PARM_1(SCT_PTR, sptr)
 {
@@ -2013,7 +2359,38 @@ sector_consume PARM_3(int, xloc, int, yloc, SHEET_PTR, out_ptr)
   mgk_cost_adjust(0, &(out_ptr->mtrls[0]));
 }
 
-/* SCT_COST_ADJUST -- Adjustment due to what is in the sector */
+/*
+ * sct_cost_adjust - Apply sector-specific cost modifications based on minor designations
+ *
+ * Modifies material costs and expenses based on the minor designations present
+ * in a sector. Different constructions provide economic benefits that reduce
+ * certain material costs or modify pricing. Used in both construction costing
+ * and ongoing maintenance calculations to reflect infrastructure advantages.
+ *
+ * Parameters:
+ *   type - Cost type flag (bit 0: if 0, apply trading post talon adjustments)
+ *   s1_ptr - Pointer to sector containing minor designations
+ *   expenses - Array of material costs to modify (MTRLS_NUMBER elements)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies expenses array values based on sector designations
+ *   - Early exit if sector not owned by current nation
+ *   - Applies percentage-based cost modifications
+ *
+ * Notes:
+ *   - Trading Post: -2% talon costs (if type bit 0 is clear)
+ *   - Mill: -5% wood costs in mill areas
+ *   - Siege: +10% talon costs when under siege
+ *   - Blacksmith: -10% metal costs for good workmanship
+ *   - Only affects sectors owned by current nation (country)
+ *   - Type parameter controls selective application of adjustments
+ *   - Used in both construction and maintenance cost calculations
+ *   - Represents economic benefits of infrastructure investments
+ *   - Applied before magical cost adjustments via mgk_cost_adjust()
+ */
 void
 sct_cost_adjust PARM_3(int, type, SCT_PTR, s1_ptr, itemtype *, expenses)
 {
@@ -2049,7 +2426,38 @@ sct_cost_adjust PARM_3(int, type, SCT_PTR, s1_ptr, itemtype *, expenses)
   }
 }
 
-/* S_USELEVEL -- Usage level of the sector within it's discipline */
+/*
+ * s_uselevel - Calculate usage efficiency/productivity level of a sector
+ *
+ * Determines the productive value or efficiency rating of a sector based on
+ * its major designation and resource characteristics. Used for display
+ * purposes and AI decision-making to evaluate sector worth and productivity
+ * potential. Returns designation-specific metrics that indicate how valuable
+ * or productive a sector is within its functional category.
+ *
+ * Parameters:
+ *   s1_ptr - Pointer to sector structure to evaluate
+ *
+ * Returns:
+ *   int - Usage level/productivity value specific to sector designation
+ *         0 if sector cannot produce food or has invalid/unknown designation
+ *
+ * Side Effects:
+ *   - Uses global variables: is_god, country, sct_ptr
+ *   - Read-only operation on sector and nation data
+ *   - Calls tofood(), tg_ok() for resource evaluations
+ *
+ * Notes:
+ *   - Returns 0 if sector has no food production capability (uninhabitable)
+ *   - Jewelmine/Metalmine: Returns mineral value if exploitable by nation
+ *   - Shrine: Returns magic value if exploitable by nation
+ *   - Lumberyard: Returns wood production value from towood()
+ *   - Farms: Returns food production value from tofood()
+ *   - Other designations: Returns 0 (no specific productivity metric)
+ *   - Visibility restricted by nation ownership, god status, or MW_SEEALL magic
+ *   - Used for sector evaluation in strategic planning and display systems
+ *   - Critical for AI assessment of sector development priorities
+ */
 int
 s_uselevel PARM_1(SCT_PTR, s1_ptr)
 {
@@ -2105,7 +2513,39 @@ s_uselevel PARM_1(SCT_PTR, s1_ptr)
   return(0);
 }
 
-/* EXPOSURE_VALUE -- The amount of exposure troops face in a sector */
+/*
+ * exposure_value - Calculate environmental exposure damage for troops in a sector
+ *
+ * Computes the environmental hazard level that troops face when stationed in
+ * a sector, based on vegetation, elevation, season, and nation-specific
+ * resistances. Different terrain types and weather conditions cause varying
+ * levels of exposure damage that can harm or kill troops over time. Nation
+ * racial traits and magical powers provide resistance to specific environments.
+ *
+ * Parameters:
+ *   n1_ptr - Pointer to nation structure for racial/magical resistances
+ *   s1_ptr - Pointer to sector structure containing terrain information
+ *
+ * Returns:
+ *   int - Exposure damage value scaled by global EXPOSURE setting
+ *         0 if EXPOSURE is disabled or sector is completely safe
+ *
+ * Side Effects:
+ *   - Read-only operation on nation and sector data
+ *   - Uses global EXPOSURE setting and SEASON(TURN) for calculations
+ *
+ * Notes:
+ *   - Base exposure from vegetation and elevation tables (seasonal variation)
+ *   - Mountaineer races ignore elevation exposure penalties
+ *   - Sailor/Marine magic reduces water-based exposure (VEG_NONE)
+ *   - Woodwinter races are immune to forest exposure (VEG_WOOD/FOREST)
+ *   - Dervish magic halves desert/ice/tundra exposure
+ *   - Destroyer magic reduces desert/ice/tundra exposure to 75%
+ *   - Amphibian magic halves swamp/jungle exposure
+ *   - Final value: (total_exposure * EXPOSURE + 5) / 10
+ *   - Used by military systems to calculate troop attrition
+ *   - Critical for strategic deployment and troop survival
+ */
 int
 exposure_value PARM_2(NTN_PTR, n1_ptr, SCT_PTR, s1_ptr)
 {
