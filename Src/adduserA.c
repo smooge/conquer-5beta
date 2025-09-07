@@ -84,7 +84,33 @@ long AU_values[]= {
 #define AU_Maxval	race_info[AU_race].au_maxval
 #define AU_units	race_info[AU_race].au_units
 
-/* TERA_CONVERT -- perform the actual teraforming */
+/*
+ * tera_convert - Perform actual terraforming of a map sector based on racial preferences
+ *
+ * Modifies terrain features (altitude, vegetation) and adds natural resources
+ * based on the nation's racial characteristics. Each race has preferred terrain
+ * types that provide strategic advantages for their civilization.
+ *
+ * Parameters:
+ *   x - X coordinate of sector to terraform
+ *   y - Y coordinate of sector to terraform
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies sct[x][y].altitude and sct[x][y].vegetation
+ *   - May add metal or jewel resources via getmetal()/getjewel()
+ *   - Uses global_int as probability threshold for resource generation
+ *   - Only affects land sectors (not water)
+ *
+ * Notes:
+ *   - Mountaineer races: Create mountains/hills with metal resources
+ *   - Woodwinter races: Create forests/woods with jewel resources  
+ *   - Monsterly races: Create rough terrain with mixed resources
+ *   - Other races: Create clear/good terrain with balanced resources
+ *   - Resource generation based on food value and global_int probability
+ */
 static void
 tera_convert PARM_2(int, x, int, y)
 {
@@ -160,7 +186,36 @@ tera_convert PARM_2(int, x, int, y)
   }
 }
 
-/* TERAFORM -- configure the area around the capital */
+/*
+ * teraform - Configure terrain around a nation's capital based on racial preferences
+ *
+ * Terraforms a circular area around the capital city to create favorable terrain
+ * for the founding nation. Ensures the capital itself has appropriate terrain
+ * for the race while modifying surrounding sectors within the specified range.
+ *
+ * Parameters:
+ *   x - X coordinate of capital sector
+ *   y - Y coordinate of capital sector  
+ *   range - Radius of terraforming effect (sectors from capital)
+ *   chance - Probability percentage for terrain modifications (0-100)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Calls map_loop() with tera_convert to modify surrounding terrain
+ *   - Sets global_int to chance value for probability calculations
+ *   - Forces capital sector to have racially appropriate terrain:
+ *     * Mountaineer: Hills
+ *     * Woodwinter: Forest on clear land
+ *     * Monsterly: Hills  
+ *     * Others: Clear land
+ *
+ * Notes:
+ *   - Used during nation placement to create starting advantage
+ *   - Range typically 1-2 sectors depending on location quality
+ *   - Higher chance values create more extensive terraforming
+ */
 static void
 teraform PARM_4( int, x, int, y, int, range, int, chance)
 {
@@ -181,7 +236,32 @@ teraform PARM_4( int, x, int, y, int, range, int, chance)
   }
 }
 
-/* DISPITEM -- display amount string at current location */
+/*
+ * dispitem - Display formatted amount string for a nation building item
+ *
+ * Formats and displays the quantity and units for various nation building
+ * items. Handles special cases like location quality (shows descriptive text)
+ * and raw materials (shows breakdown of wood, jewels, metals).
+ *
+ * Parameters:
+ *   item - Item type constant (AU_LOCATE, AU_RAWGOODS, etc.)
+ *   amount - Quantity of the item to display
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Outputs formatted text to current cursor position via printw()
+ *   - For AU_LOCATE: Shows quality level text ("Fair location", etc.)
+ *   - For AU_RAWGOODS: Shows detailed breakdown of wood/jewels/metals
+ *   - For other items: Shows "amount units" format
+ *
+ * Notes:
+ *   - Uses AU_LType[] for location quality descriptions
+ *   - Uses AU_items[] for unit names  
+ *   - Raw materials display uses conditional compilation for resource ratios
+ *   - Output includes trailing period for non-raw-materials items
+ */
 static void
 dispitem PARM_2( int, item, long, amount)
 {
@@ -219,7 +299,33 @@ dispitem PARM_2( int, item, long, amount)
 #endif
 }
 
-/* SHOWITEM -- show the current amount for country item */
+/*
+ * showitem - Display current allocated amount for a nation building item
+ *
+ * Shows the player's current allocation for a specific nation building item
+ * at the specified screen line. Handles special formatting for location quality
+ * and provides detailed breakdown for raw materials across multiple lines.
+ *
+ * Parameters:
+ *   line - Screen line number where to display the information
+ *   item - Item type constant (AU_PEOPLE, AU_TREASURY, etc.)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Moves cursor and prints formatted item information
+ *   - For AU_LOCATE: Shows quality level ("Fair location")
+ *   - For AU_RAWGOODS: Uses multiple lines to show wood/jewels/metals breakdown
+ *   - For other items: Shows "spent[item] * AU_values[item] units"
+ *   - Uses global spent[] array to get current allocations
+ *
+ * Notes:
+ *   - Displays at column 15 with right-justified 23-character field
+ *   - Raw materials show conditional breakdown based on compile-time ratios
+ *   - Location shows descriptive text from AU_LType[] array
+ *   - Used in interactive nation building interface
+ */
 static void
 showitem PARM_2 (int, line, int, item)
 {
@@ -291,7 +397,33 @@ showitem PARM_2 (int, line, int, item)
 #endif
 }
 
-/* RACE_SETUP -- Provide backbone of each race */
+/*
+ * race_setup - Initialize nation statistics based on racial characteristics
+ *
+ * Sets up the baseline nation statistics according to the chosen race's
+ * inherent characteristics. Each race has different starting values for
+ * population, military, resources, and other attributes that reflect their
+ * racial traits and culture.
+ *
+ * Parameters:
+ *   rtype - Race type constant (index into race_info[] array)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets global AU_race to rtype
+ *   - Initializes spent[] array with race-specific starting values
+ *   - For AU_LEADERS: Adds to existing value rather than replacing
+ *   - For all other items: Sets to race's au_start[] values
+ *   - Modifies global spent[] array used throughout nation building
+ *
+ * Notes:
+ *   - Uses race_info[rtype].au_start[] for baseline values
+ *   - Leaders are cumulative (added to existing count)
+ *   - Called after race selection to establish racial foundation
+ *   - Must be called before point cost calculations
+ */
 static void
 race_setup PARM_1(int, rtype)
 {
@@ -308,7 +440,31 @@ race_setup PARM_1(int, rtype)
   }
 }
 
-/* CLASS_POWERS -- Give magic powers based on the nation class */
+/*
+ * class_powers - Grant magical powers based on the selected nation class
+ *
+ * Adds class-specific magical abilities to the nation being created.
+ * Each nation class (Wizard, Priest, Rogue, etc.) grants different
+ * magical powers that enhance various aspects of the civilization.
+ *
+ * Parameters:
+ *   ctype - Nation class type constant (index into nclass_list[] array)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies ntn_ptr->powers[] array by adding class-specific powers
+ *   - Uses ADDMAGIC() macro to combine powers with existing magical abilities
+ *   - Iterates through all MAG_NUMBER magic categories
+ *   - Powers are cumulative with racial and other sources
+ *
+ * Notes:
+ *   - Uses nclass_list[ctype].pow_given[] for class power definitions
+ *   - Called after race_mgpowers() to layer class abilities on racial base
+ *   - Powers are bit-flags that can be combined
+ *   - Must be called before final nation power calculations
+ */
 static void
 class_powers PARM_1(int, ctype)
 {
@@ -321,7 +477,31 @@ class_powers PARM_1(int, ctype)
   }
 }
 
-/* RACE_MGPOWERS -- Initialize the magic powers based on the racial type */
+/*
+ * race_mgpowers - Initialize baseline magical powers based on racial heritage
+ *
+ * Sets the foundation magical abilities that each race inherently possesses.
+ * Different races have natural affinities for different types of magic,
+ * from combat spells to nature magic to divine powers.
+ *
+ * Parameters:
+ *   rtype - Race type constant (index into race_info[] array)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Directly sets ntn_ptr->powers[] array to racial baseline values
+ *   - Overwrites any existing magical powers in the array
+ *   - Sets all MAG_NUMBER magic categories to race-specific values
+ *   - Establishes foundation for later class and purchased power additions
+ *
+ * Notes:
+ *   - Uses race_info[rtype].pow_start[] for racial magic definitions
+ *   - Called before class_powers() to establish baseline
+ *   - Powers are bit-flags representing specific magical abilities
+ *   - Some races may have no inherent magical powers (all zeros)
+ */
 static void
 race_mgpowers PARM_1(int, rtype)
 {
@@ -333,7 +513,36 @@ race_mgpowers PARM_1(int, rtype)
   }
 }
 
-/* CONVERT -- convert the stored information into the nation statistics */
+/*
+ * convert - Convert user selections into final nation statistics and data structures
+ *
+ * Transforms the point-allocation decisions made during nation building into
+ * the actual nation data structure values. Handles name copying, statistical
+ * conversions, resource allocation, and magical power assignments.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Copies AU_lname, AU_name, AU_passwd to ntn_ptr structure with bounds checking
+ *   - Sets nation mark, race, class, and activity level
+ *   - Converts spent[] allocations to actual nation statistics using AU_values[]
+ *   - Sets population (tciv, tmil) and material resources (mtrls[])
+ *   - Assigns location preference with validation and fallback to AU_RANDOM
+ *   - Initializes magical powers through race_mgpowers() and class_powers()
+ *   - Grants additional random magic powers based on AU_MAGIC purchases
+ *   - Uses rand_magic() for random power generation with retry on failure
+ *
+ * Notes:
+ *   - String copying uses strncpy() with manual null termination for safety
+ *   - Location validation ensures value is within AU_OOPS to AU_EXCELLENT range
+ *   - Magic power generation uses MAG_MILITARY to MAG_WIZARDRY range
+ *   - Random magic powers are added using ADDMAGIC() macro
+ *   - AU_leaders global variable set for use in place() function
+ */
 static void
 convert PARM_0(void)
 {
@@ -396,7 +605,31 @@ convert PARM_0(void)
 
 }
 
-/* POINT_COST -- return the point cost of the current nation */
+/*
+ * point_cost - Calculate total point cost of current nation configuration
+ *
+ * Computes the total point cost for the nation being built based on all
+ * allocated resources, selected class, inherent magical powers, and late-start
+ * bonuses. Uses floating-point arithmetic for precise cost calculations.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   Total point cost rounded up to next integer
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Base cost: sum of (AU_cost[i] * spent[i] / AU_units[i]) for all items
+ *   - Adds nclass_list[AU_class].cost for class selection
+ *   - Adds magic power costs: AU_cost[AU_MAGIC] * num_bits_on(racial + class powers)
+ *   - Subtracts late-start bonus: (TURN - world.start_turn - 1) / LATESTART
+ *   - Uses floating-point for intermediate calculations to avoid truncation
+ *   - Rounds up by adding 1.0 before casting to int
+ *   - Magic cost calculated from combined racial and class powers
+ */
 static int
 point_cost PARM_0(void)
 {
@@ -424,7 +657,30 @@ point_cost PARM_0(void)
   return((int) points);
 }
 
-/* MIN_NEIGHBOR -- return the minimum distance between two neighbors */
+/*
+ * min_neighbor - Calculate minimum required distance between two nation capitals
+ *
+ * Determines the minimum separation distance required between nation capitals
+ * based on their location quality settings. Higher quality locations require
+ * greater separation to maintain strategic balance and prevent overcrowding.
+ *
+ * Parameters:
+ *   loc1 - Location quality of first nation (AU_OOPS to AU_EXCELLENT)
+ *   loc2 - Location quality of second nation (AU_OOPS to AU_EXCELLENT)
+ *
+ * Returns:
+ *   Minimum distance in map sectors between the two capitals
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Formula: (max(loc1, loc2) * BUILDDIST) / 10 + BUILDDIST + 2
+ *   - Uses the higher of the two location qualities for calculation
+ *   - BUILDDIST is base building distance constant
+ *   - Higher quality locations require proportionally more separation
+ *   - Minimum separation includes base distance plus quality modifier
+ */
 static int
 min_neighbor PARM_2(int, loc1, int, loc2)
 {
@@ -432,7 +688,32 @@ min_neighbor PARM_2(int, loc1, int, loc2)
   return((max(loc1, loc2) * (int) BUILDDIST) / 10 + (int) BUILDDIST + 2);
 }
 
-/* CHECK_NEIGHBORS -- Eliminate any placement close to other nations */
+/*
+ * check_neighbors - Verify proposed capital location maintains proper distance from existing nations
+ *
+ * Checks if a proposed capital location conflicts with existing nation capitals
+ * by ensuring minimum separation distances are maintained. Prevents nations
+ * from being placed too close together based on their location quality settings.
+ *
+ * Parameters:
+ *   xp - Proposed X coordinate for new capital
+ *   yp - Proposed Y coordinate for new capital
+ *
+ * Returns:
+ *   TRUE if placement conflicts with existing nations (too close)
+ *   FALSE if placement is acceptable (sufficient separation)
+ *
+ * Side Effects:
+ *   - None (read-only validation function)
+ *
+ * Notes:
+ *   - Iterates through all existing nations (1 to MAXNTN)
+ *   - Skips current nation being built and empty nation slots
+ *   - Skips monster nations (uses n_ismonster() check)
+ *   - Uses map_within() to check distance between capitals
+ *   - Distance requirement calculated by min_neighbor() function
+ *   - Must pass this check before nation placement can proceed
+ */
 static int
 check_neighbors PARM_2(int, xp, int, yp)
 {
@@ -460,7 +741,32 @@ check_neighbors PARM_2(int, xp, int, yp)
   return(FALSE);
 }
 
-/* PL_WATERCHECK -- Check water and neighbors */
+/*
+ * pl_watercheck - Count water sectors and detect conflicting ownership during placement
+ *
+ * Map loop callback function that counts water sectors within a range and
+ * detects sectors already owned by other nations. Used during nation placement
+ * to evaluate location suitability based on water access and ownership conflicts.
+ *
+ * Parameters:
+ *   x - X coordinate of sector being checked
+ *   y - Y coordinate of sector being checked
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - If sector is owned (not UNOWNED): sets global_int = -1 (conflict detected)
+ *   - If sector is water: increments global_int (water count)
+ *   - Uses global_int for both conflict detection and water counting
+ *
+ * Notes:
+ *   - Called via map_loop() during placement quality assessment
+ *   - global_int = -1 indicates ownership conflict (immediate disqualification)
+ *   - global_int >= 0 counts water sectors in the area
+ *   - Water sectors provide strategic and economic advantages
+ *   - Ownership conflicts prevent nation placement in occupied areas
+ */
 static void
 pl_watercheck PARM_2(int, x, int, y)
 {
@@ -473,7 +779,32 @@ pl_watercheck PARM_2(int, x, int, y)
   }
 }
 
-/* PL_VEGCHECK -- Check the vegetation of the sector */
+/*
+ * pl_vegcheck - Assess food production potential of sectors during placement evaluation
+ *
+ * Map loop callback function that evaluates the food production capability
+ * of sectors within a range. Accumulates total food value and sector count
+ * to determine if an area can sustain a new nation's population.
+ *
+ * Parameters:
+ *   x - X coordinate of sector being evaluated
+ *   y - Y coordinate of sector being evaluated
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - If sector produces food: adds food value to global_long
+ *   - If sector produces food: increments global_int (productive sector count)
+ *   - Uses tofood() to calculate sector's food production potential
+ *
+ * Notes:
+ *   - Called via map_loop() during placement suitability assessment
+ *   - global_long accumulates total food production in the area
+ *   - global_int counts number of food-producing sectors
+ *   - Food production essential for nation survival and growth
+ *   - Average food per sector calculated as global_long / global_int
+ */
 static void
 pl_vegcheck PARM_2(int, x, int, y)
 {
@@ -486,7 +817,29 @@ pl_vegcheck PARM_2(int, x, int, y)
   }
 }
 
-/* RANGE_SECTS -- Number of sectors, around a sector, within a given range */
+/*
+ * range_sects - Calculate total number of sectors within a specified range
+ *
+ * Computes the total count of map sectors that fall within a given range
+ * from a central point. Accounts for different map topologies (hexagonal
+ * vs rectangular) to provide accurate sector counts for placement calculations.
+ *
+ * Parameters:
+ *   rng - Range radius in sectors from central point
+ *
+ * Returns:
+ *   Total number of sectors within the specified range
+ *
+ * Side Effects:
+ *   - None (pure calculation function)
+ *
+ * Notes:
+ *   - Hexagonal maps: Each range ring has 6 * range sectors
+ *   - Rectangular maps: Each range ring has 8 * range sectors
+ *   - Formula sums sectors for all ranges from 1 to rng
+ *   - Used to calculate percentages and densities during placement
+ *   - Topology determined by world.hexmap setting
+ */
 static int
 range_sects PARM_1(int, rng)
 {
@@ -503,7 +856,35 @@ range_sects PARM_1(int, rng)
   return(nsects);
 }
 
-/* PLACE_CHECK -- Check for the nearby water and monster sectors */
+/*
+ * place_check - Comprehensive evaluation of location suitability for nation placement
+ *
+ * Performs detailed analysis of a proposed capital location by checking water
+ * access, ownership conflicts, and food production within specified ranges.
+ * Ensures the location meets quality standards for the nation's location preference.
+ *
+ * Parameters:
+ *   xp - Proposed X coordinate for capital
+ *   yp - Proposed Y coordinate for capital
+ *   mrange - Range for checking monster/ownership conflicts
+ *   wrange - Range for checking water sector distribution
+ *   vrange - Range for checking vegetation/food production
+ *
+ * Returns:
+ *   TRUE if location meets all quality requirements
+ *   FALSE if location fails any quality checks
+ *
+ * Side Effects:
+ *   - Uses global_int and global_long for intermediate calculations
+ *   - Calls map_loop() multiple times with different callback functions
+ *
+ * Notes:
+ *   - Water requirements: minimum (location-1)/2, maximum based on 75-15*location formula
+ *   - Food requirements: minimum 20+10*location percentage of sectors productive
+ *   - Food quality: minimum 2.5 + location/2.0 average food per sector
+ *   - If mrange == wrange: combines ownership and water checks for efficiency
+ *   - Fails immediately if ownership conflicts detected (global_int == -1)
+ */
 static int
 place_check PARM_5(int, xp, int, yp, int, mrange, int, wrange, int, vrange)
 {
@@ -560,7 +941,33 @@ place_check PARM_5(int, xp, int, yp, int, mrange, int, wrange, int, vrange)
   return(TRUE);
 }
 
-/* PL_CHOWN -- Change the ownership of neighboring sectors */
+/*
+ * pl_chown - Assign ownership and designations to sectors around the new capital
+ *
+ * Map loop callback that claims suitable sectors for the newly placed nation
+ * and assigns appropriate economic designations based on sector characteristics
+ * and seasonal considerations. Redistributes population from capital to new sectors.
+ *
+ * Parameters:
+ *   x - X coordinate of sector being evaluated for ownership
+ *   y - Y coordinate of sector being evaluated for ownership
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Claims unowned sectors with adequate food production (sets owner to country)
+ *   - Increments ntn_ptr->tsctrs (total sectors owned)
+ *   - Sets sector designation based on resources and season
+ *   - Transfers population from capital (sct_ptr->people) to new sector
+ *   - Uses global_long for population per sector, global_int for lumberyard count
+ *
+ * Notes:
+ *   - Only claims sectors with food >= DESFOOD and owner == UNOWNED
+ *   - Designation priority: Lumberyard (if wood>1, <3 existing) > Metal mine (if metal>3) > Seasonal designation
+ *   - Seasonal designations: Summer=Fertile, Fall=Fruitful, Spring/Winter=Farm
+ *   - Population distribution balances capital density across claimed territory
+ */
 static void
 pl_chown PARM_2(int, x, int, y)
 {
@@ -598,7 +1005,40 @@ pl_chown PARM_2(int, x, int, y)
   }
 }
 
-/* PLACE -- Put nation on the map.  Fill out army structures as well. */
+/*
+ * place - Place a new nation on the map with complete military and economic setup
+ *
+ * Comprehensive nation placement function that finds a suitable location (or uses
+ * provided coordinates), terraforms the area, creates the capital city, establishes
+ * military units, and claims surrounding territory. Handles fallback strategies
+ * if initial placement fails.
+ *
+ * Parameters:
+ *   xloc - Desired X coordinate (-1 for automatic placement)
+ *   yloc - Desired Y coordinate (-1 for automatic placement) 
+ *
+ * Returns:
+ *   TRUE if nation was successfully placed
+ *   FALSE if placement failed completely
+ *
+ * Side Effects:
+ *   - Creates capital sector with MAJ_CAPITAL designation and fortification
+ *   - Terraforms surrounding area based on racial preferences
+ *   - Creates city structure with initial resources and population
+ *   - Generates armies: garrison unit, national ruler, minor leaders, regular troops
+ *   - Claims and designates surrounding sectors via pl_chown()
+ *   - Writes news announcement of nation creation
+ *   - Updates military movement calculations
+ *   - On failure: downgrades location quality and retries with compensation
+ *
+ * Notes:
+ *   - Uses iterative search (up to 3000 attempts) for suitable placement
+ *   - Quality ranges: mrng=location+1, wrng=(location+1)/2, vrng=location+1
+ *   - Border restrictions based on PC vs NPC nation type
+ *   - Failure handling: downgrades AU_EXCELLENT→AU_GOOD→AU_FAIR→AU_RANDOM→AU_OOPS
+ *   - Compensation: adds free population when downgrading location quality
+ *   - Seasonal food adjustments: Winter=2x, Fall=1.5x starting food
+ */
 static int
 place PARM_2(int, xloc, int, yloc)
 {
@@ -848,7 +1288,30 @@ place PARM_2(int, xloc, int, yloc)
   return(TRUE);
 }
 
-/* DO_CLASS -- Initialize class information */
+/*
+ * do_class - Initialize leader count based on selected nation class
+ *
+ * Sets the appropriate number of leaders for the nation based on the chosen
+ * class. Different classes have different leadership requirements and 
+ * organizational structures.
+ *
+ * Parameters:
+ *   class_val - Selected nation class constant (index into nclass_list[])
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets spent[AU_LEADERS] to class-appropriate leader count
+ *   - Uses nclass_list[class_val].leadnum for base leader count
+ *   - Divides by AU_values[AU_LEADERS] to convert to purchase units
+ *
+ * Notes:
+ *   - Called after class selection to establish leadership structure
+ *   - Leader count affects nation's command capacity and spell-casting ability
+ *   - Different classes may require more or fewer leaders
+ *   - Value stored in spent[] array for point cost calculations
+ */
 static void
 do_class PARM_1 ( short, class_val )
 {
@@ -857,7 +1320,34 @@ do_class PARM_1 ( short, class_val )
 		       AU_values[AU_LEADERS]);
 }
 
-/* GETCLASS -- Obtain the national class */
+/*
+ * getclass - Interactive selection of nation class with race restrictions
+ *
+ * Presents the player with a menu of available nation classes that are
+ * compatible with their selected race. Each class provides different magical
+ * abilities, costs, and strategic advantages.
+ *
+ * Parameters:
+ *   race - Selected race constant (index into race_info[])
+ *
+ * Returns:
+ *   0 if class was successfully selected
+ *   -1 if user aborted the selection process
+ *
+ * Side Effects:
+ *   - Displays formatted class selection menu on screen
+ *   - Sets global AU_class to selected class value
+ *   - Clears menu display after selection
+ *   - May prompt for abort confirmation
+ *
+ * Notes:
+ *   - Only shows classes compatible with selected race (checks racetype string)
+ *   - Display includes: class name, race compatibility, magic type, total cost
+ *   - Cost calculation includes class base cost plus magical power costs
+ *   - Magic cost based on combined racial and class powers using num_bits_on()
+ *   - Input validation ensures selection is valid for the race
+ *   - User can abort with ESC key or invalid input
+ */
 static int
 getclass PARM_1 (int, race)
 {
@@ -935,7 +1425,42 @@ getclass PARM_1 (int, race)
   return(0);
 }
 
-/* NEWLOGIN -- Create a new nation specification */
+/*
+ * newlogin - Interactive nation creation system for players and NPCs
+ *
+ * Complete nation building interface that guides users through creating a new
+ * nation with custom race, class, attributes, and resource allocations. Handles
+ * both player nations (with passwords) and NPC nations for computer control.
+ *
+ * Parameters:
+ *   makenpcs - TRUE to create NPC nations, FALSE for player nations
+ *
+ * Returns:
+ *   Number of nations successfully created
+ *   0 if no nations were created or errors occurred
+ *
+ * Side Effects:
+ *   - Initializes curses interface via cq_init()
+ *   - Creates nation data files (.exe format for players)
+ *   - Writes to news file announcing new nations
+ *   - Places nations on map with terraforming and army creation
+ *   - For NPCs: writes to npcfile configuration
+ *   - Updates world nation tracking and military calculations
+ *
+ * Notes:
+ *   - Interactive menu system with point allocation for nation attributes
+ *   - Validates names, passwords, and resource allocations
+ *   - Late-start bonus: increases max values based on game turn
+ *   - Point system balances different nation configurations
+ *   - Supports multiple nation creation in single session
+ *   - Race selection: shows available races with single-letter selection
+ *   - Class selection: filtered by race compatibility
+ *   - Alignment: Good/Neutral/Evil (Orcs forced Evil)
+ *   - Aggression: None/Static/Enforce/Overt/Mobile/Killer
+ *   - National mark: single character for map display
+ *   - Resource allocation: interactive +/- system with costs/limits
+ *   - Placement: automatic suitable location finding with quality preferences
+ */
 int
 newlogin PARM_1(int, makenpcs)
 {
@@ -1654,7 +2179,34 @@ newlogin PARM_1(int, makenpcs)
   return(num_built);
 }
 
-/* WRITE_NPC -- Store the nation for npcs; FALSE for bad read */
+/*
+ * write_npc - Save NPC nation configuration to persistent storage file
+ *
+ * Writes current nation building configuration to the NPC configuration file
+ * for later loading into the game world. Creates file header if this is the
+ * first NPC nation, otherwise appends to existing configuration.
+ *
+ * Parameters:
+ *   void (uses global AU_* variables and spent[] array)
+ *
+ * Returns:
+ *   TRUE if NPC data was successfully written
+ *   FALSE if file I/O errors occurred
+ *
+ * Side Effects:
+ *   - Creates or appends to npcfile (typically "npc.config")
+ *   - Writes file header with usage instructions if creating new file
+ *   - Saves nation name, leader name, mark, race, class, activity level
+ *   - Saves complete spending allocation array (AU_NUMBER values)
+ *
+ * Notes:
+ *   - File format: line 1 = name leader mark race class activity
+ *   - File format: line 2 = space-separated spending values
+ *   - Header includes warning against manual editing
+ *   - Header provides commands for adding/removing NPCs
+ *   - Used by newlogin() when creating NPC nations
+ *   - File read later by read_npc() during world initialization
+ */
 int
 write_npc PARM_0(void)
 {
@@ -1706,7 +2258,37 @@ write_npc PARM_0(void)
   return(TRUE);
 }
 
-/* READ_NPC -- Read in the specified number of nations */
+/*
+ * read_npc - Load and create NPC nations from configuration file
+ *
+ * Reads NPC nation configurations from file and creates them in the game world.
+ * Handles file parsing, nation creation, placement, and error recovery.
+ * Falls back to default configuration file if local file not found.
+ *
+ * Parameters:
+ *   amount - Maximum number of NPC nations to create
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Creates NPC nations in game world with full setup
+ *   - Places nations on map with terraforming and military units
+ *   - Adds magical powers and updates nation tracking
+ *   - Reports errors and skips invalid configurations
+ *   - Uses world.passwd as default password for all NPCs
+ *
+ * Notes:
+ *   - File search order: local npcfile, then defaultdir/npcfile
+ *   - Skips comment lines (starting with '#')
+ *   - Validates nation names for uniqueness (skips duplicates)
+ *   - Adjusts national marks if conflicts detected
+ *   - Point compensation: adds free population if over point limit
+ *   - Error handling: continues processing after individual failures
+ *   - Reports final count if fewer nations created than requested
+ *   - File format matches write_npc() output format
+ *   - Creates complete nations with armies, cities, and territory
+ */
 void
 read_npc PARM_1(int, amount)
 {
