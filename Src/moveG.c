@@ -49,8 +49,39 @@ static long lost_men, unit_men = 0;
 /* variables used in the various movement routines */
 extern int range_limit, xhome, yhome, mult_10;
 
-/* MOVE_SELECT -- Routine to determine if a caravan, army or navy is
-                  being moved.                                       */
+/*
+ * move_select - Determine the type of unit to move and initiate movement
+ *
+ * Identifies which type of unit (army, navy, or caravan) is currently selected
+ * and initiates the movement sequence. Handles god mode authentication and
+ * ensures the unit returns to its final location after movement completion.
+ * This is the main entry point for interactive unit movement in the game.
+ *
+ * The function checks for unit availability in priority order:
+ * 1. Army units (including groups and monsters)
+ * 2. Naval fleets 
+ * 3. Caravans (trade/supply units)
+ *
+ * Parameters:
+ *   None (uses global unit selection state)
+ *
+ * Returns:
+ *   MOVECOST - Movement cost incurred during the movement session
+ *   0 - No movement occurred (no unit selected or movement blocked)
+ *
+ * Side Effects:
+ *   - Calls move_parse() to handle the interactive movement interface
+ *   - Modifies global unit state and location
+ *   - Updates map display and recalculates hexagonal positioning
+ *   - May trigger god mode authentication sequence
+ *   - Sets mult_10 flag during movement for display purposes
+ *
+ * Notes:
+ *   - Preserves the original unit selection after movement completion
+ *   - God mode allows moving any nation's units with special authentication
+ *   - Movement cost calculation includes terrain and unit type factors
+ *   - Uses goto_* functions to return focus to moved unit
+ */
 int
 move_select PARM_0(void)
 {
@@ -107,7 +138,37 @@ move_select PARM_0(void)
   return(MOVECOST);
 }
 
-/* MOVE_STVAL -- String representation of the movement cost */
+/*
+ * move_stval - Convert movement cost value to string representation
+ *
+ * Converts a movement cost value into a formatted string for display purposes.
+ * Handles both positive movement costs (as percentages) and negative error codes
+ * with descriptive text. Supports both compact and verbose display formats for
+ * different UI contexts (map overlay vs. status messages).
+ *
+ * For positive values, displays movement cost as percentage with optional
+ * decimal precision. For negative values, converts movement restriction codes
+ * into user-friendly error messages explaining why movement is blocked.
+ *
+ * Parameters:
+ *   out_str - Output buffer to store the formatted string (must be allocated)
+ *   mval - Movement cost value (positive) or error code (negative)
+ *   cmpct - Boolean flag for compact display format (TRUE for short form)
+ *
+ * Returns:
+ *   None (result stored in out_str buffer)
+ *
+ * Side Effects:
+ *   - Modifies the out_str buffer with formatted text
+ *   - Uses sprintf for percentage formatting
+ *   - Accesses global mult_10 and conq_infomode flags
+ *
+ * Notes:
+ *   - Compact format uses abbreviations (e.g., "tera" vs "land locked")
+ *   - Error codes include: MV_LANDING, MV_GROUND, MV_WATER, MV_OFFMAP, etc.
+ *   - Percentage display adjusts precision based on mult_10 global flag
+ *   - Buffer overflow protection relies on caller providing adequate space
+ */
 void
 move_stval PARM_3(char *, out_str, int, mval, int, cmpct)
 {
@@ -244,7 +305,47 @@ move_stval PARM_3(char *, out_str, int, mval, int, cmpct)
   }
 }
 
-/* MOVE_INIT -- set the information to be used during movement */
+/*
+ * move_init - Initialize movement interface and validate unit movement capability
+ *
+ * Sets up the movement interface for a specific unit type, validates the unit's
+ * ability to move, and configures the display with appropriate movement information.
+ * Handles complex validation including movement points, group status, trapped units,
+ * and special movement modes (patrol, flying, etc.). This is the core initialization
+ * function that must complete successfully before any movement can occur.
+ *
+ * The function performs extensive validation:
+ * - Movement point availability and nomove status checking
+ * - Group leadership and following relationships
+ * - Hostile territory and trapped unit detection
+ * - Flying unit and patrol special case handling
+ * - Range limits for teleportation and people movement
+ *
+ * Parameters:
+ *   type - Movement type constant (MOVE_ARMY, MOVE_NAVY, MOVE_CVN, MOVE_PEOPLE, MOVE_TELEPORT)
+ *
+ * Returns:
+ *   Actual movement type to use (may differ from input for special cases)
+ *   MOVE_NOMOVE - Unit cannot move (insufficient points, trapped, etc.)
+ *   MOVE_CANCEL - User cancelled movement (group confirmation, etc.)
+ *   MOVE_PATROL - Wall patrol mode (limited to one sector)
+ *   MOVE_ONEWAY - Trapped unit with limited movement options
+ *   MOVE_FLYARMY/MOVE_FLYCVN - Flying movement mode
+ *
+ * Side Effects:
+ *   - Clears screen bottom and displays movement information
+ *   - Updates global movement variables (mp_remaining, unit_men, etc.)
+ *   - Modifies unit group relationships if group member is moved
+ *   - Sets range limits and home coordinates for special movement types
+ *   - Calls set_movepotential() to configure movement system
+ *
+ * Notes:
+ *   - God mode bypasses most movement restrictions
+ *   - Group members inherit leader status when separated
+ *   - Trapped units can only return to last safe location
+ *   - Flying units have special landing restrictions
+ *   - Movement points displayed as decimal percentages (X.Y%)
+ */
 static int
 move_init PARM_1 (int, type)
 {
@@ -441,7 +542,49 @@ move_init PARM_1 (int, type)
   return(hold);
 }
 
-/* MOVE_CHECK -- test for end of movement */
+/*
+ * move_check - Validate movement step and determine if movement should continue
+ *
+ * Performs comprehensive validation of a single movement step, checking movement
+ * point costs, unit survival (exposure/attrition), hostile territory effects,
+ * and movement termination conditions. This function is called for each step
+ * during movement to ensure the move is legal and to apply movement consequences.
+ *
+ * The function handles complex movement mechanics:
+ * - Movement point deduction and exhaustion checking
+ * - Unit attrition from environmental exposure (desert, swamp, etc.)
+ * - Hostile fortification and garrison blocking
+ * - Flying unit archer interception and forced landings
+ * - Naval landing confirmation and invasion mechanics
+ * - Caravan blockage by hostile cities and walls
+ *
+ * Parameters:
+ *   x - Target x coordinate for movement
+ *   y - Target y coordinate for movement  
+ *   mcost - Movement cost for this step (in movement points)
+ *   type - Movement type (MOVE_ARMY, MOVE_NAVY, MOVE_CVN, etc.)
+ *
+ * Returns:
+ *   TRUE - Movement step successful, continue movement
+ *   FALSE - Movement step failed but movement can continue
+ *   MOVE_NOMOVE - Movement must stop (insufficient points, blocked, landed)
+ *
+ * Side Effects:
+ *   - Deducts movement points from mp_remaining
+ *   - Updates unit last position (ARMY_LASTX, NAVY_LASTX, CVN_LASTX)
+ *   - Calculates and applies unit losses from environmental exposure
+ *   - Sets lost_men global for display of casualties
+ *   - May force unit destruction if all men lost to attrition
+ *   - Displays confirmation prompts for naval landings
+ *
+ * Notes:
+ *   - God mode bypasses most restrictions except special confirmations
+ *   - Environmental losses scaled by unit type, speed, and season
+ *   - Scout and undead units have reduced exposure casualties
+ *   - Flying units can be forced to land by hostile archers
+ *   - Naval units require 15% movement to attempt landing
+ *   - Movement can be blocked by walls, fortifications, or diplomatic status
+ */
 static int
 move_check PARM_4 (int, x, int, y, int, mcost, int, type)
 {
@@ -693,7 +836,36 @@ move_check PARM_4 (int, x, int, y, int, mcost, int, type)
   return(hold);
 }
 
-/* MV_MAYMOVE -- Set global_long to TRUE if movement in sector is possible */
+/*
+ * mv_maymove - Check if movement to a sector is possible within current movement points
+ *
+ * Helper function used by map_loop() to test movement feasibility to adjacent sectors.
+ * Calculates movement cost to the specified sector and sets global_long flag if
+ * movement is both legal and affordable with remaining movement points. Used primarily
+ * for flying unit landing validation to determine if the unit has escape routes.
+ *
+ * This function is called for each sector in a radius during movement possibility
+ * checking, particularly for flying units that need to verify they can move away
+ * from their current position before being allowed to land.
+ *
+ * Parameters:
+ *   x - Target sector x coordinate to test
+ *   y - Target sector y coordinate to test
+ *
+ * Returns:
+ *   None (result stored in global_long flag)
+ *
+ * Side Effects:
+ *   - Sets global_long to TRUE if movement is possible and affordable
+ *   - Calls move_cost() which may access terrain and diplomatic data
+ *   - Uses global_int as movement type parameter for cost calculation
+ *
+ * Notes:
+ *   - Used as callback function for map_loop() iteration
+ *   - Movement cost calculation considers unit type stored in global_int
+ *   - Only positive movement costs within mp_remaining budget set the flag
+ *   - Global_long remains FALSE if any movement restriction applies
+ */
 static void
 mv_maymove PARM_2(int, x, int, y)
 {
@@ -706,7 +878,40 @@ mv_maymove PARM_2(int, x, int, y)
   }
 }
 
-/* MOVE_SPACE -- returns TRUE if ending movement is okay */
+/*
+ * move_space - Validate if movement can be terminated at current location
+ *
+ * Checks whether the current sector is a valid location to end movement for
+ * the specified unit type. Different movement modes have different restrictions
+ * on where they can safely terminate (e.g., flying units cannot land on water,
+ * people can only move to owned sectors, teleportation has diplomatic restrictions).
+ *
+ * The function performs comprehensive location validation:
+ * - Flying units: Cannot land on water, volcanoes (without fire magic), or mountain peaks
+ * - People movement: Must end in owned, non-sieged sectors
+ * - Teleportation: Cannot enter water, volcanoes, peaks, or hostile territory
+ * - Regular movement: Cannot end on water without bridges
+ *
+ * Parameters:
+ *   type - Movement type (MOVE_FLYARMY, MOVE_FLYCVN, MOVE_PEOPLE, MOVE_TELEPORT, etc.)
+ *
+ * Returns:
+ *   TRUE - Movement can be safely terminated at current location
+ *   FALSE - Current location is invalid for movement termination
+ *
+ * Side Effects:
+ *   - Displays error messages explaining why termination is invalid
+ *   - Accesses sector terrain, ownership, and designation data
+ *   - Checks diplomatic status for teleportation restrictions
+ *   - May call mv_maymove() to check escape routes for flying units
+ *
+ * Notes:
+ *   - Flying units must have escape routes available before landing restrictions apply
+ *   - Volcano restrictions can be bypassed with fire magic (WIZ_MAGIC(MW_FIRE))
+ *   - Mountain peak restrictions are absolute except for avian flying units
+ *   - Diplomatic checks prevent teleportation into unmet or hostile nations
+ *   - Bridge sectors override water landing restrictions
+ */
 static int
 move_space PARM_1( int, type )
 {
@@ -800,7 +1005,40 @@ move_space PARM_1( int, type )
   return(hold);
 }
 
-/* MVBTM_HEX -- Hexagonal map display of movement costs */
+/*
+ * mvbtm_hex - Display movement costs for adjacent sectors in hexagonal format
+ *
+ * Renders movement cost information for the six adjacent sectors in a hexagonal
+ * map layout at the bottom of the screen. Calculates movement costs for each
+ * direction and formats them using move_stval() for compact display. The layout
+ * matches the hexagonal movement pattern with proper spacing and connecting lines.
+ *
+ * The display shows a visual representation of the hex grid:
+ *     NW  N  NE
+ *   ------+====+------
+ *     SW  S  SE
+ * 
+ * Where the center (====) represents the current position and surrounding
+ * cells show movement costs or restriction codes for each direction.
+ *
+ * Parameters:
+ *   type - Movement type for cost calculation (MOVE_ARMY, MOVE_NAVY, etc.)
+ *
+ * Returns:
+ *   None (displays directly to screen)
+ *
+ * Side Effects:
+ *   - Calls move_cost() for each adjacent sector
+ *   - Uses move_stval() to format cost strings in compact mode
+ *   - Draws to screen at fixed bottom location (LINES-4 to LINES-2)
+ *   - Uses global coordinates (xoffset, xcurs, XREAL, YREAL)
+ *
+ * Notes:
+ *   - Hexagonal coordinate calculation adjusts for even/odd column offsets
+ *   - Display uses fixed character positions for alignment
+ *   - Connecting lines (/ and \) show directional relationships
+ *   - Only used when world.hexmap is TRUE
+ */
 static void
 mvbtm_hex PARM_1(int, type)
 {
@@ -836,7 +1074,43 @@ mvbtm_hex PARM_1(int, type)
   mvaddstr(LINES - 3, 50, "------+====+------");
 }
 
-/* MVBTM_RECT -- Rectangle map display of movement costs */
+/*
+ * mvbtm_rect - Display movement costs for adjacent sectors in rectangular format  
+ *
+ * Renders movement cost information for the eight adjacent sectors in a rectangular
+ * map layout at the bottom of the screen. Calculates movement costs for each
+ * cardinal and diagonal direction and formats them for compact display. The layout
+ * matches the rectangular movement pattern with proper spacing and dividers.
+ *
+ * The display shows a 3x3 grid representation:
+ *   NW  | N  | NE
+ *   ----+====+----
+ *   W   | == | E 
+ *   ----+====+----
+ *   SW  | S  | SE
+ *
+ * Where the center (====) represents the current position and surrounding
+ * cells show movement costs or restriction codes for each direction.
+ *
+ * Parameters:
+ *   type - Movement type for cost calculation (MOVE_ARMY, MOVE_NAVY, etc.)
+ *
+ * Returns:
+ *   None (displays directly to screen)
+ *
+ * Side Effects:
+ *   - Calls move_cost() for each adjacent sector
+ *   - Uses move_stval() to format cost strings in compact mode
+ *   - Draws to screen at fixed bottom location (LINES-4 to LINES-2)
+ *   - Uses global coordinates (XREAL, YREAL)
+ *
+ * Notes:
+ *   - Rectangular coordinate calculation is simpler than hexagonal
+ *   - Display uses fixed character positions for grid alignment
+ *   - Vertical bars (|) separate columns visually
+ *   - Only used when world.hexmap is FALSE
+ *   - Center position shows "====" as current location marker
+ */
 static void
 mvbtm_rect PARM_1(int, type)
 {
@@ -865,7 +1139,44 @@ mvbtm_rect PARM_1(int, type)
   }
 }
 
-/* MOVE_BOTTOM -- display movement message at bottom of screen */
+/*
+ * move_bottom - Display comprehensive movement status at bottom of screen
+ *
+ * Updates the bottom portion of the screen with detailed movement information
+ * including unit identification, remaining movement points, last movement cost,
+ * and casualty reports. Clears the bottom area and displays unit-specific
+ * information formatted for the movement interface. Also renders the movement
+ * cost grid for adjacent sectors.
+ *
+ * The display includes:
+ * - Unit identification (type, ID, group status)
+ * - Movement statistics (remaining points, last move cost)
+ * - Casualty reports from environmental exposure
+ * - Range limitations for special movement types
+ * - Movement cost grid for surrounding sectors
+ *
+ * Parameters:
+ *   lmcost - Last movement cost incurred (for display purposes)
+ *   type - Movement type determining information displayed
+ *
+ * Returns:
+ *   None (displays directly to screen)
+ *
+ * Side Effects:
+ *   - Clears bottom screen area (clear_bottom(0))
+ *   - Displays unit information and movement statistics
+ *   - Updates casualty information and reduces unit size if losses occurred
+ *   - Calls mvbtm_hex() or mvbtm_rect() to show movement cost grid
+ *   - Modifies global lost_men counter and ARMY_SIZE for casualties
+ *
+ * Notes:
+ *   - Group leaders show group number instead of unit type
+ *   - Flying and regular army movement show different information formats
+ *   - Naval landing requires special movement point calculations
+ *   - Patrol movement shows fixed "1 sector" limit
+ *   - Environmental casualties permanently reduce unit size
+ *   - Movement cost grid adapts to world map type (hex vs rectangular)
+ */
 static void
 move_bottom PARM_2( int, lmcost, int, type )
 {
@@ -949,7 +1260,47 @@ move_bottom PARM_2( int, lmcost, int, type )
   }
 }
 
-/* MOVE_RELOCATE -- complete final placement */
+/*
+ * move_relocate - Complete final unit relocation and apply movement consequences
+ *
+ * Finalizes unit movement by updating unit positions, applying movement costs,
+ * handling special movement mode termination (flying units landing), and
+ * managing movement consequences including unit destruction from hazardous
+ * landing sites. This function is called after movement is complete to
+ * commit all changes and handle any post-movement effects.
+ *
+ * The function handles complex post-movement processing:
+ * - Flying unit landing and potential destruction from hazardous terrain
+ * - Movement point finalization and remaining point calculations
+ * - Unit position updates and database consistency maintenance
+ * - Group movement coordination for army leaders
+ * - Naval transport coordination (armies and caravans on ships)
+ * - Environmental casualty processing and unit survival
+ *
+ * Parameters:
+ *   type - Movement type that was performed (MOVE_ARMY, MOVE_FLYARMY, etc.)
+ *   verbal - Boolean flag controlling error message display (TRUE for messages)
+ *
+ * Returns:
+ *   None (modifies unit state directly)
+ *
+ * Side Effects:
+ *   - Updates unit location coordinates (ARMY_XLOC, NAVY_XLOC, CVN_XLOC)
+ *   - Modifies movement points remaining (ARMY_MOVE, NAVY_MOVE, CVN_MOVE)
+ *   - May destroy units landing in hazardous terrain (water, volcanoes, peaks)
+ *   - Processes environmental casualties and updates unit sizes
+ *   - Sorts army lists to maintain database consistency
+ *   - Recursively relocates transported units (armies on ships, etc.)
+ *   - Updates hex calculation display
+ *
+ * Notes:
+ *   - Flying units automatically lose flight status unless they are avian
+ *   - Hazardous landings trigger severance pay calculations for destroyed units
+ *   - Group leaders move entire groups and coordinate member positions
+ *   - Navy movement automatically moves transported armies and caravans
+ *   - God mode prevents some movement point deductions
+ *   - Unit destruction nullifies unit pointers requiring careful handling
+ */
 void
 move_relocate PARM_2( int, type, int, verbal )
 {
@@ -1181,7 +1532,39 @@ move_relocate PARM_2( int, type, int, verbal )
   hex_recalc();
 }
 
-/* MP_QUIT -- Attempt to abort out of movement mode */
+/*
+ * mp_quit - Abort movement mode for teleportation and people relocation
+ *
+ * Attempts to cancel movement mode and return to normal map view. Only
+ * certain movement types (MOVE_PEOPLE and MOVE_TELEPORT) can be aborted
+ * safely, as these are special targeted movement modes rather than
+ * continuous unit movement. Regular unit movement cannot be aborted
+ * once initiated.
+ *
+ * When abortion is successful, the function resets the cursor position
+ * to the original starting location and sets the movement completion flag.
+ * This allows the user to escape from targeted movement modes if they
+ * change their mind about the destination.
+ *
+ * Parameters:
+ *   None (operates on global movement state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard command function return)
+ *
+ * Side Effects:
+ *   - Resets cursor position to home coordinates (xhome, yhome)
+ *   - Sets mp_done flag to terminate movement loop
+ *   - Displays error message for non-abortable movement types
+ *   - Uses global movement type variable (mp_type)
+ *
+ * Notes:
+ *   - Only MOVE_PEOPLE and MOVE_TELEPORT movement can be aborted
+ *   - Regular unit movement (armies, navies, caravans) cannot be canceled
+ *   - Bound to ESC key in movement mode key bindings
+ *   - Provides safety mechanism for targeted movement commands
+ *   - Cursor position reset ensures map returns to original view
+ */
 static int
 mp_quit PARM_0(void)
 {
@@ -1196,7 +1579,32 @@ mp_quit PARM_0(void)
   return(0);
 }
 
-/* MP_SOUTHWEST -- Move the unit one to the southwest */
+/*
+ * mp_southwest - Move the unit one sector to the southwest
+ *
+ * Sets movement coordinates for one step southwest movement, adjusting
+ * for hexagonal or rectangular map coordinates as appropriate. In hexagonal
+ * mode, southwest movement requires special coordinate calculations based
+ * on the current column's even/odd status to maintain proper hex grid
+ * alignment. Sets movement input flag to indicate new movement is ready.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates
+ *   - Clears mp_noinp flag to indicate movement input is ready
+ *   - Uses global coordinate variables (xoffset, xcurs, XREAL, YREAL)
+ *
+ * Notes:
+ *   - Hexagonal maps require column parity calculation for Y coordinate
+ *   - Rectangular maps use simple diagonal coordinate adjustment
+ *   - Movement validation occurs in calling function, not here
+ *   - Part of the directional movement command suite
+ */
 static int
 mp_southwest PARM_0(void)
 {
@@ -1212,7 +1620,33 @@ mp_southwest PARM_0(void)
   return(0);
 }
 
-/* MP_WEST -- Move the unit one to the west */
+/*
+ * mp_west - Move the unit one sector to the west  
+ *
+ * Sets movement coordinates for westward movement. In hexagonal maps,
+ * direct west movement is not geometrically possible (hex grids only
+ * support six-directional movement), so this generates an error message
+ * unless god mode is active. In rectangular maps, west movement simply
+ * decreases the X coordinate.
+ *
+ * Parameters:
+ *   None (operates on global coordinate state)
+ *
+ * Returns:
+ *   0 - Always returns 0 (standard movement command return)
+ *
+ * Side Effects:
+ *   - Sets mp_xnew and mp_ynew to target coordinates (rectangular maps)
+ *   - Clears mp_noinp flag if movement is valid
+ *   - Displays error message for invalid hexagonal west movement
+ *   - Uses global coordinate variables and world.hexmap flag
+ *
+ * Notes:
+ *   - Hexagonal geometry prevents direct east/west movement
+ *   - God mode overrides hexagonal movement restrictions
+ *   - Error message explains geometric limitation to users
+ *   - Rectangular maps support full eight-directional movement
+ */
 static int
 mp_west PARM_0(void)
 {
