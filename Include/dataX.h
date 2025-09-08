@@ -801,99 +801,413 @@ typedef struct s_sector {
     /* uns_char region;          [Unused] Regional grouping index for administration */
 } SCT_STRUCT, *SCT_PTR;
 
-/* Army Data Structure */
+/*
+ * struct s_army - Military unit data structure
+ *
+ * Represents a single military unit (army) in the game, containing all
+ * information needed for combat, movement, command hierarchy, and resource
+ * management. Army units are the primary military forces of nations and
+ * can move across the map, engage in combat, and carry out strategic operations.
+ *
+ * Usage Patterns:
+ *   - Military combat and warfare operations
+ *   - Strategic movement and positioning on game map
+ *   - Resource consumption (supply, provisions) calculations
+ *   - Command hierarchy and leadership chain management
+ *   - Magic system integration through leader spell capabilities
+ *
+ * Relationships:
+ *   - Owned by nations (managed through nation army lists)
+ *   - Located on map sectors (SCT_STRUCT coordinates)
+ *   - May be led by other units (recursive leadership hierarchy)
+ *   - Can be transported by naval units (NAVY_STRUCT integration)
+ *   - Consumes materials from nation stockpiles for supply
+ *
+ * Fields:
+ *   armyid - Unique identifier for this army unit across entire game
+ *   unittype - Military unit classification (infantry, cavalry, etc.)
+ *   max_eff - Maximum possible efficiency (100% when at full strength)
+ *   efficiency - Current operational efficiency (0-100%, affects performance)
+ *   xloc, yloc - Current map coordinates where unit is positioned
+ *   targx, targy - Target destination coordinates for movement orders
+ *   lastx, lasty - Previous location (for movement tracking and retreat)
+ *   strength - Number of individual soldiers/troops in this unit
+ *   umove - Movement points available per turn (terrain dependent)
+ *   status - Operational status flags (combat readiness, orders, morale)
+ *   spellpts - Magical power points if unit has spellcasting leaders
+ *   supply - Food supplies per soldier (affects movement and combat)
+ *   leader - Unit ID of commanding officer/leader (0 if no leader)
+ *   next - Linked list pointer to next army in nation's army roster
+ *   nrby - Linked list pointer to other armies in same map sector
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to army lists
+ *   - Next/nrby pointers require careful maintenance during operations
+ *   - Cleanup needed when units are destroyed or disbanded
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Combat operations require atomic updates to prevent conflicts
+ *   - Movement updates need coordination to prevent invalid states
+ *   - Status changes during simultaneous operations need protection
+ *
+ * Performance Notes:
+ *   - Linked list traversal for operations affecting multiple armies
+ *   - Location-based operations optimized through nrby list grouping
+ *   - Frequent access during combat and movement phases
+ *   - Supply calculations performed each turn for all active units
+ */
 typedef struct s_army {
-  idtype armyid;	/* unique identifier for unit	*/
-  uns_char unittype;	/* type of the army unit	*/
-  uns_char max_eff;	/* the efficiency of the unit	*/
-  uns_char efficiency;	/* the efficiency of the unit	*/
-  maptype xloc, yloc;	/* location of the army unit	*/
-  maptype targx, targy;	/* target sector for the unit	*/
-  maptype lastx, lasty;	/* prior location of the unit	*/
-  long strength;	/* number of soldiers		*/
-  uns_char umove;	/* movement ability of the unit	*/
-  long status;		/* the status of the unit	*/
-  uns_char spellpts;	/* magic strength of leaders	*/
-  uns_char supply;	/* food supply per man		*/
-  idtype leader;	/* unit the army is lead by	*/
-  struct s_army *next;	/* to next army			*/
-  struct s_army *nrby;	/* to armies in same sector	*/
+    idtype armyid;          /* Unique army identifier across entire game world */
+    uns_char unittype;      /* Military unit classification (infantry, cavalry, siege, etc.) */
+    uns_char max_eff;       /* Maximum efficiency percentage (100% at full strength) */
+    uns_char efficiency;    /* Current operational efficiency (0-100%, affects combat/movement) */
+    maptype xloc, yloc;     /* Current map coordinates of army position */
+    maptype targx, targy;   /* Target destination coordinates for movement orders */
+    maptype lastx, lasty;   /* Previous location coordinates (retreat, movement tracking) */
+    long strength;          /* Number of individual soldiers/troops in unit */
+    uns_char umove;         /* Movement points per turn (terrain and efficiency dependent) */
+    long status;            /* Operational status flags (combat, orders, morale, special states) */
+    uns_char spellpts;      /* Magical power points available for spellcasting operations */
+    uns_char supply;        /* Food supply per soldier (days of provisions available) */
+    idtype leader;          /* Unit ID of commanding leader (0 if independent command) */
+    struct s_army *next;    /* Linked list: next army in nation's military roster */
+    struct s_army *nrby;    /* Linked list: other armies in same map sector (spatial grouping) */
 } ARMY_STRUCT, *ARMY_PTR;
 
-/* Navy Data Structure */
+/*
+ * struct s_navy - Naval fleet data structure
+ *
+ * Represents a naval fleet consisting of multiple ship types, capable of
+ * movement on water sectors, combat operations, and transportation of armies,
+ * caravans, and materials. Naval units provide strategic mobility and control
+ * of sea routes, harbors, and coastal territories.
+ *
+ * Usage Patterns:
+ *   - Naval combat and coastal warfare operations
+ *   - Transportation of armies and caravans across water
+ *   - Materials transport and trade route protection
+ *   - Harbor control and blockade operations
+ *   - Coastal raiding and amphibious assault support
+ *
+ * Relationships:
+ *   - Owned by nations (managed through nation navy lists)
+ *   - Located on water/coastal map sectors
+ *   - Can transport army units (ARMY_STRUCT) across water
+ *   - Can transport caravan units (CVN_STRUCT) for trade
+ *   - Carries materials for supply and trade operations
+ *
+ * Fields:
+ *   navyid - Unique identifier for this naval fleet across entire game
+ *   ships[] - Array of ship counts by type (warships, merchants, galleys, etc.)
+ *   efficiency[] - Operational efficiency per ship type (0-100% per type)
+ *   xloc, yloc - Current map coordinates where fleet is positioned
+ *   targx, targy - Target destination coordinates for movement orders
+ *   lastx, lasty - Previous location (for movement tracking and retreat)
+ *   umove - Movement points available per turn (weather and damage dependent)
+ *   status - Operational status flags (combat readiness, orders, condition)
+ *   crew - Percentage of optimal crew manning the fleet (0-100%)
+ *   people - Civilian passengers carried per galley hold capacity
+ *   supply - Food supplies per crew member (affects operational range)
+ *   armynum - Army unit ID being transported (0 if no army aboard)
+ *   cvnnum - Caravan unit ID being transported (0 if no caravan aboard)
+ *   mtrls[] - Materials cargo carried by fleet (trade goods, supplies)
+ *   next - Linked list pointer to next navy in nation's naval roster
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to navy lists
+ *   - Ship type arrays use fixed sizes based on NSHP_NUMBER constant
+ *   - Materials arrays use fixed sizes based on MTRLS_NUMBER constant
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Naval combat requires atomic updates to prevent state corruption
+ *   - Transportation operations need coordination with army/caravan units
+ *   - Material transfers require synchronized access with nation stockpiles
+ *
+ * Performance Notes:
+ *   - Multiple ship type arrays require iteration for fleet calculations
+ *   - Cargo capacity calculations involve summing across ship types
+ *   - Combat effectiveness depends on combined ship type strengths
+ *   - Movement calculations consider worst-case ship type limitations
+ */
 typedef struct s_navy {
-  idtype navyid;	/* unique identifier		*/
-  uns_short ships[NSHP_NUMBER];	/* warships, merchants galleys */
-  uns_char efficiency[NSHP_NUMBER];	/* the efficiency of the fleet	*/
-  maptype xloc, yloc;	/* location of the ships	*/
-  maptype targx, targy;	/* target sector for the fleet	*/
-  maptype lastx, lasty;	/* prior location of the ships	*/
-  uns_char umove;	/* movement ability of ships	*/
-  long status;		/* the status of the unit	*/
-  uns_char crew;	/* percent of crew on the ships	*/
-  uns_char people;	/* people carried per ghold	*/
-  uns_char supply;	/* supplies per crew member	*/
-  idtype armynum;	/* army unit carried		*/
-  idtype cvnnum;	/* caravan unit carried		*/
-  itemtype mtrls[MTRLS_NUMBER];	/* materials carried	*/
-  struct s_navy *next;	/* next navy unit		*/
+    idtype navyid;                      /* Unique naval fleet identifier across game world */
+    uns_short ships[NSHP_NUMBER];       /* Ship counts by type (warships, merchants, galleys, etc.) */
+    uns_char efficiency[NSHP_NUMBER];   /* Operational efficiency per ship type (0-100% each) */
+    maptype xloc, yloc;                 /* Current map coordinates of fleet position */
+    maptype targx, targy;               /* Target destination coordinates for movement orders */
+    maptype lastx, lasty;               /* Previous location coordinates (retreat, movement tracking) */
+    uns_char umove;                     /* Movement points per turn (weather, damage, and crew dependent) */
+    long status;                        /* Operational status flags (combat, orders, condition, special states) */
+    uns_char crew;                      /* Crew manning percentage (0-100% of optimal crew levels) */
+    uns_char people;                    /* Civilian passengers carried per galley hold capacity */
+    uns_char supply;                    /* Food supplies per crew member (days of provisions available) */
+    idtype armynum;                     /* Army unit ID currently being transported (0 if empty) */
+    idtype cvnnum;                      /* Caravan unit ID currently being transported (0 if empty) */
+    itemtype mtrls[MTRLS_NUMBER];       /* Materials cargo by type (trade goods, supplies, equipment) */
+    struct s_navy *next;                /* Linked list: next navy in nation's naval roster */
 } NAVY_STRUCT, *NAVY_PTR;
 
-/* Caravan Data Structure */
+/*
+ * struct s_caravan - Trade caravan data structure
+ *
+ * Represents a trading caravan consisting of wagons, crew, and trade goods
+ * that can move across land to transport materials and people between sectors.
+ * Caravans are essential for overland commerce, resource distribution, and
+ * economic development in territories without naval access.
+ *
+ * Usage Patterns:
+ *   - Overland trade and commerce operations
+ *   - Material transport between cities and sectors
+ *   - Economic development of inland territories
+ *   - Civilian population transport and migration
+ *   - Resource distribution for national infrastructure
+ *
+ * Relationships:
+ *   - Owned by nations (managed through nation caravan lists)
+ *   - Moves across land sectors following trade routes
+ *   - Can be transported by naval units for overseas trade
+ *   - Connects cities and economic centers for resource flow
+ *   - Supports national economy through material distribution
+ *
+ * Fields:
+ *   cvnid - Unique identifier for this caravan across entire game
+ *   efficiency - Operational efficiency (0-100%, affects capacity and speed)
+ *   xloc, yloc - Current map coordinates where caravan is positioned
+ *   targx, targy - Target destination coordinates for movement orders
+ *   lastx, lasty - Previous location (for movement tracking and retreat)
+ *   size - Number of wagons in caravan (determines total capacity)
+ *   umove - Movement points available per turn (terrain and load dependent)
+ *   status - Operational status flags (loaded, moving, trading, damaged)
+ *   crew - Percentage of optimal crew manning the caravan (0-100%)
+ *   people - Civilian passengers carried per wagon capacity
+ *   supply - Food supplies per crew member (affects operational range)
+ *   mtrls[] - Materials cargo carried by caravan (trade goods, resources)
+ *   next - Linked list pointer to next caravan in nation's roster
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to caravan lists
+ *   - Materials arrays use fixed sizes based on MTRLS_NUMBER constant
+ *   - Cleanup needed when caravans are destroyed or disbanded
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Trade operations require atomic updates to prevent duplication
+ *   - Movement updates need coordination to prevent invalid states
+ *   - Material transfers require synchronized access with nation stockpiles
+ *
+ * Performance Notes:
+ *   - Cargo capacity calculations based on wagon count and efficiency
+ *   - Movement speed affected by total load and terrain conditions
+ *   - Trade route optimization considers multiple caravan coordination
+ *   - Economic calculations aggregate all caravan contributions
+ */
 typedef struct s_caravan {
-  idtype cvnid;		/* unique identifier		*/
-  uns_char efficiency;	/* the efficiency of the cvan	*/
-  maptype xloc, yloc;	/* location of the caravan	*/
-  maptype targx, targy;	/* target sector for the cvan	*/
-  maptype lastx, lasty;	/* last location of the caravan	*/
-  uns_char size;	/* how many wagons in caravan	*/
-  uns_char umove;	/* movement ability of caravan	*/
-  long status;		/* the status of the unit	*/
-  uns_char crew;	/* percent of caravan crew	*/
-  uns_char people;	/* people carried per wagon	*/
-  uns_char supply;	/* supplies per crew member	*/
-  itemtype mtrls[MTRLS_NUMBER];	/* materials carried	*/
-  struct s_caravan *next;	/* next caravan unit	*/
+    idtype cvnid;                   /* Unique caravan identifier across game world */
+    uns_char efficiency;            /* Operational efficiency (0-100%, affects capacity and speed) */
+    maptype xloc, yloc;             /* Current map coordinates of caravan position */
+    maptype targx, targy;           /* Target destination coordinates for movement orders */
+    maptype lastx, lasty;           /* Previous location coordinates (retreat, movement tracking) */
+    uns_char size;                  /* Number of wagons in caravan (determines total capacity) */
+    uns_char umove;                 /* Movement points per turn (terrain, load, and crew dependent) */
+    long status;                    /* Operational status flags (loaded, moving, trading, damaged) */
+    uns_char crew;                  /* Crew manning percentage (0-100% of optimal crew levels) */
+    uns_char people;                /* Civilian passengers carried per wagon capacity */
+    uns_char supply;                /* Food supplies per crew member (days of provisions available) */
+    itemtype mtrls[MTRLS_NUMBER];   /* Materials cargo by type (trade goods, resources, equipment) */
+    struct s_caravan *next;         /* Linked list: next caravan in nation's trade roster */
 } CVN_STRUCT, *CVN_PTR;
 
-/* City Structure */
+/*
+ * struct s_city - Urban settlement data structure
+ *
+ * Represents a major urban settlement or city within a nation, containing
+ * population, resources, economic distribution systems, and defensive
+ * fortifications. Cities serve as economic centers, military command posts,
+ * and resource distribution hubs for surrounding territories.
+ *
+ * Usage Patterns:
+ *   - Economic resource distribution and trade management
+ *   - Population centers for recruitment and civilian growth
+ *   - Military command and control coordination
+ *   - Fortified defensive positions during warfare
+ *   - Resource storage and processing facilities
+ *
+ * Relationships:
+ *   - Located on specific map sectors (usually developed urban areas)
+ *   - Owned by nations (managed through nation city lists)
+ *   - Connected to economic production and resource flows
+ *   - Serves as command centers for naval and caravan operations
+ *   - Integrates with national material distribution networks
+ *
+ * Fields:
+ *   xloc, yloc - Map coordinates where city is established
+ *   name - Human-readable city name for identification and display
+ *   cityid - Unique internal identifier for this city across game
+ *   i_people - Initial civilian population when city was founded
+ *   efficiency - Urban development efficiency (0-100%, affects productivity)
+ *   weight - Economic distribution priority weight for resource allocation
+ *   c_mtrls[] - Current materials stockpiled in city warehouses
+ *   i_mtrls[] - Distribution materials for automatic resource management
+ *   s_talons - Starting economic wealth (talons) available in city treasury
+ *   m_mtrls[] - Minimum materials to maintain in city reserves
+ *   auto_flags[] - Automatic distribution settings per material type
+ *   cmd_flag - Command and control flags for naval/caravan coordination
+ *   fortress - Defensive fortification level (affects combat protection)
+ *   next - Linked list pointer to next city in nation's urban roster
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to city lists
+ *   - Material arrays use fixed sizes based on MTRLS_NUMBER constant
+ *   - Name strings require null termination and length validation
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Resource distribution requires atomic updates across multiple arrays
+ *   - Economic calculations need coordination to prevent inconsistencies
+ *   - Command operations require synchronized access to prevent conflicts
+ *
+ * Performance Notes:
+ *   - Resource distribution calculations iterate across material arrays
+ *   - Economic weight affects priority in national resource allocation
+ *   - Fortress calculations impact combat performance for defending forces
+ *   - Command coordination affects efficiency of naval/caravan operations
+ */
 typedef struct s_city {
-  maptype xloc, yloc;	/* location of the city		*/
-  char name[NAMELTH+1];	/* name	of the city		*/
-  uns_short cityid;	/* internal identification	*/
-  short i_people;	/* initial civilians in sector	*/
-  uns_char efficiency;	/* the efficiency of the region	*/
-  uns_char weight;	/* distribution value of a city	*/
-  itemtype c_mtrls[MTRLS_NUMBER];	/* materials	*/
-  itemtype i_mtrls[MTRLS_NUMBER];	/* dist mtrls	*/
-  itemtype s_talons;	/* starting talons in city	*/
-  itemtype m_mtrls[MTRLS_NUMBER];	/* min keep	*/
-  long auto_flags[MTRLS_NUMBER];	/* dist info	*/
-  long cmd_flag;	/* navy/cvn command information	*/
-  uns_char fortress;	/* fortification value of city	*/
-  struct s_city *next;	/* next city storage structure	*/
+    maptype xloc, yloc;                 /* Map coordinates where city is established */
+    char name[NAMELTH+1];               /* Human-readable city name (null-terminated string) */
+    uns_short cityid;                   /* Unique internal identifier across entire game */
+    short i_people;                     /* Initial civilian population at city founding */
+    uns_char efficiency;                /* Urban development efficiency (0-100%, affects productivity) */
+    uns_char weight;                    /* Economic distribution priority weight for resource allocation */
+    itemtype c_mtrls[MTRLS_NUMBER];     /* Current materials stockpiled in city warehouses */
+    itemtype i_mtrls[MTRLS_NUMBER];     /* Distribution materials for automatic resource management */
+    itemtype s_talons;                  /* Starting economic wealth (talons) in city treasury */
+    itemtype m_mtrls[MTRLS_NUMBER];     /* Minimum materials to maintain in city reserves */
+    long auto_flags[MTRLS_NUMBER];      /* Automatic distribution settings per material type */
+    long cmd_flag;                      /* Command/control flags for naval and caravan coordination */
+    uns_char fortress;                  /* Defensive fortification level (affects combat protection) */
+    struct s_city *next;                /* Linked list: next city in nation's urban roster */
 } CITY_STRUCT, *CITY_PTR;
 
-/* Item Structure */
+/*
+ * struct s_item - Construction and trade item data structure
+ *
+ * Represents items that can be constructed, purchased, or traded within the
+ * game world. Items include military units, infrastructure projects, trade
+ * goods, and special constructions that require materials and workforce to
+ * complete. They serve as the foundation for economic development and military
+ * expansion.
+ *
+ * Usage Patterns:
+ *   - Construction projects for cities and infrastructure
+ *   - Military unit recruitment and equipment manufacturing
+ *   - Trade goods production and commercial transactions
+ *   - Resource transformation and value-added production
+ *   - Special projects requiring coordinated resource investment
+ *
+ * Relationships:
+ *   - Located on specific map sectors for construction/production
+ *   - Owned by nations (managed through nation item lists)
+ *   - Connected to armies, navies, or caravans for unit construction
+ *   - Requires materials from national stockpiles for completion
+ *   - Affects sector development and economic productivity
+ *
+ * Fields:
+ *   xloc, yloc - Map coordinates where item construction/production occurs
+ *   itemid - Unique identifier for this item across entire game
+ *   type - Item classification (construction, military, trade, infrastructure)
+ *   iteminfo - Detailed information about item specifications and progress
+ *   menforjob - Workforce required to complete item construction/production
+ *   armyid - Army unit ID if item is military unit construction (0 if N/A)
+ *   navyid - Navy unit ID if item is naval unit construction (0 if N/A)
+ *   cvnid - Caravan unit ID if item is trade unit construction (0 if N/A)
+ *   mtrls[] - Raw materials required for item completion
+ *   next - Linked list pointer to next item in nation's production queue
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to item lists
+ *   - Material arrays use fixed sizes based on MTRLS_NUMBER constant
+ *   - Cleanup needed when items are completed or cancelled
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Construction progress requires atomic updates to prevent corruption
+ *   - Material consumption needs coordination with nation stockpiles
+ *   - Unit creation requires synchronized access to military rosters
+ *
+ * Performance Notes:
+ *   - Production calculations iterate across material requirements
+ *   - Workforce allocation affects completion time and efficiency
+ *   - Economic impact calculations consider resource investment costs
+ *   - Unit construction affects national military and economic capacity
+ */
 typedef struct s_item {
-  maptype xloc, yloc;	/* location of the item		*/
-  idtype itemid;	/* unique identifier of item	*/
-  unsigned char type;	/* the task of this item	*/
-  long iteminfo;	/* information about item use	*/
-  long menforjob;	/* the number of men needed	*/
-  idtype armyid;	/* army id (sale or construct)	*/
-  idtype navyid;	/* navy id (sale or construct)	*/
-  idtype cvnid;		/* caravan id (for sale)	*/
-  itemtype mtrls[MTRLS_NUMBER];	/* the raw materials	*/
-  struct s_item *next;	/* pointer to next item struct	*/
+    maptype xloc, yloc;             /* Map coordinates where item construction/production occurs */
+    idtype itemid;                  /* Unique identifier for this item across entire game */
+    unsigned char type;             /* Item classification (construction, military, trade, infrastructure) */
+    long iteminfo;                  /* Detailed specifications, progress, and configuration data */
+    long menforjob;                 /* Workforce required to complete item construction/production */
+    idtype armyid;                  /* Army unit ID for military construction (0 if not applicable) */
+    idtype navyid;                  /* Navy unit ID for naval construction (0 if not applicable) */
+    idtype cvnid;                   /* Caravan unit ID for trade construction (0 if not applicable) */
+    itemtype mtrls[MTRLS_NUMBER];   /* Raw materials required for item completion */
+    struct s_item *next;            /* Linked list: next item in nation's production queue */
 } ITEM_STRUCT, *ITEM_PTR;
 
-/* Automatic Unit Numbering */
+/*
+ * struct s_unitnum - Automatic unit numbering system
+ *
+ * Provides automatic numbering schemes for various game entities to ensure
+ * unique identifiers and organized unit designation. This system maintains
+ * consistent numbering across different unit types, classes, and categories
+ * to support efficient identification and management of game objects.
+ *
+ * Usage Patterns:
+ *   - Automatic ID assignment for newly created units
+ *   - Consistent numbering schemes across unit types
+ *   - Organizational numbering for military formations
+ *   - Sequential identifier generation for various game entities
+ *   - Customizable numbering systems per nation or unit class
+ *
+ * Relationships:
+ *   - Used by nations for unit creation and identification
+ *   - Applies to armies, navies, caravans, cities, and other entities
+ *   - Supports multiple numbering schemes per nation
+ *   - Integrates with unit creation and management systems
+ *
+ * Fields:
+ *   number - Current number in sequence (next number to assign)
+ *   ident - Identifier of the unit class, type, or category being numbered
+ *   type - Classification of the numbering scheme (unit type, purpose)
+ *   next - Linked list pointer to next numbering scheme in chain
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Small structures with minimal memory overhead
+ *   - Cleanup needed when numbering schemes are removed
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Number assignment requires atomic increment operations
+ *   - Scheme modification needs coordination to prevent conflicts
+ *
+ * Performance Notes:
+ *   - Fast sequential number generation for unit creation
+ *   - Minimal memory footprint for numbering state
+ *   - Efficient linked list traversal for scheme lookup
+ */
 typedef struct s_unitnum {
-  int number;			/* number to start from */
-  int ident;			/* identifier of the class/unit/etc. */
-  int type;			/* type of the numeric */
-  struct s_unitnum *next;	/* to next element in chain */
+    int number;                 /* Current number in sequence (next number to assign) */
+    int ident;                  /* Identifier of unit class, type, or category being numbered */
+    int type;                   /* Classification of numbering scheme (unit type, purpose) */
+    struct s_unitnum *next;     /* Linked list: next numbering scheme in chain */
 } UNITNUM, *UNUM_PTR;
 
 /* Mapping Structure */
