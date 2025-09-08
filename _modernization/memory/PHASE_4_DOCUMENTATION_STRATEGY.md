@@ -115,7 +115,7 @@ Platform-specific and legacy code:
 Utility programs in Auxil/ and Docs/ directories:
 
 65. ✅ **Auxil/onavy.c** - Naval cargo management utility (3 functions) - **COMPLETED!**
-66. **Auxil/psmap.c** - PostScript map generation utility
+66. ✅ **Auxil/psmap.c** - PostScript map generation utility (8 functions) - **COMPLETED!**
 67. **Auxil/sort.c** - Sorting utility program
 68. ✅ **Docs/ezconv.c** - Documentation conversion utility (1 function) - **COMPLETED!**
 
@@ -316,7 +316,7 @@ Include/ directory header files (~40 files):
 - **Docs/ Directory**: 1 C file (ezconv.c)  
 - **Include/ Directory**: 40+ header files (.h files)
 - **REVISED TOTAL**: ~108 files need documentation (Src/ + Auxil/ + Docs/ + Include/)
-- **ACTUAL PROGRESS**: 66/108 files complete (~61.1% done)
+- **ACTUAL PROGRESS**: 67/108 files complete (~62.0% done)
 **Src/ Directory**: ALL FILES COMPLETE! 🚀
 
 ### ntninfoG.c COMPLETE! 📍
