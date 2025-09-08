@@ -14,6 +14,58 @@
 /* syntax */
 char *usage = "Usage: %s [infile [outfile]]\n";
 
+/*
+ * main - Text conversion utility for document formatting
+ *
+ * This is a quick conversion program that processes text files to handle
+ * special formatting sequences. It primarily converts page break indicators
+ * (^L sequences) into actual form feed characters and manages newline
+ * consolidation to clean up document formatting.
+ *
+ * The program reads from stdin or a specified input file and writes to
+ * stdout or a specified output file. It processes characters sequentially,
+ * looking for special formatting sequences and converting them appropriately.
+ *
+ * Parameters:
+ *   argc - Number of command line arguments (0-2 additional args expected)
+ *   argv - Array of argument strings:
+ *          argv[0] - Program name
+ *          argv[1] - Input filename (optional, defaults to stdin)
+ *          argv[2] - Output filename (optional, defaults to stdout)
+ *
+ * Returns:
+ *   Always exits with status 0 on success, 1 on error
+ *   Does not return to caller (calls exit() directly)
+ *
+ * Side Effects:
+ *   - Opens and reads from input file or stdin
+ *   - Opens and writes to output file or stdout
+ *   - Closes files before exit
+ *   - Prints error messages to stderr on file open failures
+ *   - Exits program with appropriate status code
+ *
+ * Processing Logic:
+ *   - Converts "^L" at line start to form feed character (\014)
+ *   - Consolidates multiple consecutive newlines
+ *   - Preserves other text characters unchanged
+ *   - Handles EOF conditions properly
+ *
+ * Input Format:
+ *   - Plain text with optional formatting sequences
+ *   - "^L" at beginning of line indicates page break
+ *   - Regular text and newlines processed normally
+ *
+ * Output Format:
+ *   - Clean text with form feed characters for page breaks
+ *   - Normalized newline sequences
+ *   - Suitable for printing or further document processing
+ *
+ * Notes:
+ *   - Written as a "quicky conversion program" by Adam Bryant
+ *   - Uses K&R style function definition (legacy code)
+ *   - Limited error handling (exits on file open failure)
+ *   - No validation of file permissions or disk space
+ */
 main(argc,argv)
   int argc;
   char *argv[];
