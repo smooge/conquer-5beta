@@ -114,7 +114,49 @@ extern int fclose();
 extern void exit();
 extern char *malloc();
 
-/* the whole enchaladas */
+/*
+ * main - Conquer-specific sorting utility with duplicate detection
+ *
+ * A custom replacement for Unix 'sort' written specifically for the Conquer
+ * game system. Provides in-memory sorting with configurable comparison length,
+ * case-insensitive mode, and special duplicate line handling with repetition
+ * counting. Designed for processing game log files and data exports.
+ *
+ * Command Line Usage:
+ *   conqsort [-num] [-i] [-h] [infile] [outfile]
+ *   Examples:
+ *     cat foo | conqsort > foonew        # stdin to stdout
+ *     conqsort foo > foonew              # file to stdout  
+ *     conqsort foo foonew                # file to file
+ *     conqsort foo foo                   # in-place sorting
+ *
+ * Parameters:
+ *   argc - Command line argument count
+ *   argv - Command line argument array
+ *          -num: Sort on first 'num' characters (default: 2)
+ *          -i: Case-insensitive comparison (fold upper/lowercase)
+ *          -h: Display help and exit
+ *
+ * Returns:
+ *   EX_OK (0) on successful completion
+ *   EX_USAGE (64) on invalid command line format
+ *   EX_NOINPUT (66) if input file cannot be opened
+ *   EX_CANTCREAT (73) if output file cannot be created
+ *   EX_SOFTWARE (70) on memory allocation failure
+ *
+ * Side Effects:
+ *   - Reads entire input file into memory using linked list
+ *   - Opens input/output files as specified or uses stdin/stdout
+ *   - Allocates dynamic memory for each line (freed on exit)
+ *   - Modifies global variables: compnum, iflag, infile, outfile
+ *
+ * Notes:
+ *   - Uses insertion sort algorithm for in-memory line sorting
+ *   - Special handling for lines starting with '5' (no duplicate detection)
+ *   - Filters input to printable characters, spaces, and tabs only
+ *   - Memory efficient: only allocates space needed for each line
+ *   - Processes files of any size (limited only by available memory)
+ */
 int
 main(argc, argv)
   int argc;
@@ -243,7 +285,41 @@ main(argc, argv)
   return(0);
 }
 
-/* routine to read all characters in until carriage returns */
+/*
+ * get_line - Read and filter one line from input with character validation
+ *
+ * Reads characters from the global input file stream until newline or EOF,
+ * filtering input to only include printable characters, spaces, and tabs.
+ * Provides bounds checking to prevent buffer overflow and handles line
+ * truncation for exceptionally long lines.
+ *
+ * Input Processing:
+ *   - Accepts: spaces, tabs, printable ASCII characters (0x20-0x7E)
+ *   - Rejects: control characters, extended ASCII, non-printable characters
+ *   - Truncates: lines longer than MAX_STR-1 characters (199 chars + null)
+ *   - Terminates: strings with null terminator for safe string handling
+ *
+ * Parameters:
+ *   data - Character buffer to store the filtered line (must be MAX_STR size)
+ *          Buffer will be null-terminated regardless of input length
+ *
+ * Returns:
+ *   Number of valid characters stored in data buffer (0 to MAX_STR-1)
+ *   0 for empty lines or lines with no valid characters
+ *   Does not include the null terminator in the count
+ *
+ * Side Effects:
+ *   - Advances global infile stream position to next line
+ *   - Modifies data buffer with filtered line content
+ *   - Discards characters beyond MAX_STR-1 limit
+ *   - Skips invalid characters without error reporting
+ *
+ * Notes:
+ *   - Used by main processing loop to read game data files
+ *   - Character filtering ensures consistent data format for sorting
+ *   - Buffer overflow protection prevents memory corruption
+ *   - Compatible with various text file formats and encodings
+ */
 int
 get_line(data)
   char data[];
@@ -267,7 +343,44 @@ get_line(data)
   return(in);
 }
 
-/* routine to output entire sorted file to outfile */
+/*
+ * send_out - Output sorted lines with duplicate detection and compression
+ *
+ * Traverses the sorted linked list and outputs lines to the global output file,
+ * with special processing for duplicate lines. Consecutive identical lines are
+ * compressed into a single line followed by a repetition count message, except
+ * for lines beginning with '5' which are always output individually.
+ *
+ * Duplicate Detection Algorithm:
+ *   - Compares each line with the previous line using strcmp()
+ *   - Counts consecutive duplicates and outputs summary message
+ *   - Special case: lines starting with '5' bypass duplicate detection
+ *   - Format: "Last message repeated N more time(s)." (grammatically correct)
+ *
+ * Output Format:
+ *   Normal lines: output as-is with newline
+ *   Duplicate summary: "prefix\t\tLast message repeated N more time(s)."
+ *   Where prefix is truncated to compnum characters for alignment
+ *
+ * Parameters:
+ *   None (operates on global head pointer and outfile stream)
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Writes formatted output to global outfile stream
+ *   - Traverses and effectively consumes the linked list data
+ *   - Uses printf formatting for duplicate count messages
+ *   - Memory remains allocated (cleanup handled by program exit)
+ *
+ * Notes:
+ *   - Assumes sorted linked list exists (head != NULL)
+ *   - Duplicate detection based on full line comparison, not just sort key
+ *   - Lines starting with '5' likely represent special game events
+ *   - Tab formatting aligns duplicate messages with sorted data
+ *   - Grammatical correctness: "1 more time" vs "N more times"
+ */
 void
 send_out()
 {
@@ -296,10 +409,43 @@ send_out()
   }
 }
 
-/* routine to sort list as it comes in */
+/*
+ * place - Insert line into sorted linked list using insertion sort algorithm
+ *
+ * Maintains a sorted linked list by inserting each new line in its proper
+ * position based on the custom comparison function. Uses insertion sort
+ * algorithm with optimizations for common cases (empty list, insert at head).
+ * The sorting order is determined by the first 'compnum' characters of each line.
+ *
+ * Insertion Algorithm:
+ *   1. Empty list: Create first node as head
+ *   2. Insert at head: New line sorts before current head
+ *   3. Insert in middle/end: Find proper position and insert
+ *   Uses comp_line() function for character-by-character comparison
+ *
+ * Parameters:
+ *   data - Null-terminated string containing the line to insert
+ *          Must be valid string (handled by get_line() filtering)
+ *          Length determined dynamically for memory allocation
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Modifies global head pointer to maintain sorted list
+ *   - Allocates memory for new node via build_node()
+ *   - Updates next pointers to maintain list structure
+ *   - Maintains sort order throughout the insertion process
+ *
+ * Notes:
+ *   - Uses insertion sort: O(n) for each insertion, O(n²) overall
+ *   - Efficient for small to medium datasets typical in game files
+ *   - Memory allocated per node, allowing variable line lengths
+ *   - List remains sorted after each insertion for immediate output
+ *   - Depends on comp_line() for comparison logic and sorting criteria
+ */
 void
 place(data)
-
   char data[];
 {
   L_PTR temp, build_node();
@@ -323,11 +469,41 @@ place(data)
   }
 }
 
-/* routine to compare two lines through N characters */
-/* where N is given by the variable compnum          */
-/*    returns:  0 on equal                           */
-/*             -1 on a preceding b                   */
-/*              1 on a following b                   */
+/*
+ * comp_line - Compare two strings for sorting with configurable length and case handling
+ *
+ * Performs character-by-character comparison of two strings up to 'compnum'
+ * characters, with optional case-insensitive mode controlled by global 'iflag'.
+ * Used by the insertion sort algorithm to determine proper ordering of lines
+ * in the sorted output. Handles variable-length strings safely.
+ *
+ * Comparison Logic:
+ *   - Compares up to 'compnum' characters (global variable)
+ *   - Case-sensitive mode: direct character comparison (a[i] vs b[i])
+ *   - Case-insensitive mode: UPPER() macro converts to uppercase first
+ *   - Early termination on null character encounter
+ *   - Standard lexicographic ordering (dictionary-style sorting)
+ *
+ * Parameters:
+ *   a - First string for comparison (null-terminated)
+ *   b - Second string for comparison (null-terminated)
+ *       Both strings must be valid (filtered by get_line())
+ *
+ * Returns:
+ *   -1 if string 'a' should precede string 'b' in sorted order
+ *    0 if strings are equal (within compnum characters)
+ *    1 if string 'a' should follow string 'b' in sorted order
+ *
+ * Side Effects:
+ *   None (pure comparison function, no global state modification)
+ *
+ * Notes:
+ *   - Uses global 'compnum' variable for comparison length limit
+ *   - Uses global 'iflag' variable for case-insensitive mode control
+ *   - UPPER() macro handles case conversion safely for ASCII characters
+ *   - Stops at null terminator even if compnum not reached
+ *   - Essential for maintaining proper sort order in linked list
+ */
 int
 comp_line(a, b)
   char *a, *b;
@@ -348,8 +524,43 @@ comp_line(a, b)
   return(0);
 }
 
-/* create L_DATA structure containing a line of data */
-/* and the next value set to the given location      */
+/*
+ * build_node - Create and initialize linked list node with dynamic memory allocation
+ *
+ * Allocates memory for a new linked list node containing a copy of the input
+ * string data. Performs dynamic memory allocation for both the node structure
+ * and the string data, allowing efficient storage of variable-length lines.
+ * Handles memory allocation failures with proper error reporting and program exit.
+ *
+ * Memory Allocation:
+ *   - Node structure: sizeof(L_DATA) bytes for the node itself
+ *   - String data: strlen(data) + 1 bytes for null-terminated string copy
+ *   - Dynamic sizing: each line uses only the memory it needs
+ *   - Error handling: exits program if allocation fails
+ *
+ * Parameters:
+ *   data - Null-terminated string to store in the new node
+ *          Must be valid string (typically from get_line())
+ *          String is copied, original data can be reused
+ *   nptr - Pointer to next node in linked list (may be NULL)
+ *          Allows insertion at any position in the list
+ *
+ * Returns:
+ *   L_PTR pointing to newly allocated and initialized node
+ *   Never returns NULL (program exits on allocation failure)
+ *
+ * Side Effects:
+ *   - Allocates dynamic memory that persists until program exit
+ *   - Exits program with EX_SOFTWARE on allocation failure
+ *   - Prints error message to stderr before exit
+ *   - Copies string data using strcpy()
+ *
+ * Notes:
+ *   - Memory is not freed during program execution (cleanup on exit)
+ *   - Essential for building the sorted linked list structure
+ *   - Uses system malloc() for memory allocation
+ *   - Error messages indicate specific allocation failure type
+ */
 L_PTR
 build_node(data, nptr)
   char data[];
