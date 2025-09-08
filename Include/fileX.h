@@ -398,216 +398,146 @@ extern DMODE_PTR crt_dmode PL_(( char * dmodename ));
 /* CRT_ITEM -- Add a new item to the nation list */
 extern ITEM_PTR crt_item PL_(( void ));
 
-/* CRT_NAVY -- Add a new navy to the nation list */
-extern NAVY_PTR crt_navy PL_(( void ));
-
-/* CRT_NTN -- Initialize a new nation into the world */
-extern NTN_PTR crt_ntn PL_(( char * ntnname, int actval ));
-
-/* CVN_SORT() -- Resort caravan list into ascending order */
-extern void cvn_sort PL_(( void ));
-
-/* DEST_ARMY -- Remove an army unit from the army list */
-extern void dest_army PL_(( int idnum ));
-
-/* DEST_CITY -- Remove a city from the national city list */
-extern void dest_city PL_(( char * cname ));
-
-/* DEST_CVN -- Remove a caravan from the caravan list */
-extern void dest_cvn PL_(( int idnum ));
-
-/* DEST_ITEM -- Remove an item from the national commodity list */
-extern void dest_item PL_(( int idnum ));
-
-/* DEST_NAVY -- Remove a navy unit from the navy list */
-extern void dest_navy PL_(( int idnum ));
-
-/* DEST_NTN -- This routines frees up the memory associated with a
-                  nation structure.                                   */
-extern void dest_ntn PL_(( char * nname ));
-
-/* ITEM_SORT() -- Resort item list into ascending order */
-extern void item_sort PL_(( void ));
-
-/* M2ALLOC -- Allocate a two dimensional array of memory
-              nrows: number of rows, ncols: number of columns
-              entrysize: number of bytes in a unit            */
-extern char ** m2alloc PL_(( int nrows, int ncols, int entrysize ));
-
-/* NAVY_SORT() -- Resort navy list into ascending order */
-extern void navy_sort PL_(( void ));
-
-/* NEW_ARMY -- Allocate space for a new army unit */
-extern ARMY_PTR new_army PL_(( void ));
-
-/* NEW_CITY -- Allocate space for a new city */
-extern CITY_PTR new_city PL_(( void ));
-
-/* NEW_CVN -- Allocate space for a new cvn unit */
-extern CVN_PTR new_cvn PL_(( void ));
-
-/* NEW_DMODE -- Allocate space for a new display entry */
-extern DMODE_PTR new_dmode PL_(( void ));
-
-/* NEW_ITEM -- Allocate space for a new item */
-extern ITEM_PTR new_item PL_(( void ));
-
-/* NEW_MAP -- Allocate space for a new unit mapping structure */
-extern MAP_PTR new_map PL_(( void ));
-
-/* NEW_MAPCHAR -- Allocate character memory the size of the world */
-extern char * new_mapchar PL_(( char * mem_ptr ));
-
-/* NEW_MAPLONG -- Allocate long integer memory the size of the world */
-extern long * new_maplong PL_(( long * mem_ptr ));
-
-/* NEW_MAPSHORT -- Allocate short integer memory the size of the world */
-extern short * new_mapshort PL_(( short * mem_ptr ));
-
-/* NEW_NAVY -- Allocate space for a new naval unit */
-extern NAVY_PTR new_navy PL_(( void ));
-
-/* NEW_NTN -- Allocate space for a new nation */
-extern NTN_PTR new_ntn PL_(( void ));
-
-/* NEW_UNUM -- Allocate space for a new unit numbering structure */
-extern UNUM_PTR new_unum PL_(( void ));
-
-/* NTN_SORT -- This routine places the nations in alphabetical order
-               and gets rid of any empty slots.                      */
-extern void ntn_sort PL_(( void ));
-
-/* UNUM_DEFAULTS -- Set the default values */
-extern void unum_defaults PL_(( void ));
-
-/* miscX.c: This file contains miscellaneous functions used in both programs */
-
-/* GIVE_SPELLCASTERS -- Generate spell casters for each nation */
-extern void give_spellcasters PL_(( void ));
-
-/* HL_TARGETS -- Does the highlight method need a target value */
-extern int hl_targets PL_(( int style ));
-
-/* MACH_TIME -- Return a pointer to a string containing the date */
-extern char * mach_time PL_(( void ));
-
-/* MARKOK -- Is the nation mark valid?  If so, return TRUE */
-extern int markok PL_(( int mark, int racetype, int showwhy ));
-
-/* NRAND_SEED -- Set the storage value for the nrand_val() function */
-extern void nrand_seed PL_(( void ));
-
-/* NRAND_VAL -- Adjusted random value to gain the same results each time */
-extern long nrand_val PL_(( long limit, long adj ));
-
-/* NUM_BITS_ON -- Return the number of active bits in the given long */
-extern int num_bits_on PL_(( long lng_list ));
-
-/* RAND_SEED -- Seed the random number generator */
-extern void rand_seed PL_(( void ));
-
-/* RAND_TGOOD -- Select a random tradegood of given class of > min value */
-extern int rand_tgood PL_(( int tg_class, int minval ));
-
-/* RAND_VAL -- This routine is used for generating a random number
-               from 0 to N - 1.                                    */
-extern long rand_val PL_(( int limit ));
-
-/* STR_NTEST -- This function is basically a casefolding strncmp */
-extern int str_ntest PL_(( char * s1, char * s2, int num ));
-
-/* STR_TEST -- This function is basically a casefolding strcmp */
-extern int str_test PL_(( char * s1, char * s2 ));
-
-/* moveX.c: routines concerning the relocation of units between sectors */
-
-/* MOVE_COST -- Routine to calculate the move cost for a specified unit type */
-extern int move_cost PL_(( int x, int y, int type ));
-
-/* SET_MOVEPOTENTIAL -- Set the movement potential for a unit */
-extern void set_movepotential PL_(( int type ));
-
-/* sectorX.c: Routines concerning sector adjustment and reading are in this file */
-
-/* DEFENSE_VAL -- Compute the defensive value for a sector */
-extern int defense_val PL_(( int x, int y ));
-
-/* DESG_OK -- Determine if the major designation is valid for the sector */
-extern int desg_ok PL_(( int x, int y, int dtype, int verbal ));
-
-/* DISTORT_VISION -- Distort numerical values based on vision of a sector */
-extern long distort_vision PL_(( int xval, int yval, long trueval, long distval ));
-
-/* EXPOSURE_VALUE -- The amount of exposure troops face in a sector */
-extern int exposure_value PL_(( NTN_PTR n1_ptr, SCT_PTR s1_ptr ));
-
-/* FIND_RESOURCES -- Build an item_struct holding all nearby resources */
-extern ITEM_PTR find_resources PL_(( int xloc, int yloc, int insect_only ));
-
-/* FORT_VAL -- Compute the fortification value of a sector */
-extern int fort_val PL_(( int x, int y ));
-
-/* GETJEWEL -- Assign value and type to a sector's jewels */
-extern void getjewel PL_(( SCT_PTR sptr ));
-
-/* GETMETAL -- Assign a metal value to a given sector */
-extern void getmetal PL_(( SCT_PTR sptr ));
-
-/* GETSPELL -- Assign magic spell enchantment sectors */
-extern void getspell PL_(( SCT_PTR sptr ));
-
-/* IS_HABITABLE -- Determine if a sector can be lived in */
-extern int is_habitable PL_(( int x, int y ));
-
-/* JEWEL_VALUE -- Return the value of the jewels in the sector */
-extern int jewel_value PL_(( SCT_PTR sptr ));
-
-/* MAGIC_VALUE -- Return the value of the spells in the sector */
-extern int magic_value PL_(( SCT_PTR sptr ));
-
-/* MAJDESG_COSTS -- Calculate the resource price to build a selection */
-extern ITEM_PTR majdesg_costs PL_(( int which, int x, int y, int verbal ));
-
-/* METAL_VALUE -- Return the value of the metals in the sector */
-extern int metal_value PL_(( SCT_PTR sptr ));
-
-/* MINDESG_COSTS -- Compute the cost for the minor designation */
-extern ITEM_PTR mindesg_costs PL_(( int which, int x, int y, int verbal ));
-
-/* MINDESG_OK -- Check if a minor designation is valid for a sector */
-extern int mindesg_ok PL_(( int x, int y, int mdtype, int verbal ));
-
-/* RAND_SECTOR -- Set the global int and global longs to a random locale */
-extern void rand_sector PL_(( int x, int y, int range, int nowater, int visionrand ));
-
-/* SCT_COST_ADJUST -- Adjustment due to what is in the sector */
-extern void sct_cost_adjust PL_(( int type, SCT_PTR s1_ptr, itemtype * expenses ));
-
-/* SECTOR_CONSUME -- Calculate all of the sector needs */
-extern void sector_consume PL_(( int xloc, int yloc, SHEET_PTR out_ptr ));
-
-/* SECTOR_PRODUCE -- Calculate all of the production ability */
-extern void sector_produce PL_(( int xloc, int yloc, SHEET_PTR out_ptr ));
-
-/* SEND_RESOURCES -- Redistribute materials to nearby supply centers */
-extern int send_resources PL_(( int xloc, int yloc, ITEM_PTR give_ptr, int insect ));
-
-/* S_USELEVEL -- Usage level of the sector within it's discipline */
-extern int s_uselevel PL_(( SCT_PTR s1_ptr ));
-
-/* TAKE_RESOURCES -- Remove resources from neighoring areas */
-extern int take_resources PL_(( int xloc, int yloc, ITEM_PTR take_ptr, int insect ));
-
-/* TG_OK -- TRUE if a trade good can be seen by the given nation */
-extern int tg_ok PL_(( SCT_PTR sptr, int nation ));
-
-/* TOFOOD -- Compute the food value of a sector */
-extern int tofood PL_(( SCT_PTR sptr, int cntry ));
-
-/* TOWOOD -- Compute the lumber value of a sector */
-extern int towood PL_(( SCT_PTR sptr, int cntry ));
-
-/* selectX.c: This file provides quick reference to data structures */
+/* Entity creation and initialization functions */
+extern NAVY_PTR crt_navy PL_(( void )); /* Add a new navy to the nation list */
+extern NTN_PTR crt_ntn PL_(( char * ntnname, int actval )); /* Initialize a new nation into the world */
+
+/* Entity destruction and cleanup functions */
+extern void dest_army PL_(( int idnum )); /* Remove an army unit from the army list */
+extern void dest_city PL_(( char * cname )); /* Remove a city from the national city list */
+extern void dest_cvn PL_(( int idnum )); /* Remove a caravan from the caravan list */
+extern void dest_item PL_(( int idnum )); /* Remove an item from the national commodity list */
+extern void dest_navy PL_(( int idnum )); /* Remove a navy unit from the navy list */
+extern void dest_ntn PL_(( char * nname )); /* Free memory associated with a nation structure */
+
+/* Memory allocation functions for game entities */
+extern ARMY_PTR new_army PL_(( void )); /* Allocate space for a new army unit */
+extern CITY_PTR new_city PL_(( void )); /* Allocate space for a new city */
+extern CVN_PTR new_cvn PL_(( void )); /* Allocate space for a new caravan unit */
+extern DMODE_PTR new_dmode PL_(( void )); /* Allocate space for a new display entry */
+extern ITEM_PTR new_item PL_(( void )); /* Allocate space for a new item */
+extern MAP_PTR new_map PL_(( void )); /* Allocate space for a new unit mapping structure */
+extern NAVY_PTR new_navy PL_(( void )); /* Allocate space for a new naval unit */
+extern NTN_PTR new_ntn PL_(( void )); /* Allocate space for a new nation */
+extern UNUM_PTR new_unum PL_(( void )); /* Allocate space for a new unit numbering structure */
+
+/* World-size memory allocation functions */
+extern char * new_mapchar PL_(( char * mem_ptr )); /* Allocate character memory the size of the world */
+extern long * new_maplong PL_(( long * mem_ptr )); /* Allocate long integer memory the size of the world */
+extern short * new_mapshort PL_(( short * mem_ptr )); /* Allocate short integer memory the size of the world */
+
+/* Multi-dimensional memory allocation utilities */
+extern char ** m2alloc PL_(( int nrows, int ncols, int entrysize )); /* Allocate a two dimensional array of memory */
+
+/* Data structure sorting and organization functions */
+extern void cvn_sort PL_(( void )); /* Resort caravan list into ascending order */
+extern void item_sort PL_(( void )); /* Resort item list into ascending order */
+extern void navy_sort PL_(( void )); /* Resort navy list into ascending order */
+extern void ntn_sort PL_(( void )); /* Place nations in alphabetical order and remove empty slots */
+
+/* Unit numbering system functions */
+extern void unum_defaults PL_(( void )); /* Set the default values for unit numbering */
+
+/* ============================================================================
+ * MISCELLANEOUS UTILITIES - miscX.c
+ * ============================================================================
+ * Purpose: General utility functions used in both programs
+ * Usage: Time functions, validation, random number generation, string comparison
+ * Notes: Shared utility functions for cross-program functionality (12 functions total)
+ */
+
+/* Game initialization and spell generation */
+extern void give_spellcasters PL_(( void )); /* Generate spell casters for each nation */
+
+/* Display and interface utilities */
+extern int hl_targets PL_(( int style )); /* Check if highlight method needs a target value */
+extern char * mach_time PL_(( void )); /* Return a pointer to a string containing the date */
+
+/* Data validation functions */
+extern int markok PL_(( int mark, int racetype, int showwhy )); /* Validate nation mark for race type */
+
+/* Random number generation system */
+extern void nrand_seed PL_(( void )); /* Set the storage value for the nrand_val() function */
+extern long nrand_val PL_(( long limit, long adj )); /* Adjusted random value for reproducible results */
+extern void rand_seed PL_(( void )); /* Seed the random number generator */
+extern long rand_val PL_(( int limit )); /* Generate random number from 0 to N-1 */
+extern int rand_tgood PL_(( int tg_class, int minval )); /* Select random tradegood of given class and minimum value */
+
+/* Bitwise operations and utility functions */
+extern int num_bits_on PL_(( long lng_list )); /* Return the number of active bits in the given long */
+
+/* String comparison utilities */
+extern int str_ntest PL_(( char * s1, char * s2, int num )); /* Case-insensitive strncmp function */
+extern int str_test PL_(( char * s1, char * s2 )); /* Case-insensitive strcmp function */
+
+/* ============================================================================
+ * UNIT MOVEMENT CALCULATIONS - moveX.c
+ * ============================================================================
+ * Purpose: Unit movement cost calculations and mobility management
+ * Usage: Movement validation, cost computation, mobility potential setting
+ * Notes: Essential movement mechanics for all unit types (3 functions total)
+ */
+
+extern int move_cost PL_(( int x, int y, int type )); /* Calculate movement cost for specified unit type */
+extern void set_movepotential PL_(( int type )); /* Set the movement potential for a unit */
+
+/* ============================================================================
+ * SECTOR MANAGEMENT AND CALCULATIONS - sectorX.c
+ * ============================================================================
+ * Purpose: Sector analysis, resource management, and terrain calculations
+ * Usage: Combat calculations, resource distribution, sector modification
+ * Notes: Core world map sector functionality (30+ functions total)
+ */
+
+/* Combat and defensive calculations */
+extern int defense_val PL_(( int x, int y )); /* Compute the defensive value for a sector */
+extern int exposure_value PL_(( NTN_PTR n1_ptr, SCT_PTR s1_ptr )); /* Amount of exposure troops face in a sector */
+extern int fort_val PL_(( int x, int y )); /* Compute the fortification value of a sector */
+
+/* Sector designation and validation */
+extern int desg_ok PL_(( int x, int y, int dtype, int verbal )); /* Determine if major designation is valid for sector */
+extern int is_habitable PL_(( int x, int y )); /* Determine if a sector can be lived in */
+extern int mindesg_ok PL_(( int x, int y, int mdtype, int verbal )); /* Check if minor designation is valid for sector */
+
+/* Vision and information distortion */
+extern long distort_vision PL_(( int xval, int yval, long trueval, long distval )); /* Distort numerical values based on vision */
+extern int tg_ok PL_(( SCT_PTR sptr, int nation )); /* Check if trade good can be seen by given nation */
+
+/* Resource generation and assignment */
+extern void getjewel PL_(( SCT_PTR sptr )); /* Assign value and type to a sector's jewels */
+extern void getmetal PL_(( SCT_PTR sptr )); /* Assign a metal value to a given sector */
+extern void getspell PL_(( SCT_PTR sptr )); /* Assign magic spell enchantment to sectors */
+
+/* Resource valuation functions */
+extern int jewel_value PL_(( SCT_PTR sptr )); /* Return the value of the jewels in the sector */
+extern int magic_value PL_(( SCT_PTR sptr )); /* Return the value of the spells in the sector */
+extern int metal_value PL_(( SCT_PTR sptr )); /* Return the value of the metals in the sector */
+extern int tofood PL_(( SCT_PTR sptr, int cntry )); /* Compute the food value of a sector */
+extern int towood PL_(( SCT_PTR sptr, int cntry )); /* Compute the lumber value of a sector */
+
+/* Designation cost calculations */
+extern ITEM_PTR majdesg_costs PL_(( int which, int x, int y, int verbal )); /* Calculate resource price to build major designation */
+extern ITEM_PTR mindesg_costs PL_(( int which, int x, int y, int verbal )); /* Compute the cost for minor designation */
+
+/* Resource management and distribution */
+extern ITEM_PTR find_resources PL_(( int xloc, int yloc, int insect_only )); /* Build item_struct holding all nearby resources */
+extern void sector_consume PL_(( int xloc, int yloc, SHEET_PTR out_ptr )); /* Calculate all of the sector needs */
+extern void sector_produce PL_(( int xloc, int yloc, SHEET_PTR out_ptr )); /* Calculate all of the production ability */
+extern int send_resources PL_(( int xloc, int yloc, ITEM_PTR give_ptr, int insect )); /* Redistribute materials to nearby supply centers */
+extern int take_resources PL_(( int xloc, int yloc, ITEM_PTR take_ptr, int insect )); /* Remove resources from neighboring areas */
+
+/* Sector analysis and utility functions */
+extern void rand_sector PL_(( int x, int y, int range, int nowater, int visionrand )); /* Set global coordinates to random locale */
+extern void sct_cost_adjust PL_(( int type, SCT_PTR s1_ptr, itemtype * expenses )); /* Adjustment due to what is in the sector */
+extern int s_uselevel PL_(( SCT_PTR s1_ptr )); /* Usage level of the sector within its discipline */
+
+/* ============================================================================
+ * DATA STRUCTURE SELECTION - selectX.c
+ * ============================================================================
+ * Purpose: Quick reference and lookup functions for game data structures
+ * Usage: Entity retrieval by ID, name, or location; data structure navigation
+ * Notes: Essential lookup utilities for game object access (13 functions total)
+ */
 
 /* ARMYBYNUM -- Retrieve pointer to a given army number */
 extern ARMY_PTR armybynum PL_(( int idnum ));
