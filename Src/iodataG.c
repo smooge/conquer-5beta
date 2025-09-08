@@ -22,7 +22,34 @@
 #include "cityX.h"
 #include "worldX.h"
 
-/* CLOSE_NTN -- unset and close up nation information */
+/*
+ * close_ntn - Finalize and close nation session data
+ *
+ * Safely closes a nation's game session by properly saving state,
+ * releasing file locks, and cleaning up resources. Handles both
+ * regular nations and god mode with appropriate finalization.
+ *
+ * Parameters:
+ *   ntnnum - Nation number to close (UNOWNED for god mode)
+ *   realname - Real nation name for lock file cleanup
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Releases nation lock file
+ *   - Saves nation data to persistent storage
+ *   - Updates news and mail size tracking
+ *   - Adjusts capital city resources (talons) for non-monster nations
+ *   - Closes execution recording file
+ *   - Restores previous nation pointer state
+ *
+ * Notes:
+ *   - God mode (UNOWNED) triggers global state save
+ *   - Mail/news size adjustment handled through XADJNEWS/XADJMAIL macros
+ *   - Thread-safe through proper lock file management
+ *   - Critical for maintaining game state consistency
+ */
 void
 close_ntn PARM_2( int, ntnnum, char *, realname )
 {
@@ -82,7 +109,34 @@ close_ntn PARM_2( int, ntnnum, char *, realname )
   ntn_ptr = ntn_tptr;
 }
 
-/* OPEN_NTN -- initialize all nation information */
+/*
+ * open_ntn - Initialize and open nation session data
+ *
+ * Opens and initializes a nation's game session by setting up
+ * data structures, checking for concurrent access, loading
+ * nation state, and preparing file handles for the session.
+ *
+ * Parameters:
+ *   ntnnum - Nation number to open (UNOWNED for god mode)
+ *
+ * Returns:
+ *   TRUE if nation is already logged in (access denied)
+ *   FALSE if successfully opened and ready for play
+ *
+ * Side Effects:
+ *   - Sets up global nation pointers and names
+ *   - Creates lock file to prevent concurrent access
+ *   - Loads nation execution history through execute()
+ *   - Opens execution recording file for appending commands
+ *   - Initializes mail file path
+ *   - Resets saved sector markers
+ *
+ * Notes:
+ *   - God mode bypasses normal nation validation
+ *   - Lock file checking prevents multiple concurrent sessions
+ *   - Execution file logging enables command replay/debugging
+ *   - Critical for maintaining data integrity during concurrent play
+ */
 int
 open_ntn PARM_1( int, ntnnum )
 {
@@ -129,7 +183,34 @@ open_ntn PARM_1( int, ntnnum )
   return(FALSE);
 }
 
-/* FILES_CHECK -- Periodically check if various files need accessing */
+/*
+ * files_check - Periodic file system monitoring for game session
+ *
+ * Performs periodic checks on critical game files including logout
+ * blocking, system mail, news files, and mailboxes. Handles forced
+ * logout warnings and automatic session termination when required.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Checks block file for login restrictions
+ *   - Issues logout warnings with countdown timer
+ *   - Forces session termination when time limit reached
+ *   - Triggers system mail, news, and mailbox file checks
+ *   - Updates last check timestamp for timing control
+ *   - May set conquer_done flag to terminate session
+ *
+ * Notes:
+ *   - Called periodically during game loop (MAIL_TIME intervals)
+ *   - Respects nologouts flag to disable forced logout
+ *   - Warning system provides grace period before forced logout
+ *   - File check frequency controlled by MAIL_TIME constant
+ *   - Essential for system maintenance and fair resource usage
+ */
 void
 files_check PARM_0(void)
 {
@@ -171,7 +252,32 @@ files_check PARM_0(void)
   }
 }
 
-/* NEWS_CHECK -- Check if the news needs reading */
+/*
+ * news_check - Monitor news file for updates and size changes
+ *
+ * Checks the current turn's news file for size changes to determine
+ * if new news items have been added or if the file has been reset.
+ * Updates news status indicators and tracks file size for the
+ * current nation or global state.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Updates conq_news_status (STMAIL_NEW, STMAIL_NONE)
+ *   - Modifies news_size in nation structure or world state
+ *   - Handles both god mode and regular nation contexts
+ *
+ * Notes:
+ *   - News file name format: newsfile.NNN (turn-specific)
+ *   - File size increase triggers STMAIL_NEW status
+ *   - File size decrease or missing file triggers STMAIL_NONE
+ *   - Turn number calculated as TURN - START_TURN
+ *   - Supports both per-nation and global news tracking
+ */
 void
 news_check PARM_0(void)
 {
@@ -224,7 +330,32 @@ news_check PARM_0(void)
   }
 }
 
-/* MBOX_CHECK -- Check if the mail needs reading */
+/*
+ * mbox_check - Monitor mailbox file for message updates
+ *
+ * Checks the nation's mailbox file for size changes to detect new
+ * incoming messages or if the mailbox has been cleared. Updates
+ * mail status indicators and tracks file size for proper mail
+ * notification in the user interface.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Updates conq_mail_status (STMAIL_NEW, STMAIL_NONE)
+ *   - Modifies mbox_size in nation structure or world state
+ *   - Handles both god mode and regular nation contexts
+ *
+ * Notes:
+ *   - Uses conqmail global variable for mailbox file path
+ *   - File size increase indicates new mail (STMAIL_NEW)
+ *   - File size decrease or missing file indicates no mail (STMAIL_NONE)
+ *   - Parallel implementation to news_check for consistency
+ *   - Essential for real-time mail notification system
+ */
 void
 mbox_check PARM_0(void)
 {
@@ -274,7 +405,32 @@ mbox_check PARM_0(void)
   }
 }
 
-/* SYSM_CHECK -- Check if the system mail needs reading */
+/*
+ * sysm_check - Monitor system mailbox for administrator messages
+ *
+ * Checks the system mailbox (user's actual Unix/VMS mail) for new
+ * messages from system administrators. Tracks file size and access
+ * time to determine if new system mail has arrived that players
+ * should be notified about.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Updates sys_mail_status (STMAIL_NEW, STMAIL_NONE)
+ *   - Maintains static variables for size and access time tracking
+ *   - Only active when SYSMAIL is defined at compile time
+ *
+ * Notes:
+ *   - Conditionally compiled feature (requires SYSMAIL)
+ *   - Monitors actual system mail separate from game mail
+ *   - Uses both file size and access time for change detection
+ *   - File access time update indicates mail has been read
+ *   - Provides integration between game and system messaging
+ */
 void
 sysm_check PARM_0(void)
 {
@@ -308,7 +464,31 @@ sysm_check PARM_0(void)
 #endif /* SYSMAIL */
 }
 
-/* STMAIL_INIT -- Initialize the system mail checking setup */
+/*
+ * stmail_init - Initialize mail monitoring system
+ *
+ * Sets up the mail monitoring system by determining the system
+ * mailbox path and initializing mail status tracking for both
+ * system mail (if enabled) and game mail systems.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Sets up sysmail path from MAIL environment variable or SPOOLDIR
+ *   - Initializes mail status variables to STMAIL_NONE
+ *   - Performs initial system mail check when SYSMAIL enabled
+ *
+ * Notes:
+ *   - Uses MAIL environment variable if available, otherwise SPOOLDIR/USER
+ *   - SYSMAIL feature conditionally compiled
+ *   - Called once during session initialization
+ *   - Ensures all mail systems start in clean state
+ *   - Foundation for subsequent mail monitoring operations
+ */
 void
 stmail_init PARM_0(void)
 {
@@ -335,7 +515,37 @@ static int god_exe[ABSMAXNTN];
 static int init_exe = FALSE;
 static int god_enum = 0;
 
-/* GET_GOD -- Routine to query god as to what nation to become */
+/*
+ * get_god - Handle god mode nation switching interface
+ *
+ * Manages the god mode interface for switching between nations,
+ * including user prompts, nation validation, lock file management,
+ * and setting up the execution environment for the target nation.
+ * Supports both interactive selection and direct nation specification.
+ *
+ * Parameters:
+ *   natn - Target nation number (-1 for interactive selection)
+ *   nobrowse - TRUE to force full access, FALSE to allow browse mode
+ *
+ * Returns:
+ *   TRUE if operation failed or user chose to remain as god
+ *   FALSE if successfully switched to target nation
+ *
+ * Side Effects:
+ *   - Prompts user for nation selection in interactive mode
+ *   - Creates lock files for accessed nations
+ *   - Opens execution files for command recording
+ *   - Updates global nation pointers and browsing state
+ *   - Loads nation execution history
+ *   - Increments god enumeration counter
+ *
+ * Notes:
+ *   - Browse mode allows read-only access without locks
+ *   - Enforces limits on simultaneous nation access
+ *   - Maintains list of accessed nations for cleanup
+ *   - Critical for god mode multi-nation administration
+ *   - Thread-safe through lock file coordination
+ */
 int
 get_god PARM_2(int, natn, int, nobrowse)
 {
@@ -453,7 +663,32 @@ get_god PARM_2(int, natn, int, nobrowse)
   return(FALSE);
 }
 
-/* SAVE_GOD -- Go and get rid of god locks from his tramping around */
+/*
+ * save_god - Clean up all god mode nation locks
+ *
+ * Releases all lock files that were created during god mode
+ * nation switching operations. Essential cleanup function to
+ * prevent orphaned locks that would block future access to
+ * nations that god accessed during the session.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Releases all nation lock files tracked in god_exe array
+ *   - Removes lock files from filesystem
+ *   - Prevents orphaned locks from blocking future nation access
+ *
+ * Notes:
+ *   - Only acts if initialization has occurred (init_exe == TRUE)
+ *   - Iterates through all possible nations to clean up locks
+ *   - Critical for system resource management and fair access
+ *   - Called during god mode session termination
+ *   - Prevents deadlock situations from abandoned locks
+ */
 void
 save_god PARM_0(void)
 {
@@ -471,7 +706,34 @@ save_god PARM_0(void)
   }
 }
 
-/* RESET_GOD -- Restore settings of god */
+/*
+ * reset_god - Restore god mode after nation access
+ *
+ * Restores god mode state after accessing another nation,
+ * including closing nation-specific files and reopening
+ * god's execution file. Resets global state variables
+ * to god mode defaults.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void
+ *
+ * Side Effects:
+ *   - Closes current nation's execution file
+ *   - Reopens god's execution file for command recording
+ *   - Resets god_browsing flag to FALSE
+ *   - Sets country to UNOWNED (god mode)
+ *   - Clears nation pointer (ntn_ptr = NULL)
+ *
+ * Notes:
+ *   - Only closes execution file if not in browse mode
+ *   - God execution file format: "god.exe"
+ *   - Critical for maintaining proper file handles during nation switching
+ *   - Ensures god mode commands are properly recorded
+ *   - Part of god mode session management protocol
+ */
 void
 reset_god PARM_0(void)
 {
@@ -496,7 +758,31 @@ reset_god PARM_0(void)
   ntn_ptr = NULL;
 }
 
-/* ARETHEYON -- returns TRUE if 'country' is logged on, else FALSE */
+/*
+ * aretheyon - Check if current nation is already logged in
+ *
+ * Determines if the current nation (based on nationname global)
+ * is already logged into the system by checking for the existence
+ * of their lock file. Returns lock file descriptor or error code.
+ *
+ * Parameters:
+ *   void (uses global nationname variable)
+ *
+ * Returns:
+ *   File descriptor of lock file if nation is NOT logged in (access granted)
+ *   -1 if nation is already logged in (access denied)
+ *
+ * Side Effects:
+ *   - Constructs lock filename in global fison variable
+ *   - May create lock file if nation is not currently logged in
+ *
+ * Notes:
+ *   - Lock filename format: "nationname.ison"
+ *   - Uses check_lock() function for actual lock file management
+ *   - Critical for preventing multiple concurrent sessions
+ *   - Return value interpretation: success = positive fd, failure = -1
+ *   - Relies on global variables: nationname, fison, isontag
+ */
 int
 aretheyon PARM_0(void)
 {
@@ -505,7 +791,31 @@ aretheyon PARM_0(void)
   return( check_lock(fison, TRUE) );
 }
 
-/* BYE -- Clean up everything prior to exiting */
+/*
+ * bye - Clean shutdown and exit routine
+ *
+ * Performs clean shutdown of the game session by resetting
+ * the terminal/display state and exiting with success status.
+ * Provides user feedback about the quit operation.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   void (function never returns - calls exit())
+ *
+ * Side Effects:
+ *   - Calls cq_reset() to restore terminal state
+ *   - Outputs "quit & save" message to stderr
+ *   - Terminates program with SUCCESS exit code
+ *
+ * Notes:
+ *   - Terminal function - does not return to caller
+ *   - Assumes all game state has been saved by calling code
+ *   - Part of normal game shutdown sequence
+ *   - cq_reset() likely restores curses/terminal settings
+ *   - Message confirms user initiated clean shutdown
+ */
 void
 bye PARM_0(void)
 {
@@ -519,7 +829,33 @@ bye PARM_0(void)
 extern int getrlimit(int resource, struct rlimit *rlp);
 #endif /* SYSV4 */
 
-/* MAX_DESCRIPT -- The maximum number of descriptors available */
+/*
+ * max_descript - Determine maximum file descriptors available
+ *
+ * Platform-specific function to determine the maximum number of
+ * file descriptors available to the current process. Used to
+ * limit the number of simultaneous nation accesses in god mode
+ * to prevent resource exhaustion.
+ *
+ * Parameters:
+ *   void
+ *
+ * Returns:
+ *   Maximum number of file descriptors available to process
+ *
+ * Side Effects:
+ *   - May query system for resource limits
+ *   - VMS version uses sys$getjpiw system call
+ *
+ * Notes:
+ *   - Highly platform-specific implementation
+ *   - VMS: Uses JPI$_FILLM (file limit) system service
+ *   - HP-UX: Uses sysconf(_SC_OPEN_MAX) 
+ *   - BSD systems: Uses getdtablesize() if available
+ *   - System V Release 4: Uses getrlimit(RLIMIT_NOFILE)
+ *   - Fallback: Returns conservative estimate of 24
+ *   - Critical for preventing resource exhaustion in god mode
+ */
 int
 max_descript PARM_0(void)
 {  
