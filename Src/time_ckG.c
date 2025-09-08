@@ -64,7 +64,28 @@ struct jtable_s {
   {NULL,  0}
 };
 
-/* DAYNUM -- return day number */
+/*
+ * daynum - Convert day name string to numerical day code
+ *
+ * Converts a three-character day abbreviation (SUN, MON, TUE, etc.) to its
+ * corresponding numerical daynum_t enumeration value. Used for parsing
+ * the time configuration file to match current day with access rules.
+ *
+ * Parameters:
+ *   day - Three-character day abbreviation string (case sensitive)
+ *
+ * Returns:
+ *   Corresponding daynum_t enumeration value (0-6 for SUN-SAT, 7 for DIS)
+ *   TIME_CLOSED (-1) if day string doesn't match any known day abbreviation
+ *
+ * Side Effects:
+ *   None - read-only function
+ *
+ * Notes:
+ *   - Uses exact 3-character string comparison via strncmp
+ *   - Day abbreviations must match jtable entries exactly
+ *   - DIS (disabled) is special case for host-specific restrictions
+ */
 static int
 daynum PARM_1(char *, day) 
 {
@@ -79,7 +100,29 @@ daynum PARM_1(char *, day)
 
 static alert_t alertn = CHECK;
 
-/* TC_QUIT -- exit conquer due some error etc */
+/*
+ * tc_quit - Emergency exit from time check system
+ *
+ * Performs an emergency shutdown of the game when time check system
+ * encounters a fatal error (such as setitimer failure or signal setup
+ * problems). Ensures proper cleanup of nation data before terminating.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Does not return - terminates program via bye()
+ *
+ * Side Effects:
+ *   - Closes current nation file if country is active (country != -1)
+ *   - Calls bye() to terminate the entire program
+ *   - Updates nation status to indicate emergency shutdown
+ *
+ * Notes:
+ *   - Used when time check system fails to initialize properly
+ *   - Ensures data integrity by properly closing nation files
+ *   - Does not return to caller - program terminates completely
+ */
 static void
 tc_quit PARM_0 (void)
 {
@@ -90,7 +133,30 @@ tc_quit PARM_0 (void)
   /*NOTREACHED*/
 }
 
-/* ALERT -- order SIGALRM after n seconds */
+/*
+ * alert - Set up interval timer for time check system
+ *
+ * Configures a SIGALRM signal to be delivered after specified seconds using
+ * setitimer(). Sets up both initial timer value and interval for repeated
+ * alarms. Used to implement periodic time checking and game access control.
+ *
+ * Parameters:
+ *   sec - Number of seconds until first alarm and between subsequent alarms
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Sets up ITIMER_REAL timer with specified interval
+ *   - Overwrites any existing timer configuration
+ *   - Calls tc_quit() on setitimer failure (program termination)
+ *
+ * Notes:
+ *   - Timer delivers SIGALRM signal when it expires
+ *   - Both initial delay and repeat interval are set to same value
+ *   - Fatal error handling - terminates program if timer setup fails
+ *   - Uses system interval timer for precise timing control
+ */
 static void
 alert PARM_1(long, sec)
 {
@@ -105,7 +171,29 @@ alert PARM_1(long, sec)
   }
 }
 
-/* UPCASE -- return string converted to uppercase */
+/*
+ * upcase - Convert string to uppercase in place
+ *
+ * Converts all lowercase letters in the input string to uppercase letters.
+ * Modifies the original string directly rather than creating a copy.
+ * Used for normalizing day names when parsing time configuration file.
+ *
+ * Parameters:
+ *   str - Null-terminated string to convert to uppercase (modified in place)
+ *
+ * Returns:
+ *   Pointer to the modified input string (same as str parameter)
+ *
+ * Side Effects:
+ *   - Modifies the input string by converting lowercase to uppercase
+ *   - Only affects alphabetic characters that are lowercase
+ *   - Non-alphabetic characters remain unchanged
+ *
+ * Notes:
+ *   - Uses islower() and toupper() from ctype.h for character testing/conversion
+ *   - In-place modification for memory efficiency
+ *   - Safe for strings with mixed case, numbers, and special characters
+ */
 static char *
 upcase PARM_1(char *, str)
 {
@@ -125,7 +213,43 @@ upcase PARM_1(char *, str)
 static char host[64];
 
 
-/* PRIORITY -- return new priority or information if game is closed */
+/*
+ * priority - Parse time configuration file and determine current game access status
+ *
+ * Reads the "hours" configuration file to determine the current game access
+ * status based on day of week, hour, and minute. The file format contains
+ * lines with day abbreviations followed by 48 characters representing 24 hours
+ * (2 characters per hour - priority and update minute). Also handles host-specific
+ * restrictions using DIS entries.
+ *
+ * Parameters:
+ *   None - uses current system time
+ *
+ * Returns:
+ *   Character code indicating current status:
+ *   'O' - Error opening time file
+ *   'A' - Game access denied for this host (DIS entry match)
+ *   'U' - Update is starting (minute matches update field)
+ *   'N' - Normal access with default priority
+ *   '.' - Game allowed with normal status
+ *   'X' - Game is closed (default if no day match found)
+ *   '0'-'9' - Game allowed with specified priority level
+ *   'I'/'i' - Illegal character in time file format
+ *   'S' - Syntax error in time file (line too short)
+ *
+ * Side Effects:
+ *   - Opens and reads TIME_HOURS_FILE ("hours")
+ *   - May display error messages via bottommsg()
+ *   - Closes file on successful day match
+ *
+ * Notes:
+ *   - Time file format: "DAY NNNN..." where N is priority/update character
+ *   - Each hour uses 2 characters: priority (first) and update minute (second)
+ *   - Update minute field (second char): '0'-'5' indicates 10-minute intervals
+ *   - Priority field (first char): '.', 'N', 'X', or '0'-'9'
+ *   - Host restrictions use "DIS hostname" format
+ *   - Requires exactly 47+ characters in time field (24 hours * 2 chars - 1)
+ */
 static int
 priority PARM_0(void)
 {
@@ -190,7 +314,39 @@ priority PARM_0(void)
   return 'X';
 }
 
-/* CHECK_PLAY -- Check and set time limits and nice values etc... */
+/*
+ * check_play - Periodic game access and priority checking
+ *
+ * Called periodically by timer to check current game access status and
+ * adjust process priority, set warning timers, or initiate shutdown
+ * procedures. Handles all priority() return codes and implements
+ * appropriate responses including user notifications and system actions.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - May modify process priority via setpriority()
+ *   - Sets timer alerts for various warning periods
+ *   - May display status messages via bottommsg()
+ *   - Can terminate program via tc_quit() for host restrictions
+ *   - Updates alertn global variable to control timer behavior
+ *   - Maintains static error counter for file open failures
+ *
+ * Notes:
+ *   - Handles all priority() return codes with appropriate actions
+ *   - 'X' (closed): Sets TIMELIMIT alert for shutdown warning
+ *   - 'N' (normal): Sets default priority and normal check interval
+ *   - 'A' (access denied): Terminates program if time_check enabled
+ *   - 'U' (update): Sets UPDATE alert for update warning
+ *   - '0'-'9': Sets priority based on numeric value (2 * digit)
+ *   - 'O' (open error): Retries up to 3 times before giving up
+ *   - Error conditions ('i','I','S'): No action taken
+ *   - Uses different timer intervals for different warning types
+ */
 static void
 check_play PARM_0(void)
 {
@@ -251,7 +407,31 @@ check_play PARM_0(void)
   }
 }
 
-/* DOUPEXIT -- Conquer is starting update soon, exit. */
+/*
+ * doupexit - Handle game update notification and exit procedure
+ *
+ * Called when the game update is about to start. If time checking is
+ * enabled, terminates the game session to allow the update to proceed.
+ * If time checking is disabled, only displays a notification message.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Does not return if time_check is TRUE (calls hangup())
+ *   Returns normally if time_check is FALSE
+ *
+ * Side Effects:
+ *   - Displays update notification via bottommsg()
+ *   - May terminate game session via hangup() if time_check enabled
+ *   - Forces player logout to prevent interference with update process
+ *
+ * Notes:
+ *   - Behavior controlled by global time_check flag
+ *   - Update warnings are given before this function is called
+ *   - Ensures clean game state before system update begins
+ *   - Uses hangup() for immediate session termination
+ */
 static void
 doupexit PARM_0(void)
 {
@@ -264,7 +444,31 @@ doupexit PARM_0(void)
   /*NOTREACHED*/
 }
 
-/* DOEXIT -- Conquer is closing down exit. */
+/*
+ * doexit - Handle game closure notification and exit procedure
+ *
+ * Called when the game is closing down for the day/period according to
+ * the time configuration. If time checking is enabled, terminates the
+ * game session. If disabled, only displays a notification message.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Does not return if time_check is TRUE (calls hangup())
+ *   Returns normally if time_check is FALSE
+ *
+ * Side Effects:
+ *   - Displays closure notification via bottommsg()
+ *   - May terminate game session via hangup() if time_check enabled
+ *   - Forces player logout when game hours end
+ *
+ * Notes:
+ *   - Behavior controlled by global time_check flag
+ *   - Called when time configuration indicates game should be closed
+ *   - Ensures players are logged out during non-gaming hours
+ *   - Uses hangup() for immediate session termination
+ */
 static void
 doexit PARM_0(void)
 {
@@ -277,7 +481,35 @@ doexit PARM_0(void)
   /*NOTREACHED*/
 }
 
-/* ALRM_HANDLER -- signal handler for alarms */
+/*
+ * alrm_handler - Signal handler for SIGALRM timer events
+ *
+ * Handles SIGALRM signals generated by the interval timer to perform
+ * time-based game management tasks. Dispatches to appropriate handler
+ * function based on the current alert type (UPDATE, TIMELIMIT, or CHECK).
+ *
+ * Parameters:
+ *   None (signal handler signature)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Resets signal handler to itself for subsequent alarms
+ *   - May trigger game exit procedures via doupexit() or doexit()
+ *   - May perform periodic checking via check_play()
+ *   - Global alertn variable determines which action to take
+ *
+ * Notes:
+ *   - Called automatically by system when SIGALRM is delivered
+ *   - Must be async-signal-safe (limited function calls allowed)
+ *   - Signal handler reset needed for reliable operation
+ *   - Three alert types:
+ *     UPDATE: Game update is starting - call doupexit()
+ *     TIMELIMIT: Game hours ended - call doexit()
+ *     CHECK: Periodic status check - call check_play()
+ *   - Error handling minimal due to signal context restrictions
+ */
 static void
 alrm_handler PARM_0(void)
 {
@@ -297,7 +529,32 @@ alrm_handler PARM_0(void)
 }
 #endif /* DO_TIME_CHECK */
 
-/* INIT_TIME_CHECK -- Initialize time check stuff */
+/*
+ * init_time_check - Initialize the time checking and access control system
+ *
+ * Sets up the timer-based time checking system if a time configuration file
+ * exists. Installs the SIGALRM signal handler and starts the initial timer
+ * for periodic access control checking.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Checks for existence of TIME_HOURS_FILE ("hours")
+ *   - Installs alrm_handler as SIGALRM signal handler
+ *   - Starts timer with TIME_CHECK_INTERVAL (2 minutes)
+ *   - May terminate program via tc_quit() if signal setup fails
+ *
+ * Notes:
+ *   - Only active if DO_TIME_CHECK is defined at compile time
+ *   - Requires "hours" file to exist for time checking to be enabled
+ *   - Signal handler setup failure is fatal error
+ *   - Initial timer starts the periodic checking cycle
+ *   - Called once during game initialization
+ */
 void
 init_time_check PARM_0(void)
 {
@@ -312,7 +569,40 @@ init_time_check PARM_0(void)
 #endif /* DO_TIME_CHECK */
 }
 
-/* INITIAL_CHECK -- Initial time/host check. */
+/*
+ * initial_check - Perform initial game access validation before startup
+ *
+ * Checks if the game should be allowed to start based on current time,
+ * day of week, and host restrictions. Called once during game startup
+ * to determine if the player should be allowed to connect.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 - Game access allowed, continue with startup
+ *   1 - Game is closed or update starting, deny access
+ *   -1 - Host access denied, prevent startup
+ *
+ * Side Effects:
+ *   - Gets hostname and stores in global host variable
+ *   - May set process priority via setpriority()
+ *   - Displays status messages via bottommsg()
+ *   - Reads and parses time configuration file
+ *
+ * Notes:
+ *   - Only active if DO_TIME_CHECK is defined at compile time
+ *   - Returns 0 immediately if TIME_HOURS_FILE doesn't exist
+ *   - Behavior controlled by global time_check flag
+ *   - Different return codes for different restriction types:
+ *     'X' (closed): return 1 if time_check enabled
+ *     'A' (access denied): return -1 if time_check enabled
+ *     'U' (update starting): return 1 if time_check enabled
+ *     'N' (normal): sets default priority, continues
+ *     '0'-'9': sets priority based on digit value, continues
+ *     Error conditions: continue with startup
+ *   - Host restriction check using gethostname()
+ */
 int
 initial_check PARM_0(void)
 {
