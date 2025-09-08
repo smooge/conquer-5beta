@@ -103,7 +103,7 @@ Lower priority interface modules:
 59. ✅ **time_ckG.c** - Time checking utilities (11 functions) - COMPLETED!
 60. ✅ **dataG.c** - Data display interface (0 functions, comprehensive global data) - COMPLETED!
 61. ✅ **ioG.c** - I/O interface (23 functions) - **COMPLETED!**
-62. **iodataG.c** - I/O data interface
+62. ✅ **iodataG.c** - I/O data interface (14 functions) - **COMPLETED!**
 
 ### Priority 5E: System/Legacy Files - Sessions 63-64
 Platform-specific and legacy code:
@@ -298,10 +298,13 @@ Include/ directory header files (~40 files):
 ### PRIORITY 5C COMPLETE! 🎉
 **All Priority 5C User Interface Extensions files have been documented!**
 
-**Priority 5D Progress: 7/8 files** (87.5% complete) 🚧
-**Last Completed**: ioG.c (I/O interface) - **COMPLETE** ✅
-**Priority 5 Progress**: 29/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 11/11 complete; Priority 5D: 7/8 files)
-**Strategy**: Continue Priority 5D - Secondary Interface modules
+### PRIORITY 5D COMPLETE! 🎉
+**All Priority 5D Secondary Interface files have been documented!**
+
+**Priority 5D Progress: 8/8 files** (100% complete) ✅ **COMPLETE!**
+**Last Completed**: iodataG.c (I/O data interface) - **COMPLETE** ✅
+**Priority 5 Progress**: 30/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 11/11 complete; Priority 5D: 8/8 complete)
+**Strategy**: Continue Priority 5E - System/Legacy Files (final 2 Src/ files)
 
 ### PHASE 4 PROGRESS UPDATE - SCOPE EXPANSION DISCOVERED! 🚨
 **ORIGINAL SCOPE**: 60/64 Src/ files complete (93.75% of Src/ done)
@@ -310,8 +313,8 @@ Include/ directory header files (~40 files):
 - **Docs/ Directory**: 1 C file (ezconv.c)  
 - **Include/ Directory**: 40+ header files (.h files)
 - **REVISED TOTAL**: ~108 files need documentation (Src/ + Auxil/ + Docs/ + Include/)
-- **ACTUAL PROGRESS**: 61/108 files complete (~56.5% done)
-**Remaining in Src/**: 3 files (1 in Priority 5D + 2 in Priority 5E)
+- **ACTUAL PROGRESS**: 62/108 files complete (~57.4% done)
+**Remaining in Src/**: 2 files (Priority 5E - vms.c, getopt.c)
 
 ### ntninfoG.c COMPLETE! 📍
 **ntninfoG.c**: ✅ COMPLETE (Nation information interface - 30+ functions documented)
@@ -342,9 +345,9 @@ Include/ directory header files (~40 files):
 ### Strategic Recommendations
 
 #### Immediate Priority (Complete Src/ First)
-**Recommendation**: Complete the remaining 4 Src/ files first to finish the core documentation:
+**Recommendation**: Complete the remaining 2 Src/ files first to finish the core documentation:
 1. ✅ **ioG.c** - I/O interface (23 functions) - **COMPLETED!**
-2. **iodataG.c** - I/O data interface  
+2. ✅ **iodataG.c** - I/O data interface (14 functions) - **COMPLETED!**
 3. **vms.c** - VMS platform-specific code
 4. **getopt.c** - Command line parsing
 
@@ -365,7 +368,7 @@ After completing Src/, consider these as separate phases:
 - Strategy: Group by system (combat, display, data, etc.)
 
 #### Effort Estimation
-- **Remaining Src/**: 4 sessions (immediate)
+- **Remaining Src/**: 2 sessions (immediate)
 - **Auxil + Docs**: 4 sessions (medium priority)
 - **Headers**: 40+ sessions (high priority but can be done incrementally)
 - **Total Additional**: ~48 sessions beyond current Src/ work
