@@ -32,7 +32,33 @@
 /* Declare the structures used for storage in these routines */
 static XFER_STRUCT xfer_sites[3];
 
-/* SCT2XFER -- Copy information about a sector into the current slot */
+/*
+ * sct2xfer - Copy sector information into transfer slot for exchange operations
+ *
+ * Initializes a transfer slot with sector data, setting up capacity limits
+ * and available resources based on sector ownership and food production.
+ * Only owned sectors with positive food production allow transfers.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1, represents left or right side)
+ *   xloc - X coordinate of the sector on the world map
+ *   yloc - Y coordinate of the sector on the world map
+ *
+ * Returns:
+ *   void - No return value, modifies global xfer_sites array
+ *
+ * Side Effects:
+ *   - Modifies xfer_sites[slot] structure with sector information
+ *   - Sets transfer limits based on sector ownership and food production
+ *   - Initializes material arrays to zero
+ *   - Sets site classification to XFER_SECTOR
+ *
+ * Notes:
+ *   - Performs bounds checking on slot index and map coordinates
+ *   - Only sectors owned by current player with food production > 0 allow transfers
+ *   - Unowned or foreign sectors have zero transfer capacity
+ *   - Materials are initialized to zero as sectors don't store raw materials
+ */
 void
 sct2xfer PARM_3(int, slot, int, xloc, int, yloc)
 {
@@ -85,7 +111,33 @@ sct2xfer PARM_3(int, slot, int, xloc, int, yloc)
   xfer_ptr->mtrl_max = 0;
 }
 
-/* XFER2SCT -- Return the transferred materials to the sector */
+/*
+ * xfer2sct - Return transferred population to sector after transfer operations
+ *
+ * Transfers population changes back to the sector, updating the sector's
+ * population count based on the difference between transfer slot and
+ * original sector values. Only processes owned sectors.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to read changes from
+ *   xloc - X coordinate of the target sector
+ *   yloc - Y coordinate of the target sector
+ *
+ * Returns:
+ *   void - No return value, modifies sector data
+ *
+ * Side Effects:
+ *   - Updates sector population if ownership allows
+ *   - Temporarily changes cursor position for sector update macros
+ *   - Calls SADJPEOP macro to notify of population changes
+ *   - May display error message for invalid site class
+ *
+ * Notes:
+ *   - Validates site class must be XFER_SECTOR before proceeding
+ *   - Only processes sectors owned by current country
+ *   - Uses temporary cursor position changes for proper macro operation
+ *   - Population difference calculated as (crews + civies) - current people
+ */
 void
 xfer2sct PARM_3(int, slot, int, xloc, int, yloc)
 {
@@ -129,7 +181,34 @@ xfer2sct PARM_3(int, slot, int, xloc, int, yloc)
   }
 }
 
-/* CITY2XFER -- Copy a city structure into the indicated xfer slot */
+/*
+ * city2xfer - Copy city information into transfer slot for resource exchange
+ *
+ * Initializes a transfer slot with city data including population,
+ * materials, and capacity limits. Sets up transfer constraints based
+ * on city attraction value and sector population.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) for the transfer operation
+ *   c1_ptr - Pointer to city structure to copy data from (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies global xfer_sites array
+ *
+ * Side Effects:
+ *   - Modifies xfer_sites[slot] structure with city information
+ *   - Sets transfer limits based on city attraction value
+ *   - Copies all city materials to transfer slot
+ *   - Sets site classification to XFER_CITY
+ *
+ * Notes:
+ *   - Performs bounds checking on slot index and NULL pointer validation
+ *   - City description combines major designation name with city name
+ *   - Transfer limits depend on attract_val() - positive allows unlimited transfers
+ *   - Civilians come from sector population, crew from city i_people
+ *   - Materials copied from city's i_mtrls array
+ *   - Zero attraction cities have no transfer capacity
+ */
 void
 city2xfer PARM_2(int, slot, CITY_PTR, c1_ptr)
 {
@@ -187,7 +266,35 @@ city2xfer PARM_2(int, slot, CITY_PTR, c1_ptr)
   }
 }
 
-/* XFER2CITY -- Shift the results back into the city structure */
+/*
+ * xfer2city - Apply transfer results back to city structure
+ *
+ * Updates city and sector data with transfer results, handling population
+ * and material changes. Manages complex interactions between city crew,
+ * sector civilians, and material storage.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) containing the changes
+ *   c1_ptr - Pointer to city structure to update (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies city and sector data
+ *
+ * Side Effects:
+ *   - Updates city population (i_people) and materials (i_mtrls)
+ *   - Updates sector population through temporary cursor changes
+ *   - Calls adjustment macros (CADJPEOP, CADJIMTRLS, CADJMTRLS, SADJPEOP)
+ *   - Temporarily changes global city_ptr for macro operations
+ *   - May display error message for invalid site class
+ *
+ * Notes:
+ *   - Validates site class must be XFER_CITY before proceeding
+ *   - Complex population management balances crew and civilian transfers
+ *   - Material transfers handle both positive and negative differences
+ *   - Negative material transfers affect city inventory first, then sector storage
+ *   - Uses temporary cursor positioning for proper sector update operations
+ *   - Restores original city_ptr before returning
+ */
 void
 xfer2city PARM_2(int, slot, CITY_PTR, c1_ptr)
 {
@@ -278,7 +385,35 @@ xfer2city PARM_2(int, slot, CITY_PTR, c1_ptr)
   city_ptr = chold_ptr;
 }
 
-/* NAVY2XFER -- Copy a navy structure into the indicated xfer slot */
+/*
+ * navy2xfer - Copy naval fleet information into transfer slot
+ *
+ * Initializes a transfer slot with naval fleet data including ship capacities,
+ * onboard units, materials, and population. Calculates capacity limits based
+ * on different ship types (galleys, merchants, warships, barges).
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) for the transfer operation
+ *   n1_ptr - Pointer to navy structure to copy data from (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies global xfer_sites array
+ *
+ * Side Effects:
+ *   - Modifies xfer_sites[slot] structure with naval fleet information
+ *   - Sets capacity limits based on ship types and counts
+ *   - Copies fleet materials and onboard unit IDs
+ *   - Sets site classification to XFER_NAVY
+ *
+ * Notes:
+ *   - Performs bounds checking on slot index and NULL pointer validation
+ *   - Civilian capacity based on galley ships and their people capacity
+ *   - Crew capacity calculated from all ship types minus required crew
+ *   - Material capacity from merchant ships only
+ *   - Army capacity from warship cargo space
+ *   - Caravan capacity from barge cargo space
+ *   - Different ship types have different cargo specializations
+ */
 void
 navy2xfer PARM_2(int, slot, NAVY_PTR, n1_ptr)
 {
@@ -337,7 +472,35 @@ navy2xfer PARM_2(int, slot, NAVY_PTR, n1_ptr)
 			xfer_ptr->crew_div);
 }
 
-/* XFER2NAVY -- Finalize the changes made on the commodity */
+/*
+ * xfer2navy - Apply transfer results back to naval fleet structure
+ *
+ * Updates naval fleet data with transfer results including onboard armies,
+ * caravans, materials, civilians, and crew. Handles capacity calculations
+ * based on ship types and validates changes.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) containing the changes
+ *   n1_ptr - Pointer to navy structure to update (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies navy data
+ *
+ * Side Effects:
+ *   - Updates navy army and caravan assignments
+ *   - Updates navy materials, population, and crew levels
+ *   - Calls adjustment macros (NADJARMY, NADJCVN, NMTRLS, NADJPEOP, NADJCREW)
+ *   - Temporarily changes global navy_ptr for macro operations
+ *   - May display error message for invalid site class
+ *
+ * Notes:
+ *   - Validates site class must be XFER_NAVY before proceeding
+ *   - Army and caravan IDs updated if they differ from transfer slot
+ *   - Material updates applied individually for each material type
+ *   - Civilian count calculated based on galley capacity
+ *   - Crew count calculated across all ship types with proper crew requirements
+ *   - Restores original navy_ptr before returning
+ */
 void
 xfer2navy PARM_2(int, slot, NAVY_PTR, n1_ptr)
 {
@@ -402,7 +565,34 @@ xfer2navy PARM_2(int, slot, NAVY_PTR, n1_ptr)
   navy_ptr = nhold_ptr;
 }
 
-/* CVN2XFER -- Copy a carvan structure into the indicated xfer slot */
+/*
+ * cvn2xfer - Copy caravan information into transfer slot
+ *
+ * Initializes a transfer slot with caravan data including size, population,
+ * crew, and materials. Sets up capacity limits based on caravan size
+ * and standard caravan carrying capacities.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) for the transfer operation
+ *   v1_ptr - Pointer to caravan structure to copy data from (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies global xfer_sites array
+ *
+ * Side Effects:
+ *   - Modifies xfer_sites[slot] structure with caravan information
+ *   - Sets capacity limits based on caravan size
+ *   - Copies caravan materials and population data
+ *   - Sets site classification to XFER_CARAVAN
+ *
+ * Notes:
+ *   - Performs bounds checking on slot index and NULL pointer validation
+ *   - Capacity calculations multiply base values by caravan size
+ *   - Civilian capacity set to XF_JOINED (special joined capacity mode)
+ *   - Material capacity based on CVN_HOLD constant times caravan size
+ *   - Crew capacity based on MAXCVNCREW minus current crew requirement
+ *   - Caravans cannot carry armies or other caravans (onb_max = 0)
+ */
 void
 cvn2xfer PARM_2(int, slot, CVN_PTR, v1_ptr)
 {
@@ -447,7 +637,34 @@ cvn2xfer PARM_2(int, slot, CVN_PTR, v1_ptr)
   xfer_ptr->onb_cmax = 0;
 }
 
-/* XFER2CVN -- Finalize the changes made on the caravan baggage */
+/*
+ * xfer2cvn - Apply transfer results back to caravan structure
+ *
+ * Updates caravan data with transfer results including materials,
+ * civilians, and crew. Calculates per-unit values based on caravan
+ * size and validates changes.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) containing the changes
+ *   v1_ptr - Pointer to caravan structure to update (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, modifies caravan data
+ *
+ * Side Effects:
+ *   - Updates caravan materials, population, and crew levels
+ *   - Calls adjustment macros (VMTRLS, VADJPEOP, VADJCREW)
+ *   - Temporarily changes global cvn_ptr for macro operations
+ *   - May display error message for invalid site class
+ *
+ * Notes:
+ *   - Validates site class must be XFER_CARAVAN before proceeding
+ *   - Material updates applied individually for each material type
+ *   - Population and crew calculated as totals divided by caravan size
+ *   - Crew calculation includes adjustment for existing crew requirements
+ *   - All calculations account for caravan size scaling
+ *   - Restores original cvn_ptr before returning
+ */
 void
 xfer2cvn PARM_2(int, slot, CVN_PTR, v1_ptr)
 {
@@ -519,7 +736,33 @@ static int xf_sel_crew, xf_sel_civ, xf_sel_cvn;
 static int xfer_aslot[2], xfer_vslot[2];
 static int xfer_done;
 
-/* XFER_INIT -- Initialize the keybindings, if needed, and other things */
+/*
+ * xfer_init - Initialize transfer mode configuration and interface
+ *
+ * Sets up the transfer interface by configuring key bindings, calculating
+ * item selection limits, and initializing transfer amounts. Determines
+ * which transfer categories are available based on site capabilities.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0 (success)
+ *
+ * Side Effects:
+ *   - Calls align_xfer_keys() to set up key bindings
+ *   - Sets global variables for maximum items and selection indices
+ *   - Initializes transfer amount arrays with default values
+ *   - Locates army list for current transfer location
+ *
+ * Notes:
+ *   - Calculates selection indices for civilians, crew, caravans, and armies
+ *   - Default material transfer amounts set to 1000 units
+ *   - Civilian and crew transfer amounts based on divisor units
+ *   - Army list filtered to current location coordinates
+ *   - Transfer amounts preserved between sessions unless incompatible
+ *   - Maximum items limited by screen space (LINES - XF_USEDLINES)
+ */
 int
 xfer_init PARM_0(void)
 {
@@ -591,7 +834,32 @@ xfer_init PARM_0(void)
   return(0);
 }
 
-/* XFER_UNLIMITED -- Return TRUE if selection has unlimited storage */
+/*
+ * xfer_unlimited - Check if transfer selection has unlimited storage capacity
+ *
+ * Determines whether a specific transfer selection has unlimited storage
+ * capacity, which affects transfer limits and user interface display.
+ * Different selection types have different unlimited conditions.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to check
+ *   select_num - Selection index within the transfer interface
+ *
+ * Returns:
+ *   int - TRUE if selection has unlimited capacity, FALSE otherwise
+ *
+ * Side Effects:
+ *   - None - read-only function
+ *
+ * Notes:
+ *   - Army selections: unlimited if onb_max == XF_NOLIMIT
+ *   - Caravan selections: unlimited if onb_cmax == XF_NOLIMIT
+ *   - Civilian selections: unlimited if civ_max == XF_NOLIMIT or combined with unlimited materials
+ *   - Crew selections: unlimited if crew_max == XF_NOLIMIT or XF_JOINED
+ *   - Material selections: unlimited if mtrl_max == XF_NOLIMIT
+ *   - Performs bounds checking on slot and selection parameters
+ *   - XF_JOINED indicates crew integrated with civilian capacity
+ */
 static int
 xfer_unlimited PARM_2(int, slot, int, select_num)
 {
@@ -641,7 +909,33 @@ xfer_unlimited PARM_2(int, slot, int, select_num)
   return(FALSE);
 }
 
-/* XFER_SPACE -- The amount of storage available for the selection */
+/*
+ * xfer_space - Calculate available storage space for transfer selection
+ *
+ * Computes the remaining storage capacity for a specific transfer selection,
+ * accounting for current loads and capacity limits. Handles different
+ * calculation methods for various selection types.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to check capacity
+ *   select_num - Selection index within the transfer interface
+ *
+ * Returns:
+ *   long - Available storage space in appropriate units, 0 if invalid
+ *
+ * Side Effects:
+ *   - None - read-only function that performs calculations
+ *
+ * Notes:
+ *   - Returns BIGINT for unlimited capacity selections
+ *   - Army space: capacity minus current army load
+ *   - Caravan space: capacity minus current caravan load
+ *   - Crew space: maximum crew minus current crew
+ *   - Combined capacity: accounts for civilians and materials together
+ *   - Material space: capacity minus current material load, adjusted by weight
+ *   - Performs bounds checking on slot and selection parameters
+ *   - Space calculations use appropriate load calculation functions
+ */
 static long
 xfer_space PARM_2(int, slot, int, select_num)
 {
@@ -700,7 +994,32 @@ xfer_space PARM_2(int, slot, int, select_num)
   return(hold);
 }
 
-/* XFER_ARMYPTR -- Return a pointer to the indicated army */
+/*
+ * xfer_armyptr - Get pointer to specific army unit in transfer context
+ *
+ * Locates and returns a pointer to a specific army unit based on the
+ * slot and selection index. Handles both onboard armies and armies
+ * in the same location that can be transferred.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to search within
+ *   which - Army selection index within the transfer interface
+ *
+ * Returns:
+ *   ARMY_PTR - Pointer to the requested army, NULL if not found or invalid
+ *
+ * Side Effects:
+ *   - None - read-only function that searches army lists
+ *
+ * Notes:
+ *   - Adjusts selection index by subtracting xf_min_army offset
+ *   - For onboard armies: returns leader army if which == 0
+ *   - For location armies: searches through nearby army list
+ *   - Skips armies already onboard the opposite transfer site
+ *   - Uses army leader relationships to find grouped units
+ *   - Accounts for army slot offset (xfer_aslot) for scrolling
+ *   - Performs bounds checking on slot parameter
+ */
 static ARMY_PTR
 xfer_armyptr PARM_2(int, slot, int, which)
 {
@@ -753,7 +1072,31 @@ xfer_armyptr PARM_2(int, slot, int, which)
   return(a1_ptr);
 }
 
-/* XFER_CVNPTR -- Return a pointer to the desired caravan */
+/*
+ * xfer_cvnptr - Get pointer to caravan in transfer context
+ *
+ * Locates and returns a pointer to the caravan associated with the
+ * specified transfer slot. Handles both onboard caravans and caravans
+ * in the same location.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to get caravan from
+ *
+ * Returns:
+ *   CVN_PTR - Pointer to the caravan, NULL if not found or invalid
+ *
+ * Side Effects:
+ *   - None - read-only function that searches caravan lists
+ *
+ * Notes:
+ *   - First checks for caravan already onboard (onb_cid)
+ *   - If no onboard caravan, searches location for available caravans
+ *   - Skips caravans already assigned to the opposite transfer site
+ *   - Uses caravan slot offset (xfer_vslot) for selection
+ *   - Searches through nation's caravan list at matching coordinates
+ *   - Performs bounds checking on slot parameter
+ *   - Returns NULL if slot cannot carry caravans (onb_cmax >= 0)
+ */
 static CVN_PTR
 xfer_cvnptr PARM_1(int, slot)
 {
@@ -796,7 +1139,29 @@ xfer_cvnptr PARM_1(int, slot)
   return(v1_ptr);
 }
 
-/* XFER_MAXARMY -- Determine the number of army units in the given site */
+/*
+ * xfer_maxarmy - Count army units available for transfer at site
+ *
+ * Counts the total number of army units that can be transferred from
+ * the specified site, including both onboard and location-based armies.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to count armies for
+ *
+ * Returns:
+ *   int - Number of army units available for transfer, 0 if none
+ *
+ * Side Effects:
+ *   - None - read-only function that counts armies
+ *
+ * Notes:
+ *   - Returns 0 if site cannot carry armies or has no army leader
+ *   - Counts armies that have the same ship leader as the site
+ *   - Uses army_shipleader() to determine army grouping
+ *   - Searches through the global army list (xfer_armylist)
+ *   - Count used for interface scrolling and bounds checking
+ *   - Performs bounds checking on slot parameter
+ */
 static int
 xfer_maxarmy PARM_1(int, slot)
 {
@@ -822,7 +1187,30 @@ xfer_maxarmy PARM_1(int, slot)
   return(cnt);
 }
 
-/* XFER_MAXCVN -- Determine the number of caravans in the given site */
+/*
+ * xfer_maxcvn - Count caravans available for transfer at site
+ *
+ * Counts the total number of caravans that can be transferred from
+ * the specified site location, excluding caravans already assigned
+ * to the opposite transfer site.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to count caravans for
+ *
+ * Returns:
+ *   int - Number of caravans available for transfer, 0 if none
+ *
+ * Side Effects:
+ *   - None - read-only function that counts caravans
+ *
+ * Notes:
+ *   - Returns 0 if site cannot carry caravans (onb_cmax >= 0)
+ *   - Counts caravans at the same location coordinates as the site
+ *   - Excludes caravans already assigned to opposite transfer site
+ *   - Searches through nation's complete caravan list
+ *   - Count used for interface scrolling and selection validation
+ *   - Performs bounds checking on slot parameter
+ */
 static int
 xfer_maxcvn PARM_1(int, slot)
 {
@@ -857,7 +1245,30 @@ xfer_maxcvn PARM_1(int, slot)
   return(cnt);
 }
 
-/* XFER_QUIT -- Let them go */
+/*
+ * xfer_quit - Exit transfer mode with user confirmation
+ *
+ * Prompts the user to confirm they want to exit transfer mode and
+ * sets the completion flag if confirmed. Provides a safety check
+ * to prevent accidental exit.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Displays confirmation prompt on bottom line
+ *   - Sets xfer_done global flag to TRUE if user confirms
+ *   - Clears end of line after prompt display
+ *
+ * Notes:
+ *   - Uses y_or_n() function for user confirmation
+ *   - Confirmation prevents accidental loss of transfer setup
+ *   - Transfer changes are applied when mode exits regardless
+ *   - Part of the transfer mode command interface
+ */
 static int
 xfer_quit PARM_0(void)
 {
@@ -869,7 +1280,28 @@ xfer_quit PARM_0(void)
   return(0);
 }
 
-/* XFER_DOWN -- Move the selection pointer down */
+/*
+ * xfer_down - Move transfer selection cursor downward
+ *
+ * Moves the transfer interface selection cursor down one position
+ * in the item list. Provides audio feedback if already at bottom.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Increments xfer_selection global variable
+ *   - Calls beep() if already at maximum selection
+ *
+ * Notes:
+ *   - Selection bounded by xf_max_items limit
+ *   - Used for navigating through materials, civilians, crew, armies
+ *   - Part of the transfer mode navigation interface
+ *   - Audio feedback prevents confusion at interface boundaries
+ */
 static int
 xfer_down PARM_0(void)
 {
@@ -882,7 +1314,28 @@ xfer_down PARM_0(void)
   return(0);
 }
 
-/* XFER_UP -- Move the selection pointer upward */
+/*
+ * xfer_up - Move transfer selection cursor upward
+ *
+ * Moves the transfer interface selection cursor up one position
+ * in the item list. Provides audio feedback if already at top.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Decrements xfer_selection global variable
+ *   - Calls beep() if already at minimum selection (0)
+ *
+ * Notes:
+ *   - Selection bounded by 0 minimum
+ *   - Used for navigating through materials, civilians, crew, armies
+ *   - Part of the transfer mode navigation interface
+ *   - Audio feedback prevents confusion at interface boundaries
+ */
 static int
 xfer_up PARM_0(void)
 {
@@ -895,7 +1348,35 @@ xfer_up PARM_0(void)
   return(0);
 }
 
-/* XFER_XFER -- Actually perform the shifting of goods */
+/*
+ * xfer_xfer - Execute the actual transfer of items between sites
+ *
+ * Performs the core transfer operation moving armies, caravans, crew,
+ * civilians, or materials between transfer sites. Handles complex
+ * validation, capacity checking, and state management.
+ *
+ * Parameters:
+ *   all_over - If TRUE, transfer all available items; if FALSE, transfer set amount
+ *
+ * Returns:
+ *   void - No return value, modifies transfer site data
+ *
+ * Side Effects:
+ *   - Modifies army status, leadership, and grouping
+ *   - Updates navy and caravan assignments and status
+ *   - Changes population and material quantities in transfer sites
+ *   - May display error messages for invalid operations
+ *   - Updates movement points and status for affected units
+ *
+ * Notes:
+ *   - Handles army boarding/disembarking with diplomatic restrictions
+ *   - Manages army leadership and grouping relationships
+ *   - Processes caravan loading/unloading with status changes
+ *   - Transfers civilians and crew with capacity validation
+ *   - Moves materials with weight and space constraints
+ *   - Complex logic for different transfer directions and unit types
+ *   - Validates ownership and diplomatic status for movements
+ */
 static void
 xfer_xfer PARM_1(int, all_over)
 {
@@ -1327,7 +1808,29 @@ xfer_xfer PARM_1(int, all_over)
   }
 }
 
-/* XFER_LEFT -- Shift things to the left site */
+/*
+ * xfer_left - Transfer items to the left site or set left direction
+ *
+ * Sets the transfer direction to leftward (slot 0) or performs a
+ * complete transfer if already pointing left. Handles direction
+ * setting and all-items transfer functionality.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Sets xfer_direction to 0 (leftward)
+ *   - Calls xfer_xfer(TRUE) if already pointing left
+ *
+ * Notes:
+ *   - Two-stage operation: first set direction, second execute transfer
+ *   - Transfer direction affects which site receives items
+ *   - TRUE parameter to xfer_xfer means transfer all available items
+ *   - Part of the transfer mode directional interface
+ */
 static int
 xfer_left PARM_0(void)
 {
@@ -1342,7 +1845,29 @@ xfer_left PARM_0(void)
   return(0);
 }
 
-/* XFER_RIGHT -- Shift things to the right site */
+/*
+ * xfer_right - Transfer items to the right site or set right direction
+ *
+ * Sets the transfer direction to rightward (slot 1) or performs a
+ * complete transfer if already pointing right. Handles direction
+ * setting and all-items transfer functionality.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Sets xfer_direction to 1 (rightward)
+ *   - Calls xfer_xfer(TRUE) if already pointing right
+ *
+ * Notes:
+ *   - Two-stage operation: first set direction, second execute transfer
+ *   - Transfer direction affects which site receives items
+ *   - TRUE parameter to xfer_xfer means transfer all available items
+ *   - Part of the transfer mode directional interface
+ */
 static int
 xfer_right PARM_0(void)
 {
@@ -1357,7 +1882,29 @@ xfer_right PARM_0(void)
   return(0);
 }
 
-/* XFER_MOVE -- Shift the items from one side to the other */
+/*
+ * xfer_move - Transfer specified amount of items in current direction
+ *
+ * Executes a transfer of the currently configured amount of items
+ * in the currently set direction. Uses the amount specified in
+ * the transfer configuration rather than all available items.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Calls xfer_xfer(FALSE) to execute limited transfer
+ *
+ * Notes:
+ *   - FALSE parameter means transfer only the configured amount
+ *   - Transfer amount comes from xfer_xchanges array
+ *   - Direction determined by current xfer_direction setting
+ *   - Part of the transfer mode execution interface
+ *   - Primary transfer command for precise quantity control
+ */
 static int
 xfer_move PARM_0(void)
 {
@@ -1366,7 +1913,31 @@ xfer_move PARM_0(void)
   return(0);
 }
 
-/* XFER_ADD -- Subtract one unit from the transfer amount */
+/*
+ * xfer_add - Increase transfer amount for current selection
+ *
+ * Increases the transfer amount for the currently selected item type.
+ * Amount increment depends on item type (materials, civilians, crew).
+ * Provides audio feedback if maximum limit reached.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_xchanges array for current selection
+ *   - Calls beep() if at maximum limit or invalid selection
+ *
+ * Notes:
+ *   - Cannot modify army or caravan selections (single unit transfers)
+ *   - Civilian increments by xfer_civ_units (divisor-based)
+ *   - Crew increments by xfer_crew_units (divisor-based)
+ *   - Material increments by 1 unit
+ *   - Maximum limit is 1,000,000 units
+ *   - Part of the transfer amount adjustment interface
+ */
 static int
 xfer_add PARM_0(void)
 {
@@ -1399,7 +1970,31 @@ xfer_add PARM_0(void)
   return(0);
 }
 
-/* XFER_SUB -- Subtract a unit from the target amount */
+/*
+ * xfer_subtract - Decrease transfer amount for current selection
+ *
+ * Decreases the transfer amount for the currently selected item type.
+ * Amount decrement depends on item type and minimum limits.
+ * Provides audio feedback if minimum limit reached.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_xchanges array for current selection
+ *   - Calls beep() if at minimum limit or invalid selection
+ *
+ * Notes:
+ *   - Cannot modify army or caravan selections
+ *   - Civilian decrements by xfer_civ_units with minimum check
+ *   - Crew decrements by xfer_crew_units with minimum check
+ *   - Material decrements by 1 with minimum of 1
+ *   - Prevents reduction below minimum viable transfer amounts
+ *   - Part of the transfer amount adjustment interface
+ */
 static int
 xfer_subtract PARM_0(void)
 {
@@ -1432,7 +2027,30 @@ xfer_subtract PARM_0(void)
   return(0);
 }
 
-/* XFER_MULT -- Multiply the amounts (by 10) */
+/*
+ * xfer_mult - Multiply transfer amount by 10 for current selection
+ *
+ * Multiplies the current transfer amount by 10 for quick adjustment
+ * to larger quantities. Provides audio feedback if maximum limit
+ * would be exceeded.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_xchanges array for current selection
+ *   - Calls beep() if operation would exceed maximum or invalid selection
+ *
+ * Notes:
+ *   - Cannot modify army or caravan selections
+ *   - Applies to civilians, crew, and material amounts
+ *   - Maximum limit check prevents overflow (1,000,000)
+ *   - Quick way to adjust to larger transfer quantities
+ *   - Part of the transfer amount adjustment interface
+ */
 static int
 xfer_mult PARM_0(void)
 {
@@ -1465,7 +2083,31 @@ xfer_mult PARM_0(void)
   return(0);
 }
 
-/* XFER_DIV -- Divide the amounts (by 10) */
+/*
+ * xfer_div - Divide transfer amount by 10 for current selection
+ *
+ * Divides the current transfer amount by 10 for quick adjustment
+ * to smaller quantities. Maintains minimum limits and divisor
+ * alignment for civilian and crew amounts.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_xchanges array for current selection
+ *   - Calls beep() if invalid selection
+ *
+ * Notes:
+ *   - Cannot modify army or caravan selections
+ *   - Civilian and crew amounts aligned to their divisor units
+ *   - Material amounts maintain minimum of 1
+ *   - Ensures divided amounts still meet minimum transfer requirements
+ *   - Quick way to adjust to smaller transfer quantities
+ *   - Part of the transfer amount adjustment interface
+ */
 static int
 xfer_div PARM_0(void)
 {
@@ -1510,7 +2152,33 @@ xfer_div PARM_0(void)
   return(0);
 }
 
-/* XFER_ASSIGN -- Assign the value to the amounts */
+/*
+ * xfer_assign - Set specific transfer amount for current selection
+ *
+ * Prompts the user to enter a specific transfer amount for the
+ * currently selected item type. Validates input against minimum
+ * limits and divisor requirements.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Displays input prompt on bottom line
+ *   - Modifies xfer_xchanges array if valid input provided
+ *   - May display error messages for invalid input
+ *   - Calls clrtoeol() and get_number() for user input
+ *
+ * Notes:
+ *   - Cannot modify army or caravan selections
+ *   - Civilian amounts must be multiples of xfer_civ_units
+ *   - Crew amounts must be multiples of xfer_crew_units
+ *   - Material amounts must be greater than zero
+ *   - Validates divisibility requirements for population types
+ *   - Part of the transfer amount configuration interface
+ */
 static int
 xfer_assign PARM_0(void)
 {
@@ -1569,7 +2237,30 @@ xfer_assign PARM_0(void)
   return(0);
 }
 
-/* XFER_SHIFTUP -- Shift the army or caravan units upward */
+/*
+ * xfer_shiftup - Scroll army or caravan list upward in interface
+ *
+ * Scrolls the display of army or caravan units upward to show
+ * different units when more are available than can fit on screen.
+ * Only works for army and caravan selections.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_aslot or xfer_vslot arrays for scrolling
+ *   - Calls beep() if at maximum scroll position or invalid selection
+ *
+ * Notes:
+ *   - Only applies to army selections (>= xf_min_army) or caravan selection
+ *   - Scroll position limited by maximum available units
+ *   - Uses opposite slot direction for scrolling source list
+ *   - Part of the unit list navigation interface
+ *   - Provides access to units beyond initial display limit
+ */
 static int
 xfer_shiftup PARM_0(void)
 {
@@ -1594,7 +2285,30 @@ xfer_shiftup PARM_0(void)
   return(0);
 }
 
-/* XFER_SHIFTDOWN -- Shift the army or caravan units downward */
+/*
+ * xfer_shiftdown - Scroll army or caravan list downward in interface
+ *
+ * Scrolls the display of army or caravan units downward to show
+ * different units when more are available than can fit on screen.
+ * Only works for army and caravan selections.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Modifies xfer_aslot or xfer_vslot arrays for scrolling
+ *   - Calls beep() if at minimum scroll position or invalid selection
+ *
+ * Notes:
+ *   - Only applies to army selections (>= xf_min_army) or caravan selection
+ *   - Scroll position limited by 0 minimum
+ *   - Uses opposite slot direction for scrolling source list
+ *   - Part of the unit list navigation interface
+ *   - Returns to beginning of available unit list
+ */
 static int
 xfer_shiftdown PARM_0(void)
 {
@@ -1621,7 +2335,30 @@ xfer_shiftdown PARM_0(void)
   return(0);
 }
 
-/* XFER_OPTIONS -- Perform the various conquer options */
+/*
+ * xfer_options - Access game options configuration from transfer mode
+ *
+ * Provides access to the game's options configuration system while
+ * in transfer mode. Allows players to adjust game settings without
+ * exiting the transfer interface.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Calls option_cmd() with transfer mode key system and bindings
+ *   - May modify game configuration options
+ *   - Temporarily exits transfer display for options interface
+ *
+ * Notes:
+ *   - Uses transfer mode's key system for consistency
+ *   - Options changes apply immediately to the game
+ *   - Returns to transfer mode after options configuration
+ *   - Part of the transfer mode utility interface
+ */
 static int
 xfer_options PARM_0(void)
 {
@@ -1629,7 +2366,30 @@ xfer_options PARM_0(void)
   return(0);
 }
 
-/* XFER_HELP -- Show some documentation */
+/*
+ * xfer_help - Display transfer mode command help
+ *
+ * Shows comprehensive help documentation for all transfer mode
+ * commands and key bindings. Provides interactive help system
+ * for learning the transfer interface.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   int - Always returns 0
+ *
+ * Side Effects:
+ *   - Calls create_help() to display help system
+ *   - Temporarily exits transfer display for help interface
+ *
+ * Notes:
+ *   - Help includes all transfer mode commands and descriptions
+ *   - Uses transfer mode key bindings and function definitions
+ *   - Interactive help system with navigation
+ *   - Returns to transfer mode after help consultation
+ *   - Part of the transfer mode user assistance interface
+ */
 static int
 xfer_help PARM_0(void)
 {
@@ -1639,7 +2399,33 @@ xfer_help PARM_0(void)
   return(0);
 }
 
-/* XFER_CAPSTR -- Build the capacity information into the string */
+/*
+ * xfer_capstr - Build capacity information string for display
+ *
+ * Constructs a formatted string showing the storage capacity for
+ * a specific transfer selection, handling different unit types
+ * and unlimited capacity cases.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to get capacity for
+ *   select_num - Selection index within the transfer interface
+ *   out_str - Output buffer to write capacity string (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, writes to out_str buffer
+ *
+ * Side Effects:
+ *   - Writes formatted capacity string to out_str buffer
+ *   - Sets out_str[0] = '\0' for invalid parameters
+ *
+ * Notes:
+ *   - Shows "unlimited" for unlimited capacity selections
+ *   - Army capacity shown as "X men" or "X man"
+ *   - Caravan capacity shown as "X wagons" or "X wagon"
+ *   - Other selections show numeric capacity
+ *   - Performs bounds checking on all parameters
+ *   - Used by transfer interface display system
+ */
 static void
 xfer_capstr PARM_3(int, slot, int, select_num, char *, out_str)
 {
@@ -1671,7 +2457,34 @@ xfer_capstr PARM_3(int, slot, int, select_num, char *, out_str)
   }
 }
 
-/* XFER_STOSTR -- Build the storage information into the string */
+/*
+ * xfer_stostr - Build current storage information string for display
+ *
+ * Constructs a formatted string showing the current storage contents
+ * for a specific transfer selection, handling different unit types
+ * and displaying appropriate information.
+ *
+ * Parameters:
+ *   slot - Transfer slot index (0 or 1) to get storage for
+ *   select_num - Selection index within the transfer interface
+ *   out_str - Output buffer to write storage string (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, writes to out_str buffer
+ *
+ * Side Effects:
+ *   - Writes formatted storage string to out_str buffer
+ *   - Sets out_str[0] = '\0' for invalid parameters
+ *
+ * Notes:
+ *   - Army storage shows unit type and ID number
+ *   - Caravan storage shows "caravan X" with ID
+ *   - Civilian storage shows population count
+ *   - Crew storage shows crew count
+ *   - Material storage shows quantity as floating point
+ *   - Performs bounds checking on all parameters
+ *   - Used by transfer interface display system
+ */
 static void
 xfer_stostr PARM_3(int, slot, int, select_num, char *, out_str)
 {
@@ -1711,7 +2524,33 @@ xfer_stostr PARM_3(int, slot, int, select_num, char *, out_str)
   }
 }
 
-/* XFER_MIDSTR -- Build up the middle string */
+/*
+ * xfer_midstr - Build middle column information string for display
+ *
+ * Constructs a formatted string for the middle column of the transfer
+ * interface, showing transfer amounts or unit information depending
+ * on selection type.
+ *
+ * Parameters:
+ *   select_num - Selection index within the transfer interface
+ *   out_str - Output buffer to write middle string (must not be NULL)
+ *
+ * Returns:
+ *   void - No return value, writes to out_str buffer
+ *
+ * Side Effects:
+ *   - Writes formatted middle column string to out_str buffer
+ *   - Sets out_str[0] = '\0' for invalid parameters
+ *
+ * Notes:
+ *   - Army selections show load capacity as "X men" or "X man"
+ *   - Caravan selections show load capacity as "X wagons" or "X wagon"
+ *   - Civilian selections show configured transfer amount
+ *   - Crew selections show configured transfer amount
+ *   - Material selections show configured transfer amount
+ *   - Uses xfer_direction to determine source slot
+ *   - Used by transfer interface display system for center column
+ */
 static void
 xfer_midstr PARM_2(int, select_num, char *, out_str)
 {
@@ -1749,7 +2588,34 @@ xfer_midstr PARM_2(int, select_num, char *, out_str)
   }
 }
 
-/* XFER_SHOW -- Display the gathered information */
+/*
+ * xfer_show - Display the complete transfer mode interface
+ *
+ * Renders the full transfer mode interface including site descriptions,
+ * capacity information, current storage, transfer amounts, and navigation
+ * indicators. Creates a comprehensive visual transfer management system.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   void - No return value, updates screen display
+ *
+ * Side Effects:
+ *   - Clears and redraws the entire screen
+ *   - Displays error messages if present
+ *   - Shows site titles, column headers, and data rows
+ *   - Highlights current selection with directional indicators
+ *   - Updates bottom instruction line
+ *
+ * Notes:
+ *   - Calculates column widths based on screen size
+ *   - Shows two transfer sites side by side with center amounts column
+ *   - Current selection highlighted with direction arrows
+ *   - Displays capacity, storage, and transfer amounts for each item
+ *   - Error messages shown on bottom line when present
+ *   - Complete interface refresh for transfer mode
+ */
 static void
 xfer_show PARM_0(void)
 {
@@ -1897,7 +2763,32 @@ xfer_show PARM_0(void)
   refresh();
 }
 
-/* GET_DIVUNITS -- Get the lowest common multiple of the items */
+/*
+ * get_divunits - Calculate lowest common multiple for transfer units
+ *
+ * Computes the lowest common multiple of two values to determine
+ * appropriate transfer unit sizes for population transfers between
+ * sites with different capacity divisors.
+ *
+ * Parameters:
+ *   a - First divisor value
+ *   b - Second divisor value
+ *
+ * Returns:
+ *   long - Lowest common multiple of a and b, or 0/single value for edge cases
+ *
+ * Side Effects:
+ *   - None - pure mathematical calculation function
+ *
+ * Notes:
+ *   - Returns 0 if either value is 0
+ *   - Returns the positive value if one is negative
+ *   - Returns 0 if both values are negative
+ *   - Uses Euclidean algorithm to find greatest common divisor
+ *   - LCM calculated as (a * b) / GCD(a, b)
+ *   - Used for determining civilian and crew transfer unit sizes
+ *   - Ensures transfers align with both sites' capacity divisors
+ */
 static long
 get_divunits PARM_2(long, a, long, b)
 {
@@ -1929,7 +2820,35 @@ get_divunits PARM_2(long, a, long, b)
   return(hold / b);
 }
 
-/* XFER_MODE -- Interactively transfer items between two storage elements */
+/*
+ * xfer_mode - Main interactive transfer mode interface
+ *
+ * Provides the main interactive interface for transferring items between
+ * two storage sites. Handles initialization, user input processing,
+ * and maintains the transfer loop until completion.
+ *
+ * Parameters:
+ *   void - No parameters required, uses global xfer_sites array
+ *
+ * Returns:
+ *   void - No return value, modifies transfer site data
+ *
+ * Side Effects:
+ *   - Modifies global transfer configuration variables
+ *   - Processes user keyboard input through key binding system
+ *   - Updates transfer site data based on user operations
+ *   - Displays error messages and interface updates
+ *   - May modify army, navy, caravan, and sector data
+ *
+ * Notes:
+ *   - Initializes transfer configuration based on site capabilities
+ *   - Determines available transfer types (materials, civilians, crew, armies, caravans)
+ *   - Main event loop processes user input until xfer_done flag set
+ *   - Validates transfer compatibility between sites
+ *   - Exits with error if no transferable items found
+ *   - Uses key binding system for command processing
+ *   - Complete transfer mode implementation for item management
+ */
 void
 xfer_mode PARM_0(void)
 {
@@ -2096,7 +3015,31 @@ KEYSYS_STRUCT xfer_keysys = {
   "xfer", xfer_funcs, xfer_klist, 0, 0
 };
 
-/* ALIGN_XFER_KEYS -- Align all of the transfer mode keys */
+/*
+ * align_xfer_keys - Initialize transfer mode key binding system
+ *
+ * Sets up the key binding system for transfer mode by calculating
+ * array sizes and initializing the key binding structure. Called
+ * during transfer mode initialization.
+ *
+ * Parameters:
+ *   void - No parameters required
+ *
+ * Returns:
+ *   void - No return value, initializes global key binding data
+ *
+ * Side Effects:
+ *   - Calculates and sets xfer_keysys.num_binds and num_parse
+ *   - Calls init_keys() to set up xfer_bindings structure
+ *   - Modifies global xfer_bindings pointer
+ *
+ * Notes:
+ *   - Only initializes if xfer_bindings is NULL (first call)
+ *   - Array sizes calculated using sizeof operations
+ *   - Links function definitions with key bindings
+ *   - Part of the transfer mode initialization sequence
+ *   - Ensures proper key binding system setup for user interaction
+ */
 void
 align_xfer_keys PARM_0(void)
 {
