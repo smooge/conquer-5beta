@@ -111,6 +111,59 @@ Platform-specific and legacy code:
 63. **vms.c** - VMS platform-specific code
 64. **getopt.c** - Command line parsing (standard library implementation)
 
+### Priority 6: Auxiliary Utilities - Sessions 65-68
+Utility programs in Auxil/ and Docs/ directories:
+
+65. **Auxil/onavy.c** - Naval operations utility program
+66. **Auxil/psmap.c** - PostScript map generation utility
+67. **Auxil/sort.c** - Sorting utility program
+68. **Docs/ezconv.c** - Documentation conversion utility
+
+### Priority 7: Header Files Documentation - Sessions 69-108+
+Include/ directory header files (~40 files):
+
+69. **Include/header.h** - Main header definitions
+70. **Include/dataA.h** - Core game data structures
+71. **Include/dataG.h** - User interface data structures
+72. **Include/dataX.h** - Extended data structures
+73. **Include/combatA.h** - Combat system definitions
+74. **Include/displayG.h** - Display system definitions
+75. **Include/infoG.h** - Information display definitions
+76. **Include/keybindG.h** - Key binding definitions
+77. **Include/ntninfoG.h** - Nation information definitions
+78. **Include/xferG.h** - Transfer system definitions
+79. **Include/executeX.h** - Command execution definitions
+80. **Include/fileA.h** - Core file operations
+81. **Include/fileG.h** - UI file operations
+82. **Include/fileX.h** - Extended file operations
+83. **Include/moveX.h** - Movement system definitions
+84. **Include/magicX.h** - Magic system definitions
+85. **Include/itemX.h** - Item system definitions
+86. **Include/armyX.h** - Army system definitions
+87. **Include/navyX.h** - Navy system definitions
+88. **Include/cityX.h** - City system definitions
+89. **Include/worldX.h** - World system definitions
+90. **Include/racesX.h** - Race system definitions
+91. **Include/spellsX.h** - Spell system definitions
+92. **Include/tgoodsX.h** - Trade goods definitions
+93. **Include/weightX.h** - Weight system definitions
+94. **Include/elevegX.h** - Elevation/vegetation definitions
+95. **Include/desigX.h** - Designation system definitions
+96. **Include/mtrlsX.h** - Materials system definitions
+97. **Include/stringX.h** - String utilities definitions
+98. **Include/paramX.h** - Parameter definitions
+99. **Include/statusX.h** - Status system definitions
+100. **Include/optionsX.h** - Options system definitions
+101. **Include/keyvalsX.h** - Key-value definitions
+102. **Include/butesX.h** - Attribute system definitions
+103. **Include/calenX.h** - Calendar system definitions
+104. **Include/caravanX.h** - Caravan system definitions
+105. **Include/hlightX.h** - Highlighting system definitions
+106. **Include/displayX.h** - Extended display definitions
+107. **Include/dstatusX.h** - Display status definitions
+108. **Include/dataioX.h** - Data I/O definitions
+... (Additional headers as discovered)
+
 ### Documentation Strategy for Priority 5
 
 **Rationale for Organization:**
@@ -250,9 +303,15 @@ Platform-specific and legacy code:
 **Priority 5 Progress**: 28/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 11/11 complete; Priority 5D: 6/8 files)
 **Strategy**: Continue Priority 5D - Secondary Interface modules
 
-### PHASE 4 PROGRESS UPDATE
-**OVERALL PROGRESS**: 60/64 files complete (93.75% done)
-**Files Remaining**: 4 files (2 in Priority 5D + 2 in Priority 5E)
+### PHASE 4 PROGRESS UPDATE - SCOPE EXPANSION DISCOVERED! 🚨
+**ORIGINAL SCOPE**: 60/64 Src/ files complete (93.75% of Src/ done)
+**EXPANDED SCOPE DISCOVERED**: Additional files found that need documentation:
+- **Auxil/ Directory**: 3 C files (onavy.c, psmap.c, sort.c)
+- **Docs/ Directory**: 1 C file (ezconv.c)  
+- **Include/ Directory**: 40+ header files (.h files)
+- **REVISED TOTAL**: ~108 files need documentation (Src/ + Auxil/ + Docs/ + Include/)
+- **ACTUAL PROGRESS**: 60/108 files complete (~55.5% done)
+**Remaining in Src/**: 4 files (2 in Priority 5D + 2 in Priority 5E)
 
 ### ntninfoG.c COMPLETE! 📍
 **ntninfoG.c**: ✅ COMPLETE (Nation information interface - 30+ functions documented)
@@ -270,6 +329,47 @@ Platform-specific and legacy code:
   - Large files: Checkpoint commits every 15 functions
 - **Context Preservation**: Always maintain clean session boundaries for optimal quality
 
+## SCOPE EXPANSION IMPLICATIONS 🚨
+
+### Revised Documentation Scope
+**Original Estimate**: 64 Src/ files
+**Actual Scope**: ~108+ files total
+- **Src/ Directory**: 64 files (60 complete, 4 remaining)
+- **Auxil/ Directory**: 3 utility programs  
+- **Docs/ Directory**: 1 conversion utility
+- **Include/ Directory**: 40+ header files
+
+### Strategic Recommendations
+
+#### Immediate Priority (Complete Src/ First)
+**Recommendation**: Complete the remaining 4 Src/ files first to finish the core documentation:
+1. **ioG.c** - I/O interface
+2. **iodataG.c** - I/O data interface  
+3. **vms.c** - VMS platform-specific code
+4. **getopt.c** - Command line parsing
+
+This achieves **100% core source file documentation** and provides a natural milestone.
+
+#### Future Documentation Phases
+After completing Src/, consider these as separate phases:
+
+**Phase 4B: Auxiliary Utilities** (4 files)
+- Focus: Standalone utility programs
+- Effort: 4 sessions (1 file each)
+- Priority: Medium (useful but not core to game)
+
+**Phase 4C: Header File Documentation** (40+ files) 
+- Focus: Data structures, constants, function declarations
+- Effort: 40+ sessions (1 file each)
+- Priority: High (essential for understanding system architecture)
+- Strategy: Group by system (combat, display, data, etc.)
+
+#### Effort Estimation
+- **Remaining Src/**: 4 sessions (immediate)
+- **Auxil + Docs**: 4 sessions (medium priority)
+- **Headers**: 40+ sessions (high priority but can be done incrementally)
+- **Total Additional**: ~48 sessions beyond current Src/ work
+
 ## Benefits of This Approach (With 15-Function Checkpoints)
 
 1. **Context Efficiency**: Each session focuses on understanding functions deeply without overload
@@ -280,6 +380,7 @@ Platform-specific and legacy code:
 6. **Documentation Quality**: Prevents degradation that occurs when sessions become too long
 7. **Sustainable Workflow**: Consistent high-quality output across all functions regardless of file size
 8. **Debugging**: Each checkpoint can be tested individually if needed
+9. **Scalable**: Can handle the expanded scope of 108+ files with consistent quality
 
 ## Implementation Notes
 
