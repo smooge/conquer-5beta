@@ -36,8 +36,34 @@
 #include "dstatusX.h"
 #include "patchlevel.h"
 
-/* CREATE_HELP -- Given the list of functions, and the list of key
-                  bindings, build a help list of the functions. */
+/*
+ * create_help - Generate and display a comprehensive help file for function bindings
+ *
+ * Creates a temporary help file that lists all available functions and their 
+ * associated key bindings. The help file is formatted with proper pagination
+ * and displays function names, key bindings, and descriptions in a readable
+ * format. Uses the pager system to display the help content.
+ *
+ * Parameters:
+ *   title - Title string to display at the top of the help file
+ *   kl_ptr - Pointer to the key binding list structure
+ *   fnc_l - Array of function parser structures containing function data
+ *   lim - Number of functions in the fnc_l array
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Creates a temporary file (nationname.tmptag) for help content
+ *   - Displays help content using the pager system
+ *   - Removes the temporary file after display
+ *   - May display error message if temporary file creation fails
+ *
+ * Notes:
+ *   - Handles automatic pagination with form feeds
+ *   - Shows "[none]" for functions with no key bindings
+ *   - Formats output to fit within screen width constraints
+ */
 void
 create_help PARM_4(char *, title, KLIST_PTR, kl_ptr,
 		   PARSE_PTR, fnc_l, int, lim)
@@ -120,7 +146,33 @@ create_help PARM_4(char *, title, KLIST_PTR, kl_ptr,
   unlink(quick_file);
 }
 
-/* MOTD_DISPLAY -- Show the motd to the screen */
+/*
+ * motd_display - Display the Message of the Day (MOTD) centered on screen
+ *
+ * Displays the MOTD either from a file or from a default message array.
+ * Centers all text horizontally on the screen and displays it within
+ * the designated MOTD area. Handles line length checking and proper
+ * formatting for screen display.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Clears the screen before display
+ *   - Opens and reads the MOTD file if it exists
+ *   - Displays content centered on screen using curses library
+ *   - Closes MOTD file when finished
+ *
+ * Notes:
+ *   - Uses MOTDLINES constant to limit number of lines displayed
+ *   - Falls back to default message (dflt_motd array) if file doesn't exist
+ *   - Removes newline characters from file input
+ *   - Truncates lines that exceed screen width
+ *   - Vertical positioning is centered based on screen height
+ */
 void
 motd_display PARM_0(void)
 {
@@ -171,8 +223,33 @@ motd_display PARM_0(void)
   }
 }
 
-/* GET_COUNTRY -- Return an integer representation of a nation;
-                  As a side effect 'ntn_tptr' is set properly.  */
+/*
+ * get_country - Parse user input and return nation identifier
+ *
+ * Prompts for and validates nation name input, returning the corresponding
+ * nation number. Handles special cases like "god", "unowned", and "news".
+ * Sets the global ntn_tptr as a side effect to point to the found nation
+ * structure.
+ *
+ * Parameters:
+ *   allinp - TRUE to allow extended nation names (STR_XNAME), FALSE for standard names (STR_NAME)
+ *
+ * Returns:
+ *   Nation number (1 to MAXNTN-1) for valid nations
+ *   UNOWNED for "god" or "unowned" input
+ *   NEWSPAPER for "news" input
+ *   MAXNTN for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global variable ntn_tptr to point to found nation or NULL
+ *   - Sets global variable no_input to TRUE if user provides no input
+ *   - Modifies global string variable with user input
+ *
+ * Notes:
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ *   - Searches through all active nations in world.np array
+ */
 int
 get_country PARM_1(int, allinp)
 {
@@ -211,7 +288,31 @@ get_country PARM_1(int, allinp)
   return(MAXNTN);
 }
 
-/* GET_FUNC -- Obtain a bindable function */
+/*
+ * get_func - Parse user input and return a bindable function pointer
+ *
+ * Prompts for and validates function name input, returning the corresponding
+ * function pointer. Searches through the provided function parser array
+ * to find a matching function name.
+ *
+ * Parameters:
+ *   key_info - Key system structure containing function parser array and count
+ *
+ * Returns:
+ *   Function pointer (FNCI) for valid function names
+ *   NULL for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global variable no_input to TRUE if user provides no input
+ *   - Sets global_int to the number of available functions
+ *   - Sets tmp_parsep to point to the function parser array
+ *   - Displays error message for invalid function names
+ *
+ * Notes:
+ *   - Uses STR_FUNCS input mode for function name completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Iterates through key_info.parse_p array to find matching realname
+ */
 FNCI
 get_func PARM_1(KEYSYS_STRUCT, key_info)
 {
@@ -237,7 +338,40 @@ get_func PARM_1(KEYSYS_STRUCT, key_info)
   return((FNCI) NULL);
 }
 
-/* ENTER_UNITTYPE -- Select a new army unit */
+/*
+ * enter_unittype - Interactive unit type selection with filtered choices
+ *
+ * Displays available unit types based on the specified style filter and
+ * prompts the user to select one. Filters units based on various criteria
+ * including mercenaries, monsters, upgrade classes, and player permissions.
+ * Shows available choices with highlighting based on availability.
+ *
+ * Parameters:
+ *   style - Selection style filter:
+ *           0 = Normal units (excluding most mercenaries and agents)
+ *           1 = Mercenaries only
+ *           2 = Same class as current army (for upgrades)
+ *           3 = Units that can be enlisted away from cities
+ *           4 = Monsters only
+ *           5 = Monsters with negative spell points
+ *   prompt - Text to display when asking for selection
+ *   emsg - Error message to display if no valid choices available
+ *
+ * Returns:
+ *   Unit type index (0 to num_armytypes-1) for valid selection
+ *   num_armytypes for invalid selection or user cancellation
+ *
+ * Side Effects:
+ *   - Clears bottom portion of screen for choice display
+ *   - Displays available choices with highlighting
+ *   - May display error messages for invalid selections
+ *
+ * Notes:
+ *   - Respects god mode permissions for special unit access
+ *   - Uses utype_mayuse and utype_ok for availability checking
+ *   - Handles spell point calculations for monster summoning
+ *   - Interactive single-character selection interface
+ */
 int
 enter_unittype PARM_3(int, style, char *, prompt, char *, emsg)
 {
@@ -413,7 +547,32 @@ enter_unittype PARM_3(int, style, char *, prompt, char *, emsg)
   return(result);
 }
 
-/* GET_DMODE -- Enter in a major designation */
+/*
+ * get_dmode - Interactive display mode selection from available modes
+ *
+ * Displays all available display modes and prompts the user to select one.
+ * Shows display modes in a formatted list that wraps to multiple lines
+ * if necessary. Validates user input against the available mode names.
+ *
+ * Parameters:
+ *   prompt - Text to display when asking for mode selection
+ *
+ * Returns:
+ *   Pointer to selected display mode structure (DMODE_PTR)
+ *   NULL if user cancels input or no valid mode found
+ *
+ * Side Effects:
+ *   - Clears bottom portion of screen for mode display
+ *   - Displays available display modes in formatted list
+ *   - Sets global string variable with user input
+ *   - Sets global no_input flag if user provides no input
+ *
+ * Notes:
+ *   - Iterates through dmode_list linked list to show all available modes
+ *   - Handles line wrapping when mode names exceed screen width
+ *   - Uses STR_DMODES input mode for display mode completion
+ *   - Case-insensitive string matching using str_test function
+ */
 DMODE_PTR
 get_dmode PARM_1(char *, prompt)
 {
@@ -475,7 +634,29 @@ get_dmode PARM_1(char *, prompt)
   return(dmode_tptr);
 }
 
-/* GET_DESIGNATION -- Enter in a major designation */
+/*
+ * get_designation - Parse user input for major terrain designation
+ *
+ * Prompts for and validates major terrain designation input, returning
+ * the corresponding designation index. Searches through the maj_dinfo
+ * array to find a matching designation name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Designation index (0 to MAJ_NUMBER-1) for valid designations
+ *   MAJ_NUMBER for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global buffer for input processing
+ *
+ * Notes:
+ *   - Uses STR_DESG input mode for designation completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_designation PARM_0(void)
 {
@@ -495,7 +676,29 @@ get_designation PARM_0(void)
   return(i);
 }
 
-/* GET_MINDESG -- Enter in a minor designation */
+/*
+ * get_mindesg - Parse user input for minor terrain designation
+ *
+ * Prompts for and validates minor terrain designation input, returning
+ * the corresponding designation index. Searches through the min_dinfo
+ * array to find a matching designation name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Minor designation index (0 to MIN_NUMBER-1) for valid designations
+ *   MIN_NUMBER for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global buffer for input processing
+ *
+ * Notes:
+ *   - Uses STR_MINDESG input mode for minor designation completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_mindesg PARM_0(void)
 {
@@ -515,7 +718,29 @@ get_mindesg PARM_0(void)
   return(i);
 }
 
-/* GET_TGCLASS -- Enter in a tradegood class */
+/*
+ * get_tgclass - Parse user input for trade good class selection
+ *
+ * Prompts for and validates trade good class input, returning the
+ * corresponding class index. Searches through the tgclass_info array
+ * to find a matching class name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Trade good class index (0 to tgclass_number-1) for valid classes
+ *   tgclass_number for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global string variable for input processing
+ *
+ * Notes:
+ *   - Uses STR_TGCLASS input mode for trade good class completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_tgclass PARM_0(void)
 {
@@ -534,7 +759,29 @@ get_tgclass PARM_0(void)
   return(i);
 }
 
-/* GET_TRADEGOOD -- Enter in a tradegood */
+/*
+ * get_tradegood - Parse user input for specific trade good selection
+ *
+ * Prompts for and validates trade good input, returning the corresponding
+ * trade good index. Searches through the tg_info array to find a matching
+ * trade good name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Trade good index (0 to tgoods_number-1) for valid trade goods
+ *   tgoods_number for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global buffer for input processing
+ *
+ * Notes:
+ *   - Uses STR_TGOOD input mode for trade good completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_tradegood PARM_0(void)
 {
@@ -554,7 +801,29 @@ get_tradegood PARM_0(void)
   return(i);
 }
 
-/* GET_ALTITUDE -- Enter in an altitude type */
+/*
+ * get_altitude - Parse user input for elevation/altitude type selection
+ *
+ * Prompts for and validates altitude type input, returning the corresponding
+ * elevation index. Searches through the ele_info array to find a matching
+ * elevation type name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Elevation index (0 to ELE_NUMBER-1) for valid elevation types
+ *   ELE_NUMBER for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global buffer for input processing
+ *
+ * Notes:
+ *   - Uses STR_ALT input mode for altitude/elevation completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_altitude PARM_0(void)
 {
@@ -574,7 +843,34 @@ get_altitude PARM_0(void)
   return(i);
 }
 
-/* GET_DIPLOMACY -- Read in the diplomacy status of the nation */
+/*
+ * get_diplomacy - Interactive diplomacy status selection with constraints
+ *
+ * Displays available diplomacy statuses and prompts the user to select one.
+ * Applies constraints based on current status, maximum diplomatic adjustments,
+ * and other nation's status. Shows options with highlighting based on
+ * availability and player permissions.
+ *
+ * Parameters:
+ *   oldstatus - Current diplomacy status with the other nation
+ *   othstatus - Other nation's diplomacy status toward this nation
+ *
+ * Returns:
+ *   Diplomacy status index (0 to dstatus_number-1) for valid selections
+ *   dstatus_number for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Displays diplomacy options on screen with highlighting
+ *   - Sets global no_input flag if user provides no input
+ *   - Handles line wrapping for option display
+ *
+ * Notes:
+ *   - God mode allows access to all diplomacy levels (start_num = 0)
+ *   - Regular players limited by MAXDIPADJ adjustment constraints
+ *   - Uses hip_string for availability highlighting
+ *   - Single character selection interface with case conversion
+ *   - Neutral and better statuses allowed based on other nation's status
+ */
 int
 get_diplomacy PARM_2(int, oldstatus, int, othstatus)
 {
@@ -627,7 +923,29 @@ get_diplomacy PARM_2(int, oldstatus, int, othstatus)
   return(i);
 }
 
-/* GET_VEGETATION -- Enter in a vegetation type */
+/*
+ * get_vegetation - Parse user input for vegetation type selection
+ *
+ * Prompts for and validates vegetation type input, returning the corresponding
+ * vegetation index. Searches through the veg_info array to find a matching
+ * vegetation type name.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Vegetation index (0 to VEG_NUMBER-1) for valid vegetation types
+ *   VEG_NUMBER for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses global buffer for input processing
+ *
+ * Notes:
+ *   - Uses STR_VEG input mode for vegetation completion
+ *   - Case-insensitive string matching using str_test function
+ *   - Returns immediately on empty input (sets no_input = TRUE)
+ */
 int
 get_vegetation PARM_0(void)
 {
@@ -647,8 +965,34 @@ get_vegetation PARM_0(void)
   return(i);
 }
 
-/* GAUDY_LINEOUT -- Gaudily highlight the nation name
-                    if found in output line*/
+/*
+ * gaudy_lineout - Display text line with highlighted nation name occurrences
+ *
+ * Outputs a text line to the screen with special highlighting (standout mode)
+ * applied to any occurrences of the current nation name. Handles control
+ * characters, tabs, and line length constraints while preserving the visual
+ * appearance of the text.
+ *
+ * Parameters:
+ *   loc - Screen line number where text should be displayed
+ *   str - Text string to display with potential highlighting
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Moves cursor to specified screen location
+ *   - Displays text with standout highlighting for nation name
+ *   - Handles tab expansion and control character display
+ *   - Truncates output at screen width boundary
+ *
+ * Notes:
+ *   - Uses standout()/standend() for nation name highlighting
+ *   - Converts tabs to spaces based on pager_tab setting
+ *   - Shows control characters as ^X format
+ *   - Uses str_ntest for case-insensitive nation name matching
+ *   - Respects COLS-2 screen width limit
+ */
 void
 gaudy_lineout PARM_2(int, loc, char *, str)
 {
@@ -697,7 +1041,33 @@ gaudy_lineout PARM_2(int, loc, char *, str)
   }
 }
 
-/* NORMAL_LINEOUT -- Just send the string out to the screen */
+/*
+ * normal_lineout - Display text line without special highlighting
+ *
+ * Outputs a text line to the screen with standard formatting. Handles
+ * control characters, tabs, and line length constraints while converting
+ * special characters to displayable format.
+ *
+ * Parameters:
+ *   loc - Screen line number where text should be displayed
+ *   str - Text string to display
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Moves cursor to specified screen location
+ *   - Displays text with standard formatting
+ *   - Handles tab expansion and control character display
+ *   - Truncates output at screen width boundary
+ *
+ * Notes:
+ *   - Converts tabs to spaces based on pager_tab setting
+ *   - Shows control characters as ^X format using non_cntrl function
+ *   - No special highlighting applied (contrast with gaudy_lineout)
+ *   - Respects COLS-2 screen width limit
+ *   - More efficient than gaudy_lineout when highlighting not needed
+ */
 void
 normal_lineout PARM_2(int, loc, char *, str)
 {
@@ -732,8 +1102,31 @@ normal_lineout PARM_2(int, loc, char *, str)
   }
 }
 
-/* SPAWN_OUT -- This routines allows the player to get a shell will still
-                in the conquer interface */
+/*
+ * spawn_out - Launch external shell or command while preserving game interface
+ *
+ * Platform-specific function that allows the player to spawn a shell or
+ * external command while maintaining the game interface state. Implementation
+ * varies by platform and compile-time options.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   0 on success or if feature is disabled
+ *
+ * Side Effects:
+ *   - May clear and refresh screen (VMS implementation)
+ *   - Sets redraw flag to DRAW_FULL for full screen redraw
+ *   - Platform-specific: spawns subprocess on VMS systems
+ *
+ * Notes:
+ *   - Controlled by SPAWN_OUT compile-time flag
+ *   - VMS implementation uses lib$spawn() system call
+ *   - Non-VMS and disabled builds return immediately
+ *   - Requires full screen redraw after returning from shell
+ *   - Security consideration: provides shell access to players
+ */
 int
 spawn_out PARM_0(void)
 {
@@ -756,7 +1149,36 @@ spawn_out PARM_0(void)
 #endif /* SPAWN_OUT */
 }
 
-/* SHOW_SCORES -- List all of the nation scores to standard output */
+/*
+ * show_scores - Display comprehensive nation scores and status information
+ *
+ * Generates a detailed score report for all nations in the campaign, showing
+ * nation information, player status, alignment, class, and various statistics.
+ * Includes campaign metadata, update timing, and message of the day. Respects
+ * privacy settings for hiding login names and scores.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Outputs formatted report to standard output (printf)
+ *   - Reads and displays MOTD file if available
+ *   - Reads and displays last update timestamp
+ *   - Processes mail and news status for each nation
+ *   - Temporary file operations for status checking
+ *
+ * Notes:
+ *   - Shows campaign name, demigod, current turn and year
+ *   - Status indicators: * = hasn't logged since update, ! = currently online,
+ *     + = new mail and news, - = new mail only, | = new news only
+ *   - Respects world.hide_login and world.hide_scores privacy settings
+ *   - Handles monster nations and NPC nations specially
+ *   - Displays totals for military, civilians, sectors, treasury
+ *   - Uses roman numerals for year display
+ */
 void
 show_scores PARM_0(void)
 {
@@ -925,7 +1347,32 @@ show_scores PARM_0(void)
   printf("\n");
 }
 
-/* GET_MTRLS -- Select a single entry from the materials */
+/*
+ * get_mtrls - Interactive material type selection from available materials
+ *
+ * Displays all available material types and prompts the user to select one.
+ * Shows materials with highlighting based on availability (whether the
+ * specified material quantities are greater than zero). Uses single-character
+ * selection interface.
+ *
+ * Parameters:
+ *   m1_ptr - Pointer to material quantities array (NULL allows all materials)
+ *
+ * Returns:
+ *   Material index (0 to MTRLS_NUMBER-1) for valid selections
+ *   MTRLS_NUMBER for invalid input or user cancellation
+ *
+ * Side Effects:
+ *   - Displays material choices with availability highlighting
+ *   - Sets global no_input flag if user provides no input
+ *   - Uses hip_string for conditional highlighting
+ *
+ * Notes:
+ *   - Uses first character of material names for selection
+ *   - Case-insensitive input (converts lowercase to uppercase)
+ *   - Materials with zero quantities shown but may be highlighted differently
+ *   - If m1_ptr is NULL, all materials are considered available
+ */
 int
 get_mtrls PARM_1(itemtype *, m1_ptr)
 {
@@ -960,9 +1407,35 @@ get_mtrls PARM_1(itemtype *, m1_ptr)
   return(count);
 }
 
-/* COPYSCREEN -- display the copyright notice on the screen
- * THIS SUBROUTINE MAY NOT BE ALTERED, AND THE MESSAGE CONTAINED HEREIN
- * MUST BE SHOWN TO EACH AND EVERY PLAYER, EVERY TIME THEY LOG IN	*/
+/*
+ * copyscreen - Display copyright notice and game information screen
+ *
+ * Shows the game copyright notice, version information, and licensing terms
+ * that must be displayed to every player upon login. Also displays the last
+ * update timestamp if available. This function implements the required
+ * copyright display as mandated by the game license.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Displays copyright notice in standout mode
+ *   - Shows version and patch level information
+ *   - Displays licensing terms and restrictions
+ *   - Shows last update time if timefile exists
+ *   - Uses curses library for screen positioning and formatting
+ *
+ * Notes:
+ *   - THIS FUNCTION MAY NOT BE ALTERED per license requirements
+ *   - Copyright message MUST BE SHOWN to every player on every login
+ *   - Centers all text based on screen width (COLS)
+ *   - Uses standout highlighting for version display
+ *   - Shows "Please Wait" message at bottom right
+ *   - Personal use only licensing terms are enforced
+ */
 void
 copyscreen PARM_0(void)
 {
@@ -997,7 +1470,35 @@ copyscreen PARM_0(void)
   refresh();
 }
 
-/* DUMP_NTN_INFO -- Dump out nation information in machine readable format */
+/*
+ * dump_ntn_info - Export comprehensive nation data in machine-readable format
+ *
+ * Generates a complete data dump of the current nation's information in a
+ * structured, machine-readable format. Exports nation attributes, units,
+ * cities, items, materials, and other game data for external processing
+ * or analysis tools.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Outputs extensive formatted data to standard output
+ *   - Processes all nation data structures (armies, navies, cities, items, caravans)
+ *   - Displays campaign metadata and turn information
+ *   - May conditionally hide sensitive information based on permissions
+ *
+ * Notes:
+ *   - Output format uses "Field: Value" pairs for easy parsing
+ *   - Location data only shown in god mode for security
+ *   - Exports complete material inventories and production data
+ *   - Includes detailed unit statistics and status information
+ *   - Uses DUMPS and DUMPD macros for consistent formatting
+ *   - Comprehensive coverage includes attributes, totals, and individual units
+ *   - Suitable for automated analysis or backup purposes
+ */
 void
 dump_ntn_info PARM_0(void)
 {
