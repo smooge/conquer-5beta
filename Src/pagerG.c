@@ -61,7 +61,30 @@ static char *pager_help[MAX_PAGERHELP] = {
   "  ^R - redraw screen without clearing"
 };
 
-/* CHECK_REGEXP -- Sets regular expression status and string length */
+/*
+ * check_regexp - Analyze search string for regular expression patterns
+ *
+ * Examines the provided search string to determine if it contains regular
+ * expression metacharacters. Sets the global regexp usage flag and stores
+ * the expression length. This function enables the pager to automatically
+ * switch between string matching and regex matching based on content.
+ *
+ * Parameters:
+ *   str - Search string to analyze for regex metacharacters (must not be NULL)
+ *
+ * Returns:
+ *   TRUE if string contains regex metacharacters, FALSE for literal strings
+ *
+ * Side Effects:
+ *   - Sets global exp_len to string length
+ *   - Sets global use_regexp flag when REGEXP is enabled
+ *   - Prepares search engine for appropriate matching method
+ *
+ * Notes:
+ *   - Regex support is conditional on REGEXP compilation flag
+ *   - Metacharacters checked: . * [ ] \ ^ $ + ? |
+ *   - Used by forward/backward search commands in main pager loop
+ */
 static int
 check_regexp PARM_1( char *, str )
 {
@@ -85,7 +108,29 @@ check_regexp PARM_1( char *, str )
   return(FALSE);
 }
 
-/* LINE_MATCH -- Returns true if the line matches the current pattern */
+/*
+ * line_match - Test if a line matches the current search pattern
+ *
+ * Performs pattern matching against a single line using either regular
+ * expression matching or optimized string searching based on the current
+ * search mode. The function automatically selects the appropriate matching
+ * algorithm based on the use_regexp flag set by check_regexp().
+ *
+ * Parameters:
+ *   str - Line content to test against current search pattern (must not be NULL)
+ *
+ * Returns:
+ *   TRUE if line matches current search pattern, FALSE otherwise
+ *
+ * Side Effects:
+ *   - None (read-only operation)
+ *
+ * Notes:
+ *   - Uses re_exec() for regex matching when REGEXP enabled and use_regexp is TRUE
+ *   - Falls back to optimized str_ntest() for literal string matching
+ *   - Searches from end of string backward for efficiency in string mode
+ *   - Core matching engine used by pg_search() for forward/backward searches
+ */
 static int
 line_match PARM_1(char *, str)
 {
@@ -110,7 +155,31 @@ line_match PARM_1(char *, str)
   return(FALSE);
 }
 
-/* PG_CLEANUP -- cleanup memory settings */
+/*
+ * pg_cleanup - Release all allocated memory and reset pager state
+ *
+ * Performs comprehensive cleanup of the pager's memory allocations and state.
+ * Frees all dynamically allocated line buffers from the file_line array and
+ * resets highlight flags. This function is essential for preventing memory
+ * leaks when exiting the pager.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Frees all allocated memory in file_line[].line arrays
+ *   - Sets all file_line[].line pointers to NULL
+ *   - Resets all file_line[].highlight flags to FALSE
+ *   - Prepares pager for safe shutdown or reinitialization
+ *
+ * Notes:
+ *   - Must be called before pager exit to prevent memory leaks
+ *   - Safe to call multiple times (checks for NULL before freeing)
+ *   - Processes entire MAX_FILE_LINES array for thorough cleanup
+ */
 static void
 pg_cleanup PARM_0(void)
 {
@@ -126,7 +195,34 @@ pg_cleanup PARM_0(void)
   }
 }
 
-/* PG_INIT -- initialize search settings */
+/*
+ * pg_init - Initialize pager state and validate configuration settings
+ *
+ * Performs comprehensive initialization of the pager system, setting up
+ * default values for all state variables and validating user configuration
+ * settings. Ensures the pager starts in a consistent, safe state with
+ * reasonable defaults for all operational parameters.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Clears search_str and sets exp_len to 0
+ *   - Initializes file_line array (NULL pointers, FALSE highlights)
+ *   - Sets cur_line, max_line, old_line to 0
+ *   - Sets marked_line to -1 (no mark)
+ *   - Validates and constrains pager_offset (0 to 3/4 screen height)
+ *   - Validates and constrains pager_scroll (1 to screen height - 1)
+ *   - Resets use_regexp to FALSE when REGEXP enabled
+ *
+ * Notes:
+ *   - Called once per file before reading and display
+ *   - Ensures configuration values are within safe operational ranges
+ *   - Prevents buffer overflows and display corruption from bad settings
+ */
 static void
 pg_init PARM_0(void)
 {
@@ -164,7 +260,31 @@ pg_init PARM_0(void)
 #endif /* REGEXP */
 }
 
-/* PG_STATUS -- Show the current perusal information */
+/*
+ * pg_status - Display comprehensive pager status information
+ *
+ * Shows detailed status information about the current pager session including
+ * current position, search state, and configuration settings. Provides users
+ * with complete visibility into pager state for debugging and navigation.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Displays status line in standout mode at bottom of screen
+ *   - Truncates display at screen width to prevent wrapping
+ *   - Waits for user keypress before returning
+ *   - Clears to end of line for clean display
+ *
+ * Notes:
+ *   - Shows: bottom line number/total, search string, mark position, tab width, scroll distance
+ *   - Bottom line calculated as: max(0, cur_line - pager_offset) + LINES - 1
+ *   - Mark displayed as 0 when no mark set (marked_line == -1)
+ *   - Activated by '=' command in main pager loop
+ */
 static void
 pg_status PARM_0(void)
 {
@@ -190,7 +310,31 @@ pg_status PARM_0(void)
   next_char();
 }
 
-/* PG_BOTTOM -- Provide command description */
+/*
+ * pg_bottom - Display command prompt and help summary at screen bottom
+ *
+ * Provides a concise command summary and navigation prompt at the bottom of
+ * the screen during normal pager operation. Shows the most essential commands
+ * for quick reference without requiring the full help display.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Clears bottom line of screen
+ *   - Displays centered standout help text
+ *   - Positions cursor at pager_offset for continued display
+ *   - Refreshes screen to show changes
+ *
+ * Notes:
+ *   - Shows essential commands: 'q' exit, ' ' advance, '/' '?' search, 'h' help
+ *   - Text is centered horizontally for better visual appeal
+ *   - Called after each command to maintain consistent interface
+ *   - Cursor positioned at pager_offset for proper text display
+ */
 static void
 pg_bottom PARM_0(void)
 {
@@ -205,7 +349,30 @@ pg_bottom PARM_0(void)
   refresh();
 }
 
-/* PG_SETCURRENT -- Assign the current line */
+/*
+ * pg_setcurrent - Set current line position with bounds checking
+ *
+ * Updates the current line position with comprehensive bounds checking to ensure
+ * the display remains valid. Handles edge cases for small files and maintains
+ * proper relationship between current line and display offset.
+ *
+ * Parameters:
+ *   to_what - Target line number to set as current position
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Updates cur_line with bounds-checked value
+ *   - Ensures cur_line stays within valid display range
+ *   - Maintains proper offset relationship for scrolling
+ *
+ * Notes:
+ *   - For small files (< LINES-1): sets cur_line to 0
+ *   - Enforces minimum: cur_line >= pager_offset
+ *   - Enforces maximum: cur_line <= max_line + pager_offset - LINES + 1
+ *   - Core positioning function used by all navigation commands
+ */
 static void
 pg_setcurrent PARM_1(int, to_what)
 {
@@ -223,21 +390,86 @@ pg_setcurrent PARM_1(int, to_what)
   }
 }
 
-/* PG_SAVELINE -- Remember the current line */
+/*
+ * pg_saveline - Save current line position for restoration
+ *
+ * Stores the current line position in old_line for later restoration.
+ * Used to implement position memory for operations that might fail or
+ * be cancelled, allowing the pager to return to the previous position.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Sets old_line to current cur_line value
+ *
+ * Notes:
+ *   - Used before search operations that might fail
+ *   - Paired with pg_restore() for rollback functionality
+ *   - Simple state preservation for navigation safety
+ */
 static void
 pg_saveline PARM_0(void)
 {
   old_line = cur_line;
 }
 
-/* PG_RESTORE -- Be sure that the old setting is installed */
+/*
+ * pg_restore - Restore previously saved line position
+ *
+ * Restores the line position saved by pg_saveline(), effectively undoing
+ * the last position change. Used when search operations fail or when the
+ * user wants to return to a previous position.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Sets cur_line to previously saved old_line value
+ *
+ * Notes:
+ *   - Paired with pg_saveline() for position rollback
+ *   - Used when searches fail to return to starting position
+ *   - Simple undo mechanism for navigation operations
+ */
 static void
 pg_restore PARM_0(void)
 {
   cur_line = old_line;
 }
 
-/* PG_LINEOUT -- Place the given line at the given position */
+/*
+ * pg_lineout - Display a single line with appropriate formatting
+ *
+ * Renders a single line from the file buffer to the screen at the specified
+ * location, applying appropriate highlighting and formatting based on line
+ * type and user preferences. Handles headers, gaudy mode, and normal text.
+ *
+ * Parameters:
+ *   d_line - Index into file_line array for source line
+ *   loc - Screen line number where content should be displayed
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Displays line content at specified screen location
+ *   - Applies standout mode for highlighted header lines
+ *   - Uses gaudy_lineout() for nation name highlighting when enabled
+ *   - Clears to end of line for clean display
+ *
+ * Notes:
+ *   - Headers centered horizontally and displayed in standout mode
+ *   - Gaudy mode highlights nation names within text
+ *   - Normal mode uses standard text display
+ *   - Automatically cleans up line edges with clrtoeol()
+ */
 static void
 pg_lineout PARM_2(int, d_line, int, loc)
 {
@@ -261,7 +493,31 @@ pg_lineout PARM_2(int, d_line, int, loc)
   clrtoeol();
 }
 
-/* PG_REDRAW -- Draw the file based on current line position */
+/*
+ * pg_redraw - Redraw entire screen based on current line position
+ *
+ * Redraws the complete screen display based on the current line position
+ * and pager offset. Calculates the visible range and renders all lines
+ * within that range, filling remaining space with tilde markers.
+ *
+ * Parameters:
+ *   full_clr - TRUE for complete screen clear, FALSE for partial refresh
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Clears screen (full or partial based on full_clr parameter)
+ *   - Redraws all visible lines in current display window
+ *   - Fills empty lines with '~' characters (vi-style)
+ *   - Updates entire screen display
+ *
+ * Notes:
+ *   - Display range: max(0, cur_line - pager_offset) to min(start + LINES - 1, max_line)
+ *   - Used for major navigation changes and screen refresh commands
+ *   - Tilde markers indicate end of file or empty space
+ *   - More expensive than scrolling for small position changes
+ */
 static void
 pg_redraw PARM_1(int, full_clr)
 {
@@ -288,7 +544,31 @@ pg_redraw PARM_1(int, full_clr)
   }
 }
 
-/* PG_SCROLL -- Scroll the display until the current line */
+/*
+ * pg_scroll - Efficiently scroll display to current line position
+ *
+ * Performs optimized scrolling to move the display from old_line to cur_line
+ * position. Uses hardware scrolling when possible for smooth movement and
+ * falls back to redraw for major position changes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Enables scrollok() for hardware scrolling support
+ *   - Scrolls screen up/down as needed to reach target position
+ *   - Updates old_line to track actual position during scrolling
+ *   - May fall back to pg_redraw() if scrolling causes display issues
+ *
+ * Notes:
+ *   - Scrolls up: adds new lines at bottom while moving window up
+ *   - Scrolls down: inserts lines at top for backward movement
+ *   - More efficient than redraw for small position changes
+ *   - Automatically handles both forward and backward scrolling
+ */
 static void
 pg_scroll PARM_0(void)
 {
@@ -332,7 +612,32 @@ pg_scroll PARM_0(void)
   }
 }
 
-/* PG_HELP -- Display the full command list */
+/*
+ * pg_help - Display comprehensive command help screen
+ *
+ * Shows the complete list of pager commands with descriptions, providing
+ * users with full documentation of available functionality. Displays help
+ * with scrolling effect and waits for user acknowledgment.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Overwrites current screen with help text
+ *   - Displays all commands from pager_help array
+ *   - Shows commands with nice scrolling visual effect
+ *   - Waits for keypress before returning to normal display
+ *   - Restores original screen content after help viewing
+ *
+ * Notes:
+ *   - Shows 21 different pager commands and their functions
+ *   - Help includes navigation, search, marking, and configuration commands
+ *   - Scrolling effect provides visual feedback during display
+ *   - Automatically restores previous display with pg_redraw()
+ */
 static void
 pg_help PARM_0(void)
 {
@@ -363,7 +668,29 @@ pg_help PARM_0(void)
   pg_redraw(FALSE);
 }
 
-/* PG_SEARCH -- Search for a string in the given direction */
+/*
+ * pg_search - Search for pattern in specified direction
+ *
+ * Performs forward or backward search through the file content using the
+ * current search pattern. Searches line by line from current position until
+ * a match is found or file boundaries are reached.
+ *
+ * Parameters:
+ *   dir - Search direction: 1 for forward, -1 for backward
+ *
+ * Returns:
+ *   Line number of match if found, -1 if no match or error
+ *
+ * Side Effects:
+ *   - None (read-only search operation)
+ *
+ * Notes:
+ *   - Validates direction parameter for safety
+ *   - Uses line_match() for actual pattern matching
+ *   - Searches from cur_line + dir to avoid matching current line
+ *   - Respects file boundaries (0 to max_line)
+ *   - Core search engine used by 'n', 'N', '/', and '?' commands
+ */
 static int
 pg_search PARM_1(int, dir)
 {
@@ -391,7 +718,29 @@ pg_search PARM_1(int, dir)
   return(-1);
 }
 
-/* PG_HEADER -- Search for a header in the given direction */
+/*
+ * pg_header - Search for highlighted header lines in specified direction
+ *
+ * Searches for lines marked with the highlight flag, which typically
+ * represent page headers or section dividers. Provides quick navigation
+ * between major sections of the document.
+ *
+ * Parameters:
+ *   dir - Search direction: 1 for forward, -1 for backward
+ *
+ * Returns:
+ *   Line number of next header if found, -1 if no header found or error
+ *
+ * Side Effects:
+ *   - None (read-only search operation)
+ *
+ * Notes:
+ *   - Validates direction parameter for safety
+ *   - Searches for file_line[].highlight == TRUE
+ *   - Used by 'p' (forward) and 'P' (backward) commands
+ *   - Enables quick navigation between document sections
+ *   - Headers are typically centered and displayed in standout mode
+ */
 static int
 pg_header PARM_1(int, dir)
 {
@@ -419,7 +768,30 @@ pg_header PARM_1(int, dir)
   return(-1);
 }
 
-/* PG_CONVERT -- Truncate the input string if needed */
+/*
+ * pg_convert - Process input string removing backspace characters
+ *
+ * Processes an input string to handle embedded backspace characters,
+ * effectively removing characters that would be "erased" by backspaces.
+ * This handles text formatting artifacts that might appear in input files.
+ *
+ * Parameters:
+ *   o_str - Output buffer for processed string (must be large enough)
+ *   i_str - Input string to process (must not be NULL)
+ *
+ * Returns:
+ *   Length of processed output string
+ *
+ * Side Effects:
+ *   - Modifies o_str with processed content
+ *   - Null-terminates output string
+ *
+ * Notes:
+ *   - Processes backspaces by reducing output count (removing previous char)
+ *   - Handles embedded control characters that affect text display
+ *   - Used during file reading to clean up line content
+ *   - Essential for proper display of formatted text files
+ */
 static int
 pg_convert PARM_2(char *, o_str, char *, i_str)
 {
@@ -443,7 +815,33 @@ pg_convert PARM_2(char *, o_str, char *, i_str)
   return(o_cnt);
 }
 
-/* PG_READFILE -- Read in a file for perusal */
+/*
+ * pg_readfile - Read and parse file content into pager data structure
+ *
+ * Reads the entire input file and parses it into the internal file_line
+ * array, handling special formatting for news files and header detection.
+ * Supports page separation, header highlighting, and content preprocessing.
+ *
+ * Parameters:
+ *   fpin - Open file pointer for reading (must not be NULL)
+ *   newsread - TRUE for news format parsing, FALSE for normal text
+ *
+ * Returns:
+ *   None
+ *
+ * Side Effects:
+ *   - Populates file_line array with allocated line content
+ *   - Sets max_line to total number of lines read
+ *   - Allocates memory for each line (must be freed by pg_cleanup)
+ *   - Processes header markers and news formatting
+ *
+ * Notes:
+ *   - Handles CSTR_L header indicators for highlighted sections
+ *   - News format removes 2-character prefix and handles tab headers
+ *   - Automatically adds page separation between headers
+ *   - Limits reading to MAX_FILE_LINES for memory safety
+ *   - Each line is individually malloc'd and stored
+ */
 static void
 pg_readfile PARM_2(FILE *, fpin, int, newsread)
 {
@@ -546,7 +944,34 @@ pg_readfile PARM_2(FILE *, fpin, int, newsread)
   max_line = lcount;
 }
 
-/* PAGE_FILE -- Peruse the specified file, reading appropriately */
+/*
+ * page_file - Main pager entry point for file viewing
+ *
+ * Primary function that implements the complete pager interface for viewing
+ * text files. Handles file opening, content parsing, display management, and
+ * user interaction. Provides full pager functionality with vi-like commands.
+ *
+ * Parameters:
+ *   fname - Path to file to be viewed (must not be NULL)
+ *   news - TRUE for news format parsing, FALSE for normal text files
+ *
+ * Returns:
+ *   TRUE if file could not be opened, FALSE on normal exit
+ *
+ * Side Effects:
+ *   - Opens and reads specified file
+ *   - Takes over screen for pager interface
+ *   - Processes all user input until exit
+ *   - Cleans up all allocated memory before return
+ *
+ * Notes:
+ *   - Supports 20+ navigation and search commands
+ *   - Includes regex search when compiled with REGEXP support
+ *   - Handles command counting for repeated operations
+ *   - Provides comprehensive help and status information
+ *   - Uses efficient scrolling and redraw algorithms
+ *   - Returns immediately if file cannot be opened
+ */
 int
 page_file PARM_2(char *, fname, int, news)
 {
