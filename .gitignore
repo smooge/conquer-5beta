@@ -13,6 +13,9 @@ tests/integration/integration_*
 tests/security/security_*
 tests/regression/regression_*
 
+# Old executables
+Docs/ezconv
+
 # CMake build files
 CMakeCache.txt
 CMakeFiles/

@@ -1,4 +1,28 @@
 
+/*
+ * get_cargo - Prompt user to select cargo type (army or people)
+ *
+ * Displays an interactive prompt asking the user to choose between loading/unloading
+ * army units or civilian populations. Used in naval cargo management operations.
+ *
+ * Parameters:
+ *   str - Context string ("Load" or "Unload") displayed in the prompt
+ *
+ * Returns:
+ *   TRUE if user selects army (A/a key pressed)
+ *   FALSE if user selects people (P/p key pressed)  
+ *   -1 if user cancels or presses invalid key
+ *
+ * Side Effects:
+ *   - Displays prompt on screen line LINES-3
+ *   - Clears to end of line and refreshes display
+ *   - Waits for single character input via getch()
+ *
+ * Notes:
+ *   - Case insensitive input (A/a and P/p accepted)
+ *   - Uses curses library for screen display and input
+ *   - Invalid input returns -1 without error message
+ */
 static int
 get_cargo(str)
 	char *str;
@@ -24,7 +48,33 @@ get_cargo(str)
 	return(choice);
 }
 
-/* this function returns false if loading is invalid */
+/*
+ * loadstat - Check if army unit is eligible for naval loading
+ *
+ * Determines whether an army unit with the given status can be loaded onto
+ * a naval fleet. Certain army statuses prevent loading due to operational
+ * constraints or current commitments.
+ *
+ * Parameters:
+ *   status - Current status/state of the army unit to check
+ *
+ * Returns:
+ *   FALSE if loading is invalid (army cannot be loaded)
+ *   TRUE if loading is valid (army can be loaded onto fleet)
+ *
+ * Side Effects:
+ *   None - pure validation function
+ *
+ * Notes:
+ *   Invalid statuses for loading:
+ *   - TRADED: Unit is involved in trade operations
+ *   - GENERAL: General units cannot board ships
+ *   - MILITIA: Local militia tied to specific location
+ *   - GARRISON: Garrison troops tied to defensive positions
+ *   - ONBOARD: Already loaded on another vessel
+ *   
+ *   All other statuses (ATTACK, DEFEND, etc.) allow loading
+ */
 int
 loadstat(status)
 	int status;
@@ -43,7 +93,55 @@ loadstat(status)
 	return(TRUE);
 }
 
-/* this function loads a fleet with an item */
+/*
+ * loadfleet - Interactive naval cargo management system
+ *
+ * Comprehensive function for loading and unloading cargo (armies and people) 
+ * to/from naval fleets. Handles user interaction, validation, space calculations,
+ * and game state updates for all naval transport operations.
+ *
+ * Parameters:
+ *   None - operates on global game state and selected fleet
+ *
+ * Returns:
+ *   void - all results communicated through game state changes and error messages
+ *
+ * Side Effects:
+ *   - Modifies fleet cargo (P_NARMY, P_NPEOP)
+ *   - Updates army status and location (P_ASTAT, P_AMOVE)
+ *   - Changes sector population (sct[x][y].people)
+ *   - Adjusts movement points (P_NMOVE, P_AMOVE)
+ *   - Updates display through curses interface
+ *   - May display error messages to user
+ *
+ * Operation Logic:
+ *   1. Validates selected unit is a navy fleet
+ *   2. Ensures fleet is landed (not at sea)
+ *   3. Calculates available cargo space
+ *   4. Prompts user for load/unload operation
+ *   5. Handles army or people cargo as selected
+ *   6. Validates ownership and diplomatic restrictions
+ *   7. Updates all relevant game state
+ *   8. Deducts movement costs
+ *
+ * Validation Rules:
+ *   - Fleet must be landed on shore
+ *   - Army units: Only marines can disembark in foreign territory
+ *   - Army units: Must be valid status for loading (see loadstat())
+ *   - People: Must own sector to load civilians
+ *   - Capacity: Army size vs ship capacity, people vs available space
+ *   - Location: Army must be in same sector as fleet
+ *
+ * Movement Costs:
+ *   - N_CITYCOST movement points deducted if not in friendly city
+ *   - Zero movement if operation occurs outside cities
+ *
+ * Notes:
+ *   - Uses global variables for current sector (XREAL, YREAL)
+ *   - Relies on game constants (MAXARM, MAXNAVY, SHIPHOLD)
+ *   - Integrates with diplomatic system for territory restrictions
+ *   - Complex state machine with multiple user interaction points
+ */
 void
 loadfleet()
 {
