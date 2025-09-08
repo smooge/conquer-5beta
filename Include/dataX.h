@@ -627,45 +627,178 @@
  */
 #define SEASON_NUMBER	4	/* how many seasons are there, anyway? */
 
-/* integer function pointer */
+/* ============================================================================
+ * FUNCTION POINTER TYPES
+ * ============================================================================
+ * Purpose: Define function pointer types for callback and dynamic dispatch
+ * Usage: Event handling, callback systems, dynamic function calls
+ * Notes: Legacy function pointer definitions with ANSI C compatibility
+ */
+
+/*
+ * FNCI - Integer-returning function pointer type
+ *
+ * Function pointer type for functions that return integer values.
+ * Used for callback systems and dynamic function dispatch where
+ * integer return values are expected.
+ *
+ * Return Type: int
+ * Parameters: Unspecified (legacy K&R style)
+ * Usage: Callback registration, event handlers, dynamic dispatch
+ * Notes: Legacy definition without parameter specification
+ * Modernization: Consider specific parameter types for type safety
+ */
 typedef int (*FNCI)();
 
-/* void function pointer */
+/*
+ * FNCV2 - Void function pointer with coordinate parameters
+ *
+ * Function pointer type for functions that accept two integer coordinates
+ * and return void. Used for coordinate-based operations and map functions.
+ * Includes ANSI C compatibility checking for parameter specification.
+ *
+ * Return Type: void
+ * Parameters: int x, int y (coordinates) - when __STDC__ is defined
+ * Parameters: Unspecified - for pre-ANSI C compatibility
+ * Usage: Map operations, coordinate callbacks, position-based functions
+ * Notes: Conditional parameter specification for compiler compatibility
+ * Modernization: Always use ANSI C parameter specification
+ */
 #ifdef __STDC__
-typedef void (*FNCV2)(int x, int y);
+typedef void (*FNCV2)(int x, int y);    /* ANSI C: specific parameters */
 #else /* FNCV */
-typedef void (*FNCV2)();
+typedef void (*FNCV2)();               /* K&R C: unspecified parameters */
 #endif /* FNCV */
 
-/* Spread Sheet Data Structure */
+/* ============================================================================
+ * CORE GAME DATA STRUCTURES
+ * ============================================================================
+ * Purpose: Define primary data structures for game entities and systems
+ * Usage: Game state representation, entity storage, economic calculations
+ * Notes: Central structures that define the game world model
+ */
+
+/*
+ * struct s_sheet - Regional economic and demographic summary
+ *
+ * Comprehensive data structure representing economic and demographic
+ * information for a regional area. Used for statistical analysis,
+ * economic calculations, and administrative reporting. Aggregates
+ * population, resources, military forces, and economic costs.
+ *
+ * Usage Patterns:
+ *   - Economic analysis and resource planning
+ *   - Regional summaries and statistical reports
+ *   - Administrative interface calculations
+ *   - Resource distribution and cost analysis
+ *
+ * Relationships:
+ *   - Aggregates data from multiple sectors within a region
+ *   - Connected to nation-level economic calculations
+ *   - Used by administrative programs for economic modeling
+ *   - Provides input for resource distribution algorithms
+ *
+ * Fields:
+ *   people - Total civilian population across all sectors in region
+ *   mtrls[] - Raw material quantities by type (MTRLS_NUMBER elements)
+ *   sectors - Number of sectors included in this regional summary
+ *   type_people[] - Population breakdown by major sector designation
+ *   type_talons[] - Economic value breakdown by major sector designation
+ *   type_sectors[] - Count of sectors by major designation type
+ *   army_men - Total military personnel stationed in region
+ *   monst_troops - Number of monster/NPC troops present
+ *   ship_holds - Total naval cargo capacity available in region
+ *   caravan_wagons - Total caravan transport capacity in region
+ *   army_cost - Economic cost to maintain military forces
+ *   monst_jewels - Tribute required for monster/NPC units
+ *   navy_cost - Economic cost to maintain naval forces
+ *   cvn_cost - Economic cost to maintain caravan transport
+ *
+ * Memory Management:
+ *   - Typically allocated as single instances for regional calculations
+ *   - Arrays use fixed sizes based on game constants
+ *   - No dynamic memory allocation within structure
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Economic calculations require atomic updates
+ *   - Statistical aggregation needs coordination
+ */
 typedef struct s_sheet {
-  long people;			/* total population		*/
-  itemtype mtrls[MTRLS_NUMBER];	/* the raw materials in region	*/
-  short sectors;		/* sectors covered by structure	*/
-  long type_people[MAJ_NUMBER];		/* people by major_desg	*/
-  itemtype type_talons[MAJ_NUMBER];	/* money by major_desg	*/
-  int type_sectors[MAJ_NUMBER];	/* sectors by major designation	*/
-  long army_men;		/* number of army men in region */
-  int monst_troops;		/* number of monster troops	*/
-  int ship_holds;		/* ship holds in region		*/
-  int caravan_wagons;		/* caravan wagons in region	*/
-  itemtype army_cost;		/* support cost for troops	*/
-  itemtype monst_jewels;	/* tribute to monster units	*/
-  itemtype navy_cost;		/* support cost for fleets	*/
-  itemtype cvn_cost;		/* support cost for wagons	*/
+    long people;                        /* Total population across region */
+    itemtype mtrls[MTRLS_NUMBER];      /* Raw materials by type (food, iron, etc.) */
+    short sectors;                      /* Number of sectors in this regional summary */
+    long type_people[MAJ_NUMBER];      /* Population by major designation (city, farm, etc.) */
+    itemtype type_talons[MAJ_NUMBER];  /* Economic value by major designation */
+    int type_sectors[MAJ_NUMBER];      /* Sector count by major designation type */
+    long army_men;                     /* Military personnel count in region */
+    int monst_troops;                  /* Monster/NPC troop count */
+    int ship_holds;                    /* Total naval cargo capacity (holds) */
+    int caravan_wagons;                /* Total caravan transport capacity (wagons) */
+    itemtype army_cost;                /* Economic cost for military maintenance */
+    itemtype monst_jewels;             /* Tribute cost for monster/NPC units */
+    itemtype navy_cost;                /* Economic cost for naval maintenance */
+    itemtype cvn_cost;                 /* Economic cost for caravan maintenance */
 } SHEET_STRUCT, *SHEET_PTR;
 
-/* Sector Data Structure */
+/*
+ * struct s_sector - Individual map sector data structure
+ *
+ * Fundamental data structure representing a single map sector (hex or square)
+ * in the game world. Contains all information about terrain, ownership,
+ * development, population, and resources for one map location. This is the
+ * basic building block of the game world map.
+ *
+ * Usage Patterns:
+ *   - Game world map representation and storage
+ *   - Economic production calculations per sector
+ *   - Territorial ownership and control tracking
+ *   - Resource extraction and trade good generation
+ *   - Population growth and demographic modeling
+ *
+ * Relationships:
+ *   - Owned by nations (referenced by owner field)
+ *   - Contains civilians who contribute to economy
+ *   - Produces resources based on designation and efficiency
+ *   - Aggregated into regional summaries (SHEET_STRUCT)
+ *   - Connected to combat and movement systems
+ *
+ * Fields:
+ *   designation - Sector type/purpose (city, farm, mine, etc.)
+ *   altitude - Terrain elevation category affecting movement and combat
+ *   vegetation - Climate/vegetation type affecting production
+ *   owner - Nation ID that controls this sector (UNOWNED if neutral)
+ *   efficiency - Development level affecting productivity (0-100%)
+ *   people - Civilian population living in this sector
+ *   minerals - Geological wealth value for mining operations
+ *   tradegood - Exotic trade goods available for economic exploitation
+ *   region - [Commented out] Regional grouping index for administration
+ *
+ * Memory Management:
+ *   - Typically allocated as large 2D arrays for entire world map
+ *   - Fixed-size structure for efficient array access
+ *   - No internal dynamic allocation
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Concurrent updates during turns require coordination
+ *   - Population and efficiency changes need atomic operations
+ *
+ * Performance Notes:
+ *   - Hot path structure accessed frequently during game updates
+ *   - Compact layout important for cache performance
+ *   - Array indexing used for fast map coordinate access
+ */
 typedef struct s_sector {
-  uns_short designation;	/* design of a sector	*/
-  uns_char altitude;	/* sector altitude		*/
-  uns_char vegetation;	/* sector vegetation		*/
-  ntntype owner;	/* nation id of owner		*/
-  uns_char efficiency;	/* the efficiency of the sector	*/
-  long people;		/* civilians in sector		*/
-  uns_char minerals;	/* jewel / metal value		*/
-  uns_char tradegood;	/* exotic trade goods in sector	*/
-  /* uns_char region;	 index of region		*/
+    uns_short designation;      /* Sector type/purpose (city, farm, mine, fortress, etc.) */
+    uns_char altitude;          /* Elevation category (affects movement, combat, visibility) */
+    uns_char vegetation;        /* Climate/vegetation type (affects production, movement) */
+    ntntype owner;              /* Owning nation ID (UNOWNED if neutral territory) */
+    uns_char efficiency;        /* Development level 0-100% (affects productivity) */
+    long people;                /* Civilian population (contributes to economy, recruitment) */
+    uns_char minerals;          /* Geological wealth 0-255 (mining potential) */
+    uns_char tradegood;         /* Exotic trade goods 0-255 (special economic value) */
+    /* uns_char region;          [Unused] Regional grouping index for administration */
 } SCT_STRUCT, *SCT_PTR;
 
 /* Army Data Structure */
