@@ -54,6 +54,49 @@ int	 optopt;	/* char checked for validity	*/
 char	*optarg;	/* arg associated with option	*/
 
 
+/*
+ * getopt - Parse command line options following POSIX conventions
+ *
+ * This is a public domain implementation of the standard getopt() function
+ * for parsing command line arguments. It supports short options (single character
+ * preceded by '-') with optional arguments. The function processes options
+ * sequentially and maintains state between calls.
+ *
+ * Parameters:
+ *   nargc - Number of arguments in argv array (typically argc from main)
+ *   nargv - Array of argument strings (typically argv from main)
+ *   ostr  - Option string specifying valid option characters (must not be NULL)
+ *           Format: "abc:d::" where:
+ *           - 'a', 'b' are options without arguments
+ *           - 'c:' is option requiring an argument
+ *           - 'd::' is option with optional argument (non-standard)
+ *
+ * Returns:
+ *   Option character (0-255) when valid option found
+ *   EOF (-1) when no more options to process
+ *   '?' when invalid option character encountered
+ *
+ * Side Effects:
+ *   - Sets optarg to argument string for options requiring arguments
+ *   - Sets optind to index of next argv element to process
+ *   - Sets optopt to the option character that caused error
+ *   - May write error messages to stderr if opterr is non-zero
+ *   - Maintains internal static state between calls
+ *
+ * Global Variables Used:
+ *   - optarg: Set to option argument or NULL
+ *   - optind: Index of next argument to process (starts at 1)
+ *   - optopt: Option character that caused error
+ *   - opterr: If non-zero, error messages printed to stderr
+ *
+ * Notes:
+ *   - Stops processing at first non-option argument or "--"
+ *   - Options can be combined: "-abc" same as "-a -b -c"
+ *   - Option arguments can be adjacent ("-oarg") or separate ("-o arg")
+ *   - Thread safety: Not thread-safe due to static variables
+ *   - Standard behavior: Follows POSIX getopt() conventions
+ *   - Error handling: Invalid options return '?' and set optopt
+ */
 getopt(nargc, nargv, ostr)
 int	  nargc;
 char	**nargv;
