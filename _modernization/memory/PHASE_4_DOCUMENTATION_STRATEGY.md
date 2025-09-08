@@ -116,7 +116,7 @@ Utility programs in Auxil/ and Docs/ directories:
 
 65. ✅ **Auxil/onavy.c** - Naval cargo management utility (3 functions) - **COMPLETED!**
 66. ✅ **Auxil/psmap.c** - PostScript map generation utility (8 functions) - **COMPLETED!**
-67. **Auxil/sort.c** - Sorting utility program
+67. ✅ **Auxil/sort.c** - Sorting utility program (5 functions) - **COMPLETED!**
 68. ✅ **Docs/ezconv.c** - Documentation conversion utility (1 function) - **COMPLETED!**
 
 ### Priority 7: Header Files Documentation - Sessions 69-108+
@@ -388,6 +388,233 @@ After completing Src/, consider these as separate phases:
 8. **Debugging**: Each checkpoint can be tested individually if needed
 9. **Scalable**: Can handle the expanded scope of 108+ files with consistent quality
 
+## Phase 4C: Header File Documentation Template
+
+### Header Documentation Methodology
+
+**Purpose**: Comprehensive documentation of data structures, constants, macros, and function declarations in header files (.h files) to support modernization and maintenance.
+
+**Key Principles**:
+1. **System Architecture Focus**: Document how components connect and interface
+2. **Data Structure Emphasis**: Explain purpose, relationships, and usage patterns  
+3. **Interface Documentation**: Clear parameter, return value, and dependency information
+4. **Modernization Support**: Identify safe modernization opportunities and constraints
+
+### Standard Header Documentation Template
+
+```c
+/*
+ * filename.h - Brief descriptive title (e.g., "Combat System Data Structures")
+ *
+ * Comprehensive description of the header's purpose, scope, and role in the
+ * overall system architecture. Explain what functionality this header enables
+ * and how it integrates with other system components.
+ *
+ * Key Components:
+ *   - [List major data structures, constants, or function groups]
+ *   - [Note any special relationships or dependencies]
+ *   - [Highlight critical interfaces or architectural decisions]
+ *
+ * Integration Notes:
+ *   - Used by: [List source files that include this header]
+ *   - Depends on: [List other headers this file requires]
+ *   - Provides: [Key interfaces or data structures exported]
+ *
+ * Modernization Considerations:
+ *   - [Note any legacy patterns that need updating]
+ *   - [Identify thread safety or portability concerns]
+ *   - [Document any magic numbers or unclear constants]
+ */
+
+/* ============================================================================
+ * SECTION NAME - Descriptive group title
+ * ============================================================================
+ * Purpose: What this section provides (constants, types, macros, etc.)
+ * Usage: How these definitions are typically used
+ * Notes: Any special considerations or relationships
+ */
+
+/*
+ * CONSTANT_NAME - Purpose and meaning
+ *
+ * Detailed explanation of what this constant represents, how it's used,
+ * and why this specific value was chosen. Include units, ranges, or
+ * constraints where applicable.
+ *
+ * Value: [Actual value with explanation]
+ * Units: [If applicable - points, pixels, bytes, etc.]  
+ * Usage: [Where and how this constant is typically used]
+ * Notes: [Any special considerations or historical context]
+ */
+#define CONSTANT_NAME    value
+
+/*
+ * struct structure_name - Brief purpose description
+ *
+ * Detailed explanation of the data structure's role in the system,
+ * what it represents (game entity, UI element, etc.), and how it's
+ * typically used throughout the codebase.
+ *
+ * Usage Patterns:
+ *   - [How instances are typically created]
+ *   - [Common operations performed on this structure]
+ *   - [Lifecycle management (allocation, initialization, cleanup)]
+ *
+ * Relationships:
+ *   - [How this structure relates to other data types]
+ *   - [Any inheritance or composition patterns]
+ *   - [Dependencies on other structures]
+ *
+ * Fields:
+ *   field1 - [Purpose, constraints, valid ranges]
+ *   field2 - [Relationship to other fields or external data]
+ *   field3 - [Special usage patterns or initialization requirements]
+ */
+typedef struct structure_name {
+    type field1;    /* Inline comment: specific purpose and constraints */
+    type field2;    /* Inline comment: relationship to other data */
+    type field3;    /* Inline comment: usage patterns or special notes */
+} STRUCT_NAME;
+
+/*
+ * function_name - Brief function purpose
+ *
+ * Detailed description of what the function does, its role in the
+ * system, and any important behavioral characteristics. Include
+ * algorithm notes for complex operations.
+ *
+ * Parameters:
+ *   param1 - [Purpose, constraints, valid values/ranges]
+ *   param2 - [Relationship to other parameters or system state]
+ *   param3 - [Special requirements like non-NULL, initialization]
+ *
+ * Returns:
+ *   [Detailed return value description]
+ *   [Error conditions and their meanings]
+ *   [Special return value interpretations]
+ *
+ * Side Effects:
+ *   - [Global state modifications]
+ *   - [Memory allocation/deallocation]
+ *   - [File or network operations]
+ *
+ * Notes:
+ *   - [Thread safety information]
+ *   - [Performance considerations]
+ *   - [Usage restrictions or requirements]
+ */
+extern return_type function_name(param_types);
+```
+
+### Documentation Focus Areas for Header Files
+
+#### 1. **Data Structures and Types**
+- **Purpose**: What game entity or system component this represents
+- **Lifecycle**: How instances are created, used, and destroyed
+- **Relationships**: Connections to other structures and dependencies
+- **Field Documentation**: Purpose, constraints, and usage patterns for each field
+- **Memory Layout**: Size considerations and alignment requirements
+
+#### 2. **Constants and Macros**
+- **Value Meaning**: What the constant represents and why this value
+- **Usage Context**: Where and how the constant is typically used
+- **Units and Ranges**: Physical units, acceptable ranges, constraints
+- **Historical Context**: Why this value was chosen (if non-obvious)
+- **Modernization Notes**: Whether values need updating for modern systems
+
+#### 3. **Function Declarations**
+- **Interface Documentation**: Complete parameter and return value specs
+- **Behavioral Description**: What the function does and how it works
+- **Error Conditions**: All possible error states and their meanings
+- **Side Effects**: Global state changes, memory allocation, I/O operations
+- **Usage Requirements**: Initialization, ordering, or context requirements
+
+#### 4. **Preprocessor Logic**
+- **Conditional Compilation**: When different code paths are selected
+- **Platform Differences**: How behavior varies across target systems
+- **Feature Selection**: Compile-time options and their implications
+- **Configuration Impact**: How settings affect system behavior
+
+#### 5. **System Integration**
+- **Dependency Mapping**: What this header requires and what requires it
+- **Interface Boundaries**: How this header connects system components
+- **Data Flow**: How information moves through structures and functions
+- **Architectural Role**: Position in overall system design
+
+### Header File Prioritization Strategy
+
+#### **Priority 1: Core System Headers (Sessions 69-78)**
+Critical data structures and interfaces:
+1. **Include/header.h** - Main header definitions and system-wide constants
+2. **Include/dataA.h** - Core game data structures and entity definitions
+3. **Include/dataG.h** - User interface data structures and display types
+4. **Include/dataX.h** - Extended data structures and system extensions
+5. **Include/combatA.h** - Combat system definitions and battle mechanics
+6. **Include/displayG.h** - Display system definitions and rendering constants
+7. **Include/infoG.h** - Information display definitions and report structures
+8. **Include/executeX.h** - Command execution definitions and processing types
+
+#### **Priority 2: File and I/O Headers (Sessions 79-84)**
+Data persistence and file operations:
+9. **Include/fileA.h** - Core file operations and data file structures
+10. **Include/fileG.h** - UI file operations and interface file handling
+11. **Include/fileX.h** - Extended file operations and specialized I/O
+12. **Include/moveX.h** - Movement system definitions and pathfinding types
+13. **Include/magicX.h** - Magic system definitions and spell structures
+14. **Include/itemX.h** - Item system definitions and object types
+
+#### **Priority 3: Game Entity Headers (Sessions 85-94)**
+Specific game components and entities:
+15. **Include/armyX.h** - Army system definitions and military unit types
+16. **Include/navyX.h** - Navy system definitions and naval unit types
+17. **Include/cityX.h** - City system definitions and settlement types
+18. **Include/worldX.h** - World system definitions and geographic types
+19. **Include/racesX.h** - Race system definitions and species characteristics
+20. **Include/spellsX.h** - Spell system definitions and magic effect types
+21. **Include/tgoodsX.h** - Trade goods definitions and economic item types
+22. **Include/weightX.h** - Weight system definitions and encumbrance types
+23. **Include/elevegX.h** - Elevation/vegetation definitions and terrain types
+24. **Include/desigX.h** - Designation system definitions and land use types
+
+#### **Priority 4: Interface and Utility Headers (Sessions 95-108+)**
+User interface and support systems:
+25. **Include/keybindG.h** - Key binding definitions and input mapping
+26. **Include/ntninfoG.h** - Nation information definitions and display types
+27. **Include/xferG.h** - Transfer system definitions and transaction types
+28. **Include/mtrlsX.h** - Materials system definitions and resource types
+29. **Include/stringX.h** - String utilities definitions and text processing
+30. **Include/paramX.h** - Parameter definitions and configuration types
+31. **Include/statusX.h** - Status system definitions and state tracking
+32. **Include/optionsX.h** - Options system definitions and preference types
+33. **Include/keyvalsX.h** - Key-value definitions and data storage types
+34. **Include/butesX.h** - Attribute system definitions and property types
+35. **Include/calenX.h** - Calendar system definitions and time types
+36. **Include/caravanX.h** - Caravan system definitions and trade route types
+37. **Include/hlightX.h** - Highlighting system definitions and visual emphasis
+38. **Include/displayX.h** - Extended display definitions and rendering extensions
+39. **Include/dstatusX.h** - Display status definitions and UI state types
+40. **Include/dataioX.h** - Data I/O definitions and serialization types
+
+### Quality Standards for Header Documentation
+
+#### **Completeness Requirements**
+- **Every Structure**: Purpose, usage patterns, and field meanings
+- **Every Constant**: Value meaning, usage context, and constraints
+- **Every Function**: Complete interface specification and behavior
+- **Every Macro**: Expansion meaning and usage safety considerations
+
+#### **Technical Accuracy**
+- **Data Types**: Correct size, alignment, and portability information
+- **Memory Management**: Allocation, ownership, and cleanup responsibilities
+- **Error Handling**: Complete error condition documentation
+- **Thread Safety**: Concurrency considerations and restrictions
+
+#### **Modernization Support**
+- **Legacy Patterns**: Identification of outdated or unsafe constructs
+- **Portability Issues**: Platform-specific code and compatibility concerns
+- **Security Considerations**: Buffer overflows, input validation, privilege issues
+- **Performance Notes**: Computational complexity and optimization opportunities
+
 ## Implementation Notes
 
 - Always commit documentation before starting modernization of any file
@@ -395,3 +622,6 @@ After completing Src/, consider these as separate phases:
 - Keep automation script updated for better K&R function detection
 - Document magic numbers and unclear logic patterns as discovered
 - Preserve existing comments and enhance them rather than replacing
+- **Header Documentation**: Focus on interfaces, data structures, and system integration
+- **Use Template**: Apply standard template consistently across all header files
+- **System Grouping**: Document related headers together to understand system relationships
