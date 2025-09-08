@@ -1,4 +1,38 @@
-/* User and god commands to allow manipulation of sectors */
+/*
+ * sectorG.c - Sector Manipulation and Information Interface
+ *
+ * This file implements comprehensive sector management functionality for the Conquer game.
+ * It provides both user and god commands for manipulating sector properties, designations,
+ * and construction options. The system handles major designations (cities, capitals, etc.),
+ * minor designations (fortifications, constructions), and detailed sector information display.
+ *
+ * Key Features:
+ * - Major Designation Management: City creation, capital designation, designation changes
+ * - Minor Construction System: Fortifications, roads, and other improvements
+ * - Sector Information Display: Detailed production, consumption, and status information
+ * - God Mode Functions: Complete sector property manipulation (altitude, ownership, etc.)
+ * - Resource Management: Cost calculation, resource validation, and consumption tracking
+ * - City Integration: Automatic city creation/destruction during designation changes
+ *
+ * The system enforces game rules including:
+ * - Ownership requirements for construction and modification
+ * - Siege restrictions preventing construction in besieged sectors
+ * - Resource availability validation for all construction projects
+ * - Proper cost calculation and resource consumption
+ * - Capital designation transfer mechanics
+ *
+ * God Mode Capabilities:
+ * - Altitude adjustment with automatic terrain validation
+ * - Ownership transfer with city relocation handling
+ * - Population manipulation and construction timing
+ * - Tradegood and mineral value assignment
+ * - Vegetation control with terrain compatibility checking
+ *
+ * Functions:
+ * - change_desg(): Interactive major designation modification system
+ * - construct(): Minor designation construction interface
+ * - sect_info(): Comprehensive sector information display
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -30,7 +64,59 @@
 #include "tgoodsX.h"
 #include "displayG.h"
 
-/* CHANGE_DESG -- Adjust the major designation of a sector */
+/*
+ * change_desg - Interactive major designation modification system
+ *
+ * Provides comprehensive interface for changing sector major designations including
+ * city creation, capital designation, and god mode sector property manipulation.
+ * Handles all aspects of designation changes from resource validation to city
+ * management and automatic updates of related game systems.
+ *
+ * The function operates in two distinct modes:
+ * - God Mode: Complete sector property manipulation (altitude, ownership, population, etc.)
+ * - Normal Mode: Major designation changes with proper resource costs and validation
+ *
+ * God Mode Functions:
+ * - Altitude: Terrain modification with automatic property adjustment
+ * - Designation: Direct designation changes bypassing normal restrictions
+ * - Mineral Value: Resource value assignment for tradegood sectors
+ * - Owner: Ownership transfer with automatic city relocation
+ * - Population: Direct population manipulation for sectors
+ * - Tradegood: Tradegood type assignment with mineral validation
+ * - Vegetation: Terrain vegetation with altitude compatibility checking
+ *
+ * Normal Mode Functions:
+ * - Major designation changes (None, City, Capital, etc.)
+ * - Automatic city creation with naming interface
+ * - Resource cost calculation and validation
+ * - Capital designation transfer with old capital adjustment
+ * - City destruction when changing from city designations
+ * - Construction time delays for new city buildings
+ *
+ * Parameters:
+ *   void - Uses global coordinates XREAL, YREAL for target sector
+ *
+ * Returns:
+ *   int - MOVECOST on successful designation change, 0 on cancellation or error
+ *
+ * Side Effects:
+ *   - Modifies sector designation and related properties
+ *   - Creates or destroys cities as needed
+ *   - Transfers capital designation and updates nation properties
+ *   - Consumes resources for construction costs
+ *   - Updates city weights and construction timing
+ *   - Records all changes for game persistence
+ *   - Temporarily switches god mode context for ownership changes
+ *
+ * Notes:
+ *   - Validates map coordinates and ownership before operations
+ *   - Prevents capital changes without designating new capital first
+ *   - Enforces siege restrictions on construction
+ *   - Handles city name conflicts with automatic resolution
+ *   - God mode altitude changes automatically adjust other properties
+ *   - Water sectors reset to default empty state
+ *   - Mineral sectors require compatible tradegoods for non-zero values
+ */
 int
 change_desg PARM_0(void)
 {
@@ -660,7 +746,52 @@ change_desg PARM_0(void)
   return(MOVECOST);
 }
 
-/* CONSTRUCT -- construct minor designations */
+/*
+ * construct - Minor designation construction interface
+ *
+ * Provides interactive interface for constructing minor designations (improvements)
+ * on sectors including fortifications, roads, and other sector enhancements.
+ * Handles cost calculation, resource validation, and construction execution
+ * with proper game rule enforcement.
+ *
+ * The function manages all minor construction types:
+ * - Fortifications: Defensive improvements that increase sector defense
+ * - Roads: Transportation improvements that facilitate movement
+ * - Other Improvements: Various minor enhancements available in the game
+ * - Devastation: Special construction that clears all other improvements
+ * - Undevastation: Removal of devastation status from sectors
+ *
+ * Construction Process:
+ * - Validates sector ownership and accessibility
+ * - Checks resource availability from nearby supply centers
+ * - Displays available construction options with possibility indicators
+ * - Calculates and displays construction costs (non-expert mode)
+ * - Processes resource consumption and records construction
+ * - Updates sector designation and related game systems
+ *
+ * Parameters:
+ *   void - Uses global coordinates XREAL, YREAL for target sector
+ *
+ * Returns:
+ *   int - MOVECOST on successful construction, 0 on cancellation or error
+ *
+ * Side Effects:
+ *   - Modifies sector minor designations
+ *   - Consumes resources from nearby supply centers
+ *   - Updates fortification levels for cities
+ *   - Records construction activities for game persistence
+ *   - May clear all existing improvements (devastation)
+ *   - Temporarily switches god mode context if operating as administrator
+ *
+ * Notes:
+ *   - Enforces siege restrictions preventing construction in besieged sectors
+ *   - Validates resource availability before allowing construction
+ *   - God mode bypasses resource requirements and ownership restrictions
+ *   - Devastation requires confirmation as it eliminates other improvements
+ *   - Fortification construction increases city fort values up to maximum
+ *   - Special handling for "Undevastate" option when sector is devastated
+ *   - Cost display and confirmation can be bypassed in expert mode
+ */
 int
 construct PARM_0(void)
 {
@@ -900,7 +1031,58 @@ construct PARM_0(void)
   return(MOVECOST);
 }
 
-/* SECT_INFO -- Provide more detailed information on the current sector */
+/*
+ * sect_info - Comprehensive sector information display
+ *
+ * Provides detailed information display for the current sector including
+ * ownership, designations, production/consumption data, and various sector
+ * statistics. Handles visibility restrictions and displays appropriate
+ * information based on player access level and magical detection abilities.
+ *
+ * Information Categories Displayed:
+ * - Ownership: Nation name and sector control information
+ * - Designations: Major designation (city name, type) and minor improvements
+ * - Statistics: Attraction, weights, defense values, and supply range
+ * - City Details: Recruits/construction status, fortification, materials
+ * - Production: Resource production rates based on sector configuration
+ * - Consumption: Resource consumption requirements for the sector
+ * - Workers: Population-based worker estimates for non-city sectors
+ *
+ * Visibility System:
+ * - Full visibility for owned sectors and god mode
+ * - Partial visibility based on reconnaissance level
+ * - Magic detection affects city visibility (wizardry powers)
+ * - Hidden cache cities and void-protected sectors
+ * - Production/consumption visible only for owned or fully visible sectors
+ *
+ * Display Layout:
+ * - Right side of screen (SCREEN_MIDDLE to COLS)
+ * - Structured information with highlighting for important elements
+ * - Production and consumption in columnar format
+ * - Construction status and recruitment information
+ * - Material stores for supply centers
+ *
+ * Parameters:
+ *   void - Uses global coordinates XREAL, YREAL for target sector
+ *
+ * Returns:
+ *   void - Function purely displays information, no return value
+ *
+ * Side Effects:
+ *   - Displays information on the right side of the game screen
+ *   - Temporarily switches nation context for production calculations
+ *   - Uses standout mode for highlighting important information
+ *   - May reveal or hide information based on magical detection
+ *
+ * Notes:
+ *   - Returns early if sector not visible or off-map
+ *   - Handles unowned sectors and nation lookup safely
+ *   - Production/consumption calculated using sector owner's context
+ *   - City information requires proper city lookup for accuracy
+ *   - Magic detection (MW_SEEALL) affects information availability
+ *   - Cache cities hidden unless proper detection available
+ *   - Support level affects construction/devastation status display
+ */
 void
 sect_info PARM_0(void)
 {
