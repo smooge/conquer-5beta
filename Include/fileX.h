@@ -598,190 +598,188 @@ extern void army_renum PL_(( int newnum ));
 /* ARMY_SHIPLEADER -- Return leader if onboard otherwise EMPTY_HOLD */
 extern int army_shipleader PL_(( ARMY_PTR a1_ptr ));
 
-/* ARMY_SPELLPTS -- How many spell points maximum should a unit get? */
+/* unitsX.c: Unit manipulation and management functions (remainder) */
+
+/* army_spellpts - Calculate maximum spell points for a unit */
 extern int army_spellpts PL_(( NTN_PTR n1_ptr, ARMY_PTR a1_ptr ));
 
-/* ARMY_SUPPORT -- Calculate the support costs for an army unit */
+/* army_support - Calculate support costs for an army unit */
 extern void army_support PL_(( ARMY_PTR a1_ptr, itemtype * out_costs, int amount ));
 
-/* ARMY_WORKSIZE -- Strength of the unit in relation to building potential */
+/* army_worksize - Calculate unit strength for building potential */
 extern long army_worksize PL_(( ARMY_PTR a1_ptr ));
 
-/* A_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
+/* a_issupplyable - Check if army unit can be supplied from location */
 extern int a_issupplyable PL_(( ARMY_PTR a1_ptr, int x, int y, int sayit ));
 
-/* CARGO_HOLDS -- The number of holds in the given ship information */
+/* cargo_holds - Get number of cargo holds in ship information */
 extern int cargo_holds PL_(( int shipinfo ));
 
-/* CHECK_LEADER -- return TRUE or FALSE if a leader is really leading */
+/* check_leader - Verify if leader is actively leading units */
 extern int check_leader PL_(( int idnum ));
 
-/* CVNS_IN_SECTOR -- Report the number of caravans in a sector */
+/* cvns_in_sector - Count caravans in specified sector */
 extern int cvns_in_sector PL_(( int natn, int xloc, int yloc ));
 
-/* CVN_CARRYING -- Return TRUE if the given unit has something onboard */
+/* cvn_carrying - Check if caravan has cargo onboard */
 extern int cvn_carrying PL_(( CVN_PTR c1_ptr ));
 
-/* CVN_LOAD -- The amount of load within a caravan unit;
-               This will need to later have mtrls weight added */
+/* cvn_load - Calculate total load within caravan unit */
 extern long cvn_load PL_(( CVN_PTR v_ptr ));
 
-/* CVN_MVPTS --  Find speed of caravan */
+/* cvn_mvpts - Calculate caravan movement speed */
 extern int cvn_mvpts PL_(( NTN_PTR nat_ptr, CVN_PTR c_ptr ));
 
-/* CVN_REDOCOSTS -- Calculate the repair costs for the caravan */
+/* cvn_redocosts - Calculate caravan repair costs */
 extern void cvn_redocosts PL_(( CVN_PTR v1_ptr, itemtype * out_costs ));
 
-/* CVN_RENUM -- Renumber the current caravan unit in the current nation */
+/* cvn_renum - Renumber caravan unit in current nation */
 extern void cvn_renum PL_(( int newnum ));
 
-/* CVN_SUPPORT -- Calculate the supply levels for a caravan */
+/* cvn_support - Calculate caravan supply requirements */
 extern void cvn_support PL_(( CVN_PTR v1_ptr, itemtype * out_costs, int amount ));
 
-/* DEFAULTUNIT -- Selection of the default unit for drafting */
+/* defaultunit - Get default unit type for drafting */
 extern int defaultunit PL_(( void ));
 
-/* GETMINLEADER -- Return the minor leader for the national class */
+/* getminleader - Get minor leader for national class */
 extern int getminleader PL_(( int class ));
 
-/* GETRULER -- Return the major leader for the national class */
+/* getruler - Get major leader for national class */
 extern int getruler PL_(( int class ));
 
-/* GROUP_STAT -- Return the status of the given group */
+/* group_stat - Get status of specified group */
 extern int group_stat PL_(( int idnum ));
 
-/* HEAL_RATE -- The percentage of health healed for an army unit */
+/* heal_rate - Calculate healing percentage for army unit */
 extern int heal_rate PL_(( NTN_PTR n1_ptr, ARMY_PTR a1_ptr ));
 
-/* MAIN_LEADER -- Get the setting of the guy at the front of a group */
+/* main_leader - Get primary leader of a group */
 extern ARMY_PTR main_leader PL_(( int idnum ));
 
-/* MAKE_MADUNIT -- Create an army of given type size and location */
+/* make_madunit - Create army unit at specified location */
 extern int make_madunit PL_(( int own, int atype, int asize, int axloc, int ayloc ));
 
-/* MAX_NUMUNIT -- Return the value of the number of men possible */
+/* max_numunit - Calculate maximum possible unit size */
 extern long max_numunit PL_(( NTN_PTR n1_ptr, CITY_PTR c1_ptr, int utype, int spts ));
 
-/* MAY_UPGRADE -- Is the army unit able to be upgraded? */
+/* may_upgrade - Check if army unit can be upgraded */
 extern int may_upgrade PL_(( NTN_PTR n1_ptr, CITY_PTR c1_ptr, int utype, int men ));
 
-/* MEN_INGARRISON -- Return the number of men garrisoned in the sector */
+/* men_ingarrison - Count garrisoned soldiers in sector */
 extern long men_ingarrison PL_(( int x, int y, int onlyaair ));
 
-/* MEN_INGROUP -- Return the number of soldiers in a given group */
+/* men_ingroup - Count soldiers in specified group */
 extern int men_ingroup PL_(( int idnum, int onlyaair ));
 
-/* MTRLS_LOAD -- Return the value of the load of a set of raw materials */
+/* mtrls_load - Calculate load weight of raw materials */
 extern long mtrls_load PL_(( itemtype * m_ptr ));
 
-/* NAVIES_IN_SECTOR -- Report the number of naval units in a sector */
+/* navies_in_sector - Count naval units in specified sector */
 extern int navies_in_sector PL_(( int natn, int xloc, int yloc ));
 
-/* NAVY_ADDSHIPS -- increase element by nships of given type
-                    return resulting element or -1 for failure */
+/* navy_addships - Add ships to fleet element */
 extern int navy_addships PL_(( uns_short info, int sh_size, int nships ));
 
-/* NAVY_CARRYING -- Return TRUE if the given unit has something onboard */
+/* navy_carrying - Check if naval unit has cargo onboard */
 extern int navy_carrying PL_(( NAVY_PTR n1_ptr ));
 
-/* NAVY_HOLDS -- The number of holds among a class of ships in a given fleet */
+/* navy_holds - Calculate cargo holds in fleet ship class */
 extern int navy_holds PL_(( NAVY_PTR n1_ptr, int classnum ));
 
-/* NAVY_MVPTS --  Find speed of naval fleet */
+/* navy_mvpts - Calculate naval fleet movement speed */
 extern int navy_mvpts PL_(( NTN_PTR nat_ptr, NAVY_PTR nvy_ptr ));
 
-/* NAVY_REDOCOSTS -- Calculate the repair costs for the navy */
+/* navy_redocosts - Calculate naval unit repair costs */
 extern void navy_redocosts PL_(( NAVY_PTR n1_ptr, itemtype * out_costs ));
 
-/* NAVY_RENUM -- Renumber the current navy unit in the current nation */
+/* navy_renum - Renumber naval unit in current nation */
 extern void navy_renum PL_(( int newnum ));
 
-/* NAVY_SUBSHIPS -- remove nships of given shipsize for a given fleet
-                    return result or -1 if it is not possible */
+/* navy_subships - Remove ships from fleet element */
 extern int navy_subships PL_(( uns_short info, int sh_size, int nships ));
 
-/* NAVY_SUPPORT -- Calculate the supply levels for a naval unit */
+/* navy_support - Calculate naval unit supply requirements */
 extern void navy_support PL_(( NAVY_PTR n1_ptr, itemtype * out_costs, int amount ));
 
-/* NEWSLOTNUMBER -- set the default number to the given value */
+/* newslotnumber - Set default numbering for unit slots */
 extern void newslotnumber PL_(( int base, int idnum, int numtype ));
 
-/* N_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
+/* n_issupplyable - Check if naval unit can be supplied from location */
 extern int n_issupplyable PL_(( NAVY_PTR n1_ptr, int x, int y, int sayit ));
 
-/* RAND_MONSTUNIT -- Give random monster unit as limited by size */
+/* rand_monstunit - Generate random monster unit by strength limit */
 extern int rand_monstunit PL_(( int maxstrength ));
 
-/* REAL_STAT -- Return the real status of the army unit */
+/* real_stat - Get actual status of army unit */
 extern int real_stat PL_(( ARMY_PTR a1_ptr ));
 
-/* RESETNUMBERS -- Clear out the default numbering scheme */
+/* resetnumbers - Clear default unit numbering scheme */
 extern void resetnumbers PL_(( void ));
 
-/* SET_ARMYCOSTS -- Set the costs of the given unit of given size */
+/* set_armycosts - Calculate costs for creating army unit */
 extern void set_armycosts PL_(( NTN_PTR n1_ptr, itemtype * cost_ptr, int type, int size ));
 
-/* SET_GRPLOC -- Assign a given location to an entire group */
+/* set_grploc - Assign location to entire unit group */
 extern void set_grploc PL_(( int idnum, int x, int y ));
 
-/* SET_GRPMOVE -- Assign a given movement to an entire group */
+/* set_grpmove - Assign movement parameters to unit group */
 extern void set_grpmove PL_(( int idnum, int speed, int mval ));
 
-/* SET_UPGCOSTS -- Set the to upgrade to the given unit of given size */
+/* set_upgcosts - Calculate costs for upgrading army unit */
 extern void set_upgcosts PL_(( NTN_PTR n1_ptr, ARMY_PTR a1_ptr, itemtype * cost_ptr, int newtype ));
 
-/* SHIPS_IN_SECTOR -- Retrun the number of ships in a given sector */
+/* ships_in_sector - Count ships in specified sector */
 extern int ships_in_sector PL_(( int x, int y ));
 
-/* STARTNUMBER -- Assign a starting number using the given string */
+/* startnumber - Parse and assign starting unit number */
 extern int startnumber PL_(( char * str, char * estr ));
 
-/* START_UNITSPLY -- Return the standard starting supply value for new units */
+/* start_unitsply - Get standard starting supply for new units */
 extern int start_unitsply PL_(( void ));
 
-/* UNITS_IN_SECTOR -- return the number of armies, caravans, and
-                      navies in a sector for a nation.           */
+/* units_in_sector - Count all unit types in sector for nation */
 extern int units_in_sector PL_(( int natn, int x, int y ));
 
-/* UNIT_BASENUM -- Determine the base unit number of a unit */
+/* unit_basenum - Get base unit number for unit type */
 extern int unit_basenum PL_(( int utype ));
 
-/* UNUM_COPYDEFAULT -- Copy the default numbering scheme */
+/* unum_copydefault - Copy default unit numbering scheme */
 extern void unum_copydefault PL_(( void ));
 
-/* UTYPE_MAYUSE -- Check if the given unit type may be used by the nation */
+/* utype_mayuse - Check if nation can use specified unit type */
 extern int utype_mayuse PL_(( NTN_PTR n1_ptr, int utype ));
 
-/* UTYPE_OK -- Check if the given unit type is okay for the current city */
+/* utype_ok - Validate unit type for city and nation */
 extern int utype_ok PL_(( NTN_PTR n1_ptr, CITY_PTR c1_ptr, int utype, int upg_men, int eout ));
 
-/* V_ISSUPPLYABLE -- Determine if a unit is or is not supplyable from x, y */
+/* v_issupplyable - Check if caravan can be supplied from location */
 extern int v_issupplyable PL_(( CVN_PTR v1_ptr, int x, int y, int sayit ));
 
-/* WAGONS_IN_SECTOR -- Return the number of caravan wagons in a given sector */
+/* wagons_in_sector - Count caravan wagons in specified sector */
 extern int wagons_in_sector PL_(( int x, int y ));
 
-/* WALL_PATROL -- Is an army unit acting as a wall patrol? */
+/* wall_patrol - Check if army unit is acting as wall patrol */
 extern int wall_patrol PL_(( int cntry, ARMY_PTR a1_ptr ));
 
-/* jointA.c: Conqrun implementation of routines defined for both sections */
+/* jointA.c: Shared functionality between game programs */
 
-/* BIND_FUNC -- return a string name for the given function */
+/* bind_func - Get string name for specified function number */
 extern char * bind_func PL_(( int which ));
 
-/* CHECK_SPELLS -- Implement the spell list */
+/* check_spells - Execute spell effects at location */
 extern void check_spells PL_(( int spellnum, int xloc, int yloc ));
 
-/* DFLT_DISP_SETUP -- Build up one of the settings of the default display */
+/* dflt_disp_setup - Configure default display settings */
 extern void dflt_disp_setup PL_(( char * str, char * fstr, int lnum ));
 
-/* DISPLAY_SETUP -- Configure the display modes */
+/* display_setup - Configure display modes and settings */
 extern void display_setup PL_(( char * str, char * fstr, int lnum ));
 
-/* HANGUP -- signal catching routine */
+/* hangup - Signal handler for connection termination */
 extern void hangup PL_(( void ));
 
-/* KEYSYS_SETUP -- Configure the keybindings */
+/* keysys_setup - Configure keyboard binding system */
 extern void keysys_setup PL_(( int type, char * str, char * fstr, int lnum ));
 
 #undef PL_
