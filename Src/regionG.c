@@ -1,4 +1,32 @@
-/* This file holds all of the commands to operate over a supply region */
+/*
+ * regionG.c - Supply Region Management Interface
+ *
+ * This file implements the complete supply region management system for the Conquer game.
+ * It provides comprehensive functionality for managing cities, supply centers, and regional
+ * operations including resource transfers, supply distribution, and administrative functions.
+ *
+ * Key Features:
+ * - City Management: Renaming, weighting, and store adjustments
+ * - Resource Transfer: Direct material exchange between neighboring cities
+ * - Supply Operations: Army, navy, and caravan supply level management
+ * - Administrative Tools: God mode functions for volunteer and store manipulation
+ * - Regional Operations: Supply range calculation and distribution control
+ *
+ * The system supports both player-owned cities (full functionality) and simple sectors
+ * (limited to supply operations). Supply ranges are calculated based on city infrastructure
+ * and can be extended through proper city development and management.
+ *
+ * Supply System:
+ * - Armies: Up to MAXSUPPLIES months of supplies
+ * - Navies: Up to 4*MAXSUPPLIES months of supplies  
+ * - Caravans: Up to 2*MAXSUPPLIES months of supplies
+ * - Transfer Range: LIMITED to MAX_TRANSFER sectors for direct city-to-city transfers
+ * - Siege Restrictions: Cities under siege cannot participate in transfers
+ *
+ * Functions:
+ * - adjust_region(): Main interactive interface for supply region management
+ * - region_cmd(): Command entry point with validation and context management
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -27,7 +55,43 @@
 #include "stringX.h"
 #include "caravanX.h"
 
-/* ADJUST_REGION -- Affect a change on a region */
+/*
+ * adjust_region - Comprehensive supply region management interface
+ *
+ * Provides a complete interactive interface for managing supply regions and cities.
+ * Handles city renaming, resource transfers, supply level adjustments, and various
+ * administrative functions. Supports both city-based operations (with supply range)
+ * and nation-level operations (without city infrastructure).
+ *
+ * The function displays context-sensitive menus based on whether the location is:
+ * - A city owned by the player (full functionality including transfers, renaming)
+ * - A sector owned by the player (limited to supply operations)
+ * - God mode operations (includes volunteer and store adjustments)
+ *
+ * Parameters:
+ *   x - X coordinate of the target sector (must be valid map coordinates)
+ *   y - Y coordinate of the target sector (must be valid map coordinates)
+ *
+ * Returns:
+ *   void - Function handles all user interaction and displays results
+ *
+ * Side Effects:
+ *   - Modifies city names, material stores, and supply levels
+ *   - Updates transfer records between cities
+ *   - Changes volunteer counts and construction status (god mode)
+ *   - Modifies supply center weighting values
+ *   - Supplies armies, navies, and caravans at national level
+ *   - Updates display interface and clears screen sections
+ *
+ * Notes:
+ *   - Validates map coordinates and ownership before operations
+ *   - Enforces transfer distance limitations (MAX_TRANSFER sectors)
+ *   - Prevents operations on cities under siege
+ *   - Supply range calculated using r10_region() function
+ *   - Different supply limits: armies (MAXSUPPLIES), navies (4*MAXSUPPLIES), caravans (2*MAXSUPPLIES)
+ *   - City weighting must be between base value and 200
+ *   - God mode allows adjustment of stores and volunteers with construction timing
+ */
 void
 adjust_region PARM_2(int, x, int, y)
 {
@@ -436,7 +500,38 @@ adjust_region PARM_2(int, x, int, y)
   }
 }
 
-/* REGION_CMD -- Attempt to send commands to the current supply center */
+/*
+ * region_cmd - Entry point for regional command operations
+ *
+ * Validates sector access and initiates supply region management for the current
+ * cursor position. Handles both normal player operations and god mode functionality.
+ * Ensures proper ownership validation and context switching for administrative access.
+ *
+ * The function serves as a command dispatcher that:
+ * - Validates the current sector is on the map and owned by the player
+ * - Switches to god mode context if operating as administrator
+ * - Delegates actual region management to adjust_region()
+ * - Restores normal context after operations complete
+ *
+ * Parameters:
+ *   void - Uses global coordinates XREAL, YREAL for current cursor position
+ *
+ * Returns:
+ *   int - Always returns 0 (success/completion status)
+ *
+ * Side Effects:
+ *   - Temporarily switches to god mode context if is_god is TRUE
+ *   - Validates and potentially changes current nation context
+ *   - Displays error messages for invalid operations
+ *   - Calls adjust_region() which may modify game state extensively
+ *
+ * Notes:
+ *   - Uses global cursor coordinates (XREAL, YREAL) for target location
+ *   - God mode requires owned sectors (not UNOWNED) for operation
+ *   - Normal players must own the target sector to operate
+ *   - Automatically restores god context on completion
+ *   - Error handling prevents operations on invalid/unowned sectors
+ */
 int
 region_cmd PARM_0(void)
 {
