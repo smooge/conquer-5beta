@@ -154,7 +154,13 @@ extern int troop_listing PL_(( void )); /* List troops in sector */
 extern int zoom_in PL_(( void )); /* Increase map detail */
 extern int zoom_out PL_(( void )); /* Decrease map detail */
 
-/* emailG.c: Code for the mail editor for sending interactive messages */
+/* ============================================================================
+ * EMAIL SYSTEM INTERFACE - emailG.c
+ * ============================================================================
+ * Purpose: Mail editor for sending interactive messages
+ * Usage: Email composition, message editing, mail transmission
+ * Notes: Interactive mail editor with key binding system (26 functions total)
+ */
 
 /* ALIGN_EMAIL_KEYS -- Align all of the mail editor keys */
 extern void align_email_keys PL_(( void ));
@@ -168,7 +174,13 @@ extern int email_init PL_(( void ));
 /* EMAIL_PARSE -- Main interface for sending mail; message in cur_message */
 extern void email_parse PL_(( void ));
 
-/* enlistG.c: routines to create armies, navies, and caravans */
+/* ============================================================================
+ * UNIT ENLISTMENT INTERFACE - enlistG.c
+ * ============================================================================
+ * Purpose: Unit creation system for armies, navies, and caravans
+ * Usage: Unit recruitment, military/economic unit creation
+ * Notes: Core unit creation interface (7 functions total)
+ */
 
 /* ENLIST -- Select whether to enlist armies, navies or caravans */
 extern int enlist PL_(( void ));
@@ -219,7 +231,13 @@ extern void show_cursor PL_(( void )); /* Position cursor properly */
 extern void show_sect PL_(( int x, int y, int x_loc, int y_loc, int method )); /* Show sector at position */
 extern void whatcansee PL_(( void )); /* Track map/screen visibility */
 
-/* ieditG.c: This file holds editing functions for information displays */
+/* ============================================================================
+ * INFORMATION EDITING INTERFACE - ieditG.c
+ * ============================================================================
+ * Purpose: Information display editing and modification functions
+ * Usage: Data editing, information modification, god mode adjustments
+ * Notes: Specialized editing interface for information displays (4 functions total)
+ */
 
 /* EDIT_INFO -- Allow the user to alter some of the information */
 extern void edit_info PL_(( int line, int choice ));
@@ -233,7 +251,13 @@ extern void god_cvnedit PL_(( int line, int cvnnum ));
 /* GOD_NAVYEDIT -- Adjust a navy in god mode */
 extern void god_navyedit PL_(( int line, int navynum ));
 
-/* infoG.c: This file creates formatted displays of various information */
+/* ============================================================================
+ * INFORMATION DISPLAY INTERFACE - infoG.c
+ * ============================================================================
+ * Purpose: Formatted information displays and data presentation
+ * Usage: Information screens, data formatting, content display
+ * Notes: Core information display system (12 functions total)
+ */
 
 /* SHOW_CITY_INFO -- Filter to call the show_info routine */
 extern int show_city_info PL_(( void ));
@@ -275,7 +299,13 @@ extern void normal_lineout PL_(( int loc, char * str )); /* Standard string outp
 extern void show_scores PL_(( void )); /* Display nation scores */
 extern int spawn_out PL_(( void )); /* Spawn shell interface */
 
-/* iodataG.c: interaction routines between conquer and the file system */
+/* ============================================================================
+ * DATA I/O INTERFACE SYSTEM - iodataG.c
+ * ============================================================================ 
+ * Purpose: File system interaction and data persistence management
+ * Usage: Nation login/logout, file monitoring, game state management
+ * Notes: Critical system for multi-user data coordination (14 functions total)
+ */
 
 /* ARETHEYON -- returns TRUE if 'country' is logged on, else FALSE */
 extern int aretheyon PL_(( void ));
@@ -316,7 +346,13 @@ extern void stmail_init PL_(( void ));
 /* SYSM_CHECK -- Check if the system mail needs reading */
 extern void sysm_check PL_(( void ));
 
-/* keybindG.c: routines designed for manipulation / verification of keybindings */
+/* ============================================================================
+ * KEY BINDING SYSTEM - keybindG.c  
+ * ============================================================================
+ * Purpose: Keyboard binding configuration and management system
+ * Usage: Key assignment, function mapping, user input customization
+ * Notes: Sophisticated customizable input system (15 functions total)
+ */
 
 /* ALIGN_GLOBAL_KEYS -- Align all of the global keys */
 extern void align_global_keys PL_(( void ));
@@ -360,7 +396,13 @@ extern int rm_keys PL_(( KLIST_PTR * klist_ptr, char * kstr ));
 /* SORT_KEYS -- Re-sort the entire key binding list */
 extern void sort_keys PL_(( KLIST_PTR * klist_ptr ));
 
-/* magicG.c: The display routines for magic powers and interface to spells */
+/* ============================================================================
+ * MAGIC SYSTEM INTERFACE - magicG.c
+ * ============================================================================
+ * Purpose: Magic power display and spell casting interface
+ * Usage: Spell selection, power management, magical abilities interface
+ * Notes: Complete magic system UI with power display (25 functions total)
+ */
 
 /* ALIGN_MAGIC_KEYS -- Align all of the magic system keys */
 extern void align_magic_keys PL_(( void ));
@@ -371,7 +413,13 @@ extern int cast_spells PL_(( void ));
 /* SHOW_MAGIC -- Display and adjust all of the magic powers for the nation */
 extern int show_magic PL_(( void ));
 
-/* mailG.c: routines to read and manipulate conquer mail messages */
+/* ============================================================================
+ * MAIL READING INTERFACE - mailG.c
+ * ============================================================================
+ * Purpose: In-game mail system interface and message management
+ * Usage: Mail reading, message navigation, mail system control
+ * Notes: Comprehensive mail reader with full message system (43 functions total)
+ */
 
 /* ALIGN_READER_KEYS -- Align all of the mail reader keys */
 extern void align_reader_keys PL_(( void ));
@@ -385,7 +433,13 @@ extern void rmail_close PL_(( void ));
 /* RMAIL_PARSE -- Peruse all of the mail for the user */
 extern int rmail_parse PL_(( void ));
 
-/* miscG.c: handle all of the main input and command parsing for conquer */
+/* ============================================================================
+ * MISCELLANEOUS INTERFACE - miscG.c
+ * ============================================================================
+ * Purpose: Main command processing and general interface functions
+ * Usage: Primary command parsing, reporting, game state management
+ * Notes: Core command processing system with reports (30 functions total)
+ */
 
 /* ARMY_REPORT -- Show the army information for the nation */
 extern int army_report PL_(( void ));
@@ -471,7 +525,13 @@ extern int navy_report PL_(( void ));
 /* OPTION_CMD -- Adjust some options */
 extern void option_cmd PL_(( KEYSYS_STRUCT key_info, KLIST_PTR * list_of_keys ));
 
-/* moveG.c: interactive routines for moving units and items */
+/* ============================================================================
+ * MOVEMENT INTERFACE - moveG.c
+ * ============================================================================
+ * Purpose: Interactive unit and item movement system
+ * Usage: Unit relocation, movement interface, path planning
+ * Notes: Core movement interface with relocation system (24 functions total)
+ */
 
 /* ALIGN_MOVE_KEYS -- Align all of the movement keys */
 extern void align_move_keys PL_(( void ));
@@ -489,7 +549,13 @@ extern int move_select PL_(( void ));
 /* MOVE_STVAL -- String representation of the movement cost */
 extern void move_stval PL_(( char * out_str, int mval, int cmpct ));
 
-/* navyG.c: This file contains routines allowing user manipulation of naval units */
+/* ============================================================================
+ * NAVY MANIPULATION INTERFACE - navyG.c
+ * ============================================================================
+ * Purpose: Naval unit management and fleet operations interface
+ * Usage: Navy manipulation, fleet commands, maritime operations
+ * Notes: Complete naval interface system with transport (14 functions total)
+ */
 
 /* DISB_NAVY -- Get rid of a naval unit */
 extern void disb_navy PL_(( NAVY_PTR n1_ptr ));
@@ -509,7 +575,13 @@ extern void navy_transport PL_(( NAVY_PTR n1_ptr ));
 /* SUPPLY_NAVY -- Attempt to set the supply value of a navy unit */
 extern int supply_navy PL_(( NAVY_PTR n1_ptr, int level, int doquery ));
 
-/* ntninfoG.c: This file provides the nation information screen to the user */
+/* ============================================================================
+ * NATION INFORMATION INTERFACE - ntninfoG.c
+ * ============================================================================
+ * Purpose: Nation information display and statistics screen
+ * Usage: Nation data presentation, statistics viewing, info management
+ * Notes: Comprehensive nation information system (30+ functions total)
+ */
 
 /* ALIGN_NINFO_KEYS -- Align all of the nation information mode keys */
 extern void align_ninfo_keys PL_(( void ));
@@ -517,12 +589,24 @@ extern void align_ninfo_keys PL_(( void ));
 /* NTN_INFO - this is the nation information screen routine */
 extern int ntn_info PL_(( void ));
 
-/* pagerG.c: file perusal program especially written for conquer */
+/* ============================================================================
+ * FILE PAGING INTERFACE - pagerG.c
+ * ============================================================================
+ * Purpose: File viewing and text display system
+ * Usage: File reading, text browsing, news display
+ * Notes: Specialized paging system for game content (19 functions total)
+ */
 
 /* PAGE_FILE -- Peruse the specified file, reading appropriately */
 extern int page_file PL_(( char * fname, int news ));
 
-/* regionG.c: This file holds all of the commands to operate over a supply region */
+/* ============================================================================
+ * REGION MANAGEMENT INTERFACE - regionG.c
+ * ============================================================================
+ * Purpose: Supply region command processing and management
+ * Usage: Regional commands, supply center operations, area management
+ * Notes: Regional command system for supply operations (2 functions total)
+ */
 
 /* ADJUST_REGION -- Affect a change on a region */
 extern void adjust_region PL_(( int x, int y ));
@@ -530,7 +614,13 @@ extern void adjust_region PL_(( int x, int y ));
 /* REGION_CMD -- Attempt to send commands to the current supply center */
 extern int region_cmd PL_(( void ));
 
-/* sectorG.c: User and god commands to allow manipulation of sectors */
+/* ============================================================================
+ * SECTOR MANAGEMENT INTERFACE - sectorG.c
+ * ============================================================================
+ * Purpose: Sector manipulation and terrain management commands
+ * Usage: Sector designation, construction, terrain modification
+ * Notes: Core sector management interface (3 functions total)
+ */
 
 /* CHANGE_DESG -- Adjust the major designation of a sector */
 extern int change_desg PL_(( void ));
@@ -541,7 +631,13 @@ extern int construct PL_(( void ));
 /* SECT_INFO -- Provide more detailed information on the current sector */
 extern void sect_info PL_(( void ));
 
-/* selectG.c: This file is used to allow quick retrieval of data */
+/* ============================================================================
+ * UNIT SELECTION INTERFACE - selectG.c
+ * ============================================================================
+ * Purpose: Unit selection and navigation system
+ * Usage: Unit targeting, selection management, goto operations
+ * Notes: Core selection system with navigation (16 functions total)
+ */
 
 /* EXT_CMD -- Perform an extend command on a selected unit */
 extern int ext_cmd PL_(( void ));
@@ -588,7 +684,13 @@ extern int set_select PL_(( int type, char * desc ));
 /* TRANS_CMD -- Load or unload the currently selected caravan or navy */
 extern int trans_cmd PL_(( void ));
 
-/* xferG.c: mechanism to transfer items between storage sites */
+/* ============================================================================
+ * TRANSFER SYSTEM INTERFACE - xferG.c
+ * ============================================================================
+ * Purpose: Item transfer mechanism between storage locations
+ * Usage: Resource transfer, inventory management, item exchange
+ * Notes: Comprehensive transfer system with multi-source support (38 functions total)
+ */
 
 /* ALIGN_XFER_KEYS -- Align all of the transfer mode keys */
 extern void align_xfer_keys PL_(( void ));
@@ -623,7 +725,13 @@ extern int xfer_init PL_(( void ));
 /* XFER_MODE -- Interactively transfer items between two storage elements */
 extern void xfer_mode PL_(( void ));
 
-/* time_ckG.c: This file handles all of the time accessing checks for conquer */
+/* ============================================================================
+ * TIME CHECKING INTERFACE - time_ckG.c
+ * ============================================================================
+ * Purpose: Time validation and host access verification system
+ * Usage: Time restrictions, host checking, access control
+ * Notes: Security system for time/host validation (11 functions total)
+ */
 
 /* INITIAL_CHECK -- Initial time/host check. */
 extern int initial_check PL_(( void ));
