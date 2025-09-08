@@ -1210,174 +1210,510 @@ typedef struct s_unitnum {
     struct s_unitnum *next;     /* Linked list: next numbering scheme in chain */
 } UNITNUM, *UNUM_PTR;
 
-/* Mapping Structure */
+/*
+ * struct s_map - Map visibility and reconnaissance data structure
+ *
+ * Represents areas of the map that have been explored, scouted, or are under
+ * surveillance by a nation. This structure tracks visibility ranges, reconnaissance
+ * strength, and the persistence of map knowledge for strategic planning and
+ * situational awareness during gameplay.
+ *
+ * Usage Patterns:
+ *   - Track explored territories and reconnaissance information
+ *   - Manage fog of war and visibility systems
+ *   - Store intelligence gathering and surveillance data
+ *   - Support strategic planning with known map information
+ *   - Implement scouting and exploration mechanics
+ *
+ * Relationships:
+ *   - Owned by nations (managed through nation map lists)
+ *   - References specific map coordinates for visibility
+ *   - Integrates with movement and exploration systems
+ *   - Supports combat intelligence and strategic awareness
+ *   - Connected to scouting units and reconnaissance operations
+ *
+ * Fields:
+ *   xloc, yloc - Map coordinates of the area under surveillance/known
+ *   range - Distance visible from this location (visibility radius)
+ *   strength - Intensity of visibility/reconnaissance (clarity, accuracy)
+ *   lifetime - Duration of visibility in turns (0 = permanent knowledge)
+ *   next - Linked list pointer to next map knowledge entry
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists per nation
+ *   - Nation structures maintain head pointers to map lists
+ *   - Temporary entries cleaned up when lifetime expires
+ *   - Permanent entries persist throughout game
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Visibility updates require atomic operations during exploration
+ *   - Lifetime decrements need coordination during turn processing
+ *   - Map knowledge queries need consistent read access
+ *
+ * Performance Notes:
+ *   - Frequent access during movement and combat operations
+ *   - Range calculations for visibility determination
+ *   - Lifetime management requires periodic cleanup operations
+ *   - Strategic AI relies heavily on map knowledge for decisions
+ */
 typedef struct s_map {
-  maptype xloc, yloc;		/* location of the mapping element	*/
-  uns_char range;		/* distance visible from this locale	*/
-  uns_char strength;		/* the strength of the visibility	*/
-  uns_char lifetime;		/* duration of visibility -- 0 = perm	*/
-  struct s_map *next;
+    maptype xloc, yloc;     /* Map coordinates of the area under surveillance/known */
+    uns_char range;         /* Distance visible from this location (visibility radius) */
+    uns_char strength;      /* Intensity of visibility/reconnaissance (clarity, accuracy) */
+    uns_char lifetime;      /* Duration of visibility in turns (0 = permanent knowledge) */
+    struct s_map *next;     /* Linked list: next map knowledge entry in nation's intel */
 } MAP_STRUCT, *MAP_PTR;
 
-/* Nation Data Structure */
+/*
+ * struct s_nation - Complete nation data structure
+ *
+ * Represents a complete player nation in the game, containing all information
+ * about leadership, territory, military forces, economy, diplomacy, and
+ * strategic attributes. This is the central data structure that defines each
+ * player's civilization and tracks all aspects of their empire.
+ *
+ * Usage Patterns:
+ *   - Complete player nation representation and state management
+ *   - Economic calculations and resource management
+ *   - Military command and unit coordination
+ *   - Diplomatic relations and international politics
+ *   - Strategic AI decision-making and planning
+ *
+ * Relationships:
+ *   - Contains linked lists of all national assets (armies, navies, cities)
+ *   - References map sectors through ownership and territorial control
+ *   - Maintains diplomatic relations with other nations
+ *   - Integrates with game world for resource production and consumption
+ *   - Connected to user authentication and session management
+ *
+ * Fields:
+ *   name - Nation name displayed to other players
+ *   login - User login name for authentication
+ *   passwd - Encrypted password for secure access
+ *   leader - Ruler/leader title for roleplay and identification
+ *   repro - Population reproduction rate modifier
+ *   race - National race affecting characteristics and abilities
+ *   mark - Unique single-character identifier for map display
+ *   location - Initial placement quality score on world creation
+ *   capx, capy - Capital city coordinates (center of government)
+ *   centerx, centery - Geographic center of national territory
+ *   leftedge, rightedge, topedge, bottomedge - Territorial boundaries
+ *   class - National classification affecting abilities and strategies
+ *   aplus, dplus - Combat bonuses for all national military units
+ *   score - Overall nation score for ranking and victory conditions
+ *   active - Activity status and AI strategy type
+ *   maxmove - Maximum movement points for national units
+ *   num_* - Entity counts for save/load serialization
+ *   *_list - Linked list heads for all national assets
+ *   dstatus[] - Diplomatic relations with all other nations
+ *   mtrls[] - Total national material stockpiles
+ *   m_new[] - Materials produced this turn
+ *   t* - Total counts of various national assets and population
+ *   powers[] - Magical abilities and special national powers
+ *   attribute[] - National characteristics affecting various game mechanics
+ *   mbox_size, news_size - Communication system state tracking
+ *
+ * Memory Management:
+ *   - Central structure allocated once per nation
+ *   - Contains head pointers to multiple linked lists
+ *   - Arrays use fixed sizes based on game constants
+ *   - String fields require null termination and validation
+ *
+ * Thread Safety:
+ *   - Not thread-safe without external synchronization
+ *   - Economic calculations require atomic updates across multiple fields
+ *   - Military operations need coordination to prevent state corruption
+ *   - Diplomatic changes require synchronized access to prevent conflicts
+ *
+ * Performance Notes:
+ *   - Central structure accessed frequently during all game operations
+ *   - Economic calculations iterate across material arrays
+ *   - Military operations traverse linked lists for unit management
+ *   - AI decision-making relies heavily on statistical totals
+ */
 typedef struct s_nation {
-  char name[NAMELTH+1];		/* name				*/
-  char login[NAMELTH+1];	/* login name of user		*/
-  char passwd[PASSLTH+1];	/* password			*/
-  char leader[LEADERLTH+1];	/* leader title			*/
-  short repro;			/* reproduction rate of nation	*/
-  short race;			/* national race		*/
-  char mark;			/* unique mark for nation	*/
-  char location;		/* how well placed on creation	*/
-  maptype capx;			/* Capital x coordinate		*/
-  maptype capy;			/* Capital y coordinate		*/
-  maptype centerx;		/* Relative central X location	*/
-  maptype centery;		/* Relative central Y location	*/
-  short leftedge;		/* Left Edge of Nation		*/
-  short rightedge;		/* Right Edge of Nation		*/
-  short topedge;		/* Top Edge of Nation		*/
-  short bottomedge;		/* Bottom Edge of Nation	*/
-  short class;			/* national class		*/
-  short aplus;			/* attack plus of all soldiers	*/
-  short dplus;			/* defense plus of all soldiers	*/
-  long score;			/* score			*/
-  short active;			/* nation type and strategy	*/
-  short maxmove;		/* maximum movement of soldiers */
-  idtype num_army;		/* for saves; number of armies	*/
-  idtype num_navy;		/* for saves; number of navies	*/
-  idtype num_city;		/* for saves; # of city structs	*/
-  idtype num_item;		/* for saves; # of item structs	*/
-  idtype num_cvn;		/* for saves; # of caravans	*/
-  idtype num_unum;		/* for saves; # of autonum itms	*/
-  idtype num_maps;		/* for saves; # of map structs	*/
-  ARMY_PTR army_list;		/* the army units of the nation	*/
-  NAVY_PTR navy_list;		/* the navy units of the nation	*/
-  CITY_PTR city_list;		/* the city information		*/
-  ITEM_PTR item_list;		/* national commodities		*/
-  CVN_PTR cvn_list;		/* trading caravans		*/
-  UNUM_PTR unum_list;		/* autonumbering schemes	*/
-  MAP_PTR map_list;		/* mapping of sectors		*/
-  char dstatus[ABSMAXNTN];	/* diplomatic status		*/
-  itemtype mtrls[MTRLS_NUMBER];	/* sum of materials in nation	*/
-  itemtype m_new[MTRLS_NUMBER];	/* sum of produced materials	*/
-  short tsctrs;			/* total number sectors		*/
-  short tunsctrs;		/* total number unsupported	*/
-  short tships;			/* number of ships		*/
-  short twagons;		/* number of wagons		*/
-  long tmonst;			/* total number of monsters	*/
-  long tleaders;		/* total number of leaders	*/
-  long tmil;			/* total military		*/
-  long tciv;			/* total civilians		*/
-  long powers[MAG_NUMBER];	/* lists of national powers	*/
-  short attribute[BUTE_NUMBER];	/* national attributes		*/
-  off_t mbox_size;		/* last known size of conq mail	*/
-  off_t news_size;		/* last known size of conq news	*/
+    char name[NAMELTH+1];               /* Nation name displayed to other players */
+    char login[NAMELTH+1];              /* User login name for authentication */
+    char passwd[PASSLTH+1];             /* Encrypted password for secure access */
+    char leader[LEADERLTH+1];           /* Ruler/leader title for roleplay identification */
+    short repro;                        /* Population reproduction rate modifier */
+    short race;                         /* National race affecting characteristics and abilities */
+    char mark;                          /* Unique single-character identifier for map display */
+    char location;                      /* Initial placement quality score on world creation */
+    maptype capx;                       /* Capital city X coordinate (center of government) */
+    maptype capy;                       /* Capital city Y coordinate (center of government) */
+    maptype centerx;                    /* Geographic center X of national territory */
+    maptype centery;                    /* Geographic center Y of national territory */
+    short leftedge;                     /* Western boundary of national territory */
+    short rightedge;                    /* Eastern boundary of national territory */
+    short topedge;                      /* Northern boundary of national territory */
+    short bottomedge;                   /* Southern boundary of national territory */
+    short class;                        /* National classification affecting abilities/strategies */
+    short aplus;                        /* Combat attack bonus for all national military units */
+    short dplus;                        /* Combat defense bonus for all national military units */
+    long score;                         /* Overall nation score for ranking and victory conditions */
+    short active;                       /* Activity status and AI strategy type */
+    short maxmove;                      /* Maximum movement points for national units */
+    idtype num_army;                    /* Number of armies (for save/load serialization) */
+    idtype num_navy;                    /* Number of navies (for save/load serialization) */
+    idtype num_city;                    /* Number of cities (for save/load serialization) */
+    idtype num_item;                    /* Number of items (for save/load serialization) */
+    idtype num_cvn;                     /* Number of caravans (for save/load serialization) */
+    idtype num_unum;                    /* Number of autonumbering schemes (for serialization) */
+    idtype num_maps;                    /* Number of map entries (for save/load serialization) */
+    ARMY_PTR army_list;                 /* Linked list head: all army units of the nation */
+    NAVY_PTR navy_list;                 /* Linked list head: all navy units of the nation */
+    CITY_PTR city_list;                 /* Linked list head: all city information */
+    ITEM_PTR item_list;                 /* Linked list head: all national commodities/projects */
+    CVN_PTR cvn_list;                   /* Linked list head: all trading caravans */
+    UNUM_PTR unum_list;                 /* Linked list head: all autonumbering schemes */
+    MAP_PTR map_list;                   /* Linked list head: mapping/reconnaissance of sectors */
+    char dstatus[ABSMAXNTN];            /* Diplomatic status with all other nations */
+    itemtype mtrls[MTRLS_NUMBER];       /* Total national material stockpiles by type */
+    itemtype m_new[MTRLS_NUMBER];       /* Materials produced this turn by type */
+    short tsctrs;                       /* Total number of sectors owned by nation */
+    short tunsctrs;                     /* Total number of unsupported sectors */
+    short tships;                       /* Total number of ships across all navies */
+    short twagons;                      /* Total number of wagons across all caravans */
+    long tmonst;                        /* Total number of monster/NPC units */
+    long tleaders;                      /* Total number of military leaders */
+    long tmil;                          /* Total military population across all forces */
+    long tciv;                          /* Total civilian population across all sectors */
+    long powers[MAG_NUMBER];            /* Magical abilities and special national powers */
+    short attribute[BUTE_NUMBER];       /* National characteristics affecting game mechanics */
+    off_t mbox_size;                    /* Last known size of nation's mail file */
+    off_t news_size;                    /* Last known size of nation's news file */
 } NTN_STRUCT, *NTN_PTR;
 
-/* World Data Structure */
+/*
+ * struct s_world - Global game world configuration and state
+ *
+ * Contains all global game parameters, world generation settings, combat rules,
+ * economic factors, and administrative configuration for the entire game world.
+ * This structure defines the fundamental rules and current state of the game
+ * universe, affecting all players and game mechanics.
+ *
+ * Usage Patterns:
+ *   - Global game configuration and rule enforcement
+ *   - World generation parameters and terrain distribution
+ *   - Combat system configuration and damage calculations
+ *   - Economic and production rate management
+ *   - Administrative functions and game master controls
+ *
+ * Relationships:
+ *   - Contains array of all nations in the game world
+ *   - Defines rules affecting all players equally
+ *   - Controls random event generation and world dynamics
+ *   - Manages global resource pools and mercenary availability
+ *   - Integrates with all game systems for consistent rule application
+ *
+ * Key Sections:
+ *   World Dimensions: mapx, mapy define the game world size
+ *   Nation Management: nations, npcs, active_ntns, np[] array
+ *   Time Management: turn, start_turn for game progression
+ *   Administrative: demigod controls, passwords, security flags
+ *   Combat System: dice, damage, combat bonuses configuration
+ *   World Generation: terrain percentages, smoothing algorithms
+ *   Economic Factors: production rates, trade good distribution
+ *   Random Events: event frequencies, NPC generation rates
+ *   Global Statistics: world totals for population, military, resources
+ *
+ * Memory Management:
+ *   - Single global instance allocated at game startup
+ *   - Contains large nation pointer array
+ *   - Material arrays use fixed sizes based on constants
+ *   - String fields require null termination and validation
+ *
+ * Thread Safety:
+ *   - Global structure requiring synchronized access
+ *   - Turn progression requires atomic updates
+ *   - Statistical totals need coordination during calculations
+ *   - Administrative changes require exclusive access
+ *
+ * Performance Notes:
+ *   - Central structure accessed by all game operations
+ *   - Nation array requires efficient indexing and bounds checking
+ *   - Global statistics recalculated frequently during gameplay
+ *   - Configuration parameters affect computational complexity
+ */
 struct s_world
 {
-  maptype mapx, mapy;	/* size of world		*/
-  ntntype nations;	/* total number of nations	*/
-  ntntype npcs;		/* number of beginning npcs	*/
-  ntntype active_ntns;	/* number of active nations	*/
-  NTN_PTR np[ABSMAXNTN];	/* nations of the world */
-  short turn;		/* count of game turn		*/
-  short start_turn;	/* turn on which campaign began	*/
-  char demigod[NAMELTH+1];	/* name of the demi-god	*/
-  char passwd[PASSLTH+1];	/* god's password	*/
-  char addpwd[PASSLTH+1];	/* add nation password	*/
-  char demibuild;	/* flag allows demigod rebuild	*/
-  char demilimit;	/* flag limits demigod powers	*/
-  char relative_map;	/* flag for messing up players	*/
-  char hexmap;		/* flag to indicate hexmap mode	*/
-  char verify_login;	/* flag to increase security	*/
-  char hide_scores;	/* flag to hide nation scores	*/
-  char hide_login;	/* flag to hide nation owners	*/
-  char builddist;	/* min dist between nations	*/
-  short fleet_cbval;	/* base combat bonus of navies	*/
-  short wagon_cbval;	/* base combat bonus of cvns	*/
-  char num_dice;	/* number of combat roll dice	*/
-  char avg_damage;	/* average damage during combat	*/
-  char damage_limit;	/* damage needed to stop attack	*/
-  char overmatch_adj;	/* adjust to dam for rel_size	*/
-  char pmindamage;	/* min damage level (% of roll)	*/
-  char smoothings;	/* smoothing algorithm repeats	*/
-  char land_range;	/* displacement check for water	*/
-  char preject_land;	/* % chance rejection for land	*/
-  char pwater;		/* percentage of water		*/
-  char pmount;		/* % of land that is mountains	*/
-  char pmercval;	/* % of disbanded to mercs	*/
-  char prevolt;		/* % yearly revolts level	*/
-  char pscout;		/* % chance to capture scouts	*/
-  char pmonster;	/* % per year for monster repro	*/
-  char pmercmonst;	/* % of monsters who goto mercs	*/
-  char ptrade;		/* % of sectors with tradegoods	*/
-  char ptgmetal;	/* metal tradegood percentage	*/
-  char ptgjewel;	/* jewel tradegood percentage	*/
-  char ptgspell;	/* magic tradegood percentage	*/
-  char supplylimit;	/* limit on supply carrying	*/
-  char nvsplydist;	/* distance of supply for n & v	*/
-  char cityxfdist;	/* max dist for city transfers	*/
-  uns_char exposelvl;	/* the exposure level: 10=norm	*/
-  uns_char maxpts;	/* maximum number of build pts	*/
-  uns_char lizards;	/* how many lizards are created	*/
-  uns_char savages;	/* how many savages are created	*/
-  uns_char nomads;	/* how many nomads are created	*/
-  uns_char pirates;	/* how many pirates are created	*/
-  char numrandom;	/* number of random events/turn	*/
-  char numweather;	/* number of weather/turn	*/
-  long m_mil;		/* number of mercs available	*/
-  short m_aplus;	/* mercenary attack bonus	*/
-  short m_dplus;	/* mercenary defense bonus	*/
-  itemtype bribelevel;	/* value level of bribes	*/
-  itemtype w_mtrls[MTRLS_NUMBER];	/* all resource	*/
-  long w_civ;		/* world population		*/
-  long w_mil;		/* world military		*/
-  long w_sctrs;		/* owned sectors in world	*/
-  long w_score;		/* world score total		*/
-  off_t mbox_size;	/* size of god's mbox when read	*/
-  off_t news_size;	/* gods knowledge of news size	*/
-  int num_unum;		/* how many default unit nums	*/
-  UNUM_PTR dflt_unum;	/* default world unit numbering	*/
-  uns_char maxdipadj;	/* maximum diplomacy adjustment	*/
-  uns_char latestart;	/* turns before password check	*/
-  uns_char growthrate;	/* speed of world reproduction	*/
+    maptype mapx, mapy;                 /* World dimensions (width and height in sectors) */
+    ntntype nations;                    /* Total number of nations configured in world */
+    ntntype npcs;                       /* Number of NPC nations at world creation */
+    ntntype active_ntns;                /* Number of currently active player nations */
+    NTN_PTR np[ABSMAXNTN];             /* Array of pointers to all nations in world */
+    short turn;                         /* Current game turn counter */
+    short start_turn;                   /* Turn number when campaign began (offset) */
+    char demigod[NAMELTH+1];           /* Name of the game master/administrator */
+    char passwd[PASSLTH+1];            /* Administrator password for god-level access */
+    char addpwd[PASSLTH+1];            /* Password required to add new nations */
+    char demibuild;                     /* Flag: allows demigod to rebuild world */
+    char demilimit;                     /* Flag: limits demigod powers for fairness */
+    char relative_map;                  /* Flag: enables relative map confusion */
+    char hexmap;                        /* Flag: indicates hexagonal map mode */
+    char verify_login;                  /* Flag: increases login security requirements */
+    char hide_scores;                   /* Flag: hides nation scores from players */
+    char hide_login;                    /* Flag: hides nation owner names */
+    char builddist;                     /* Minimum distance between new nations */
+    short fleet_cbval;                  /* Base combat bonus for naval fleets */
+    short wagon_cbval;                  /* Base combat bonus for caravan units */
+    char num_dice;                      /* Number of dice rolled for combat resolution */
+    char avg_damage;                    /* Average damage percentage during combat */
+    char damage_limit;                  /* Damage threshold to stop attack progression */
+    char overmatch_adj;                 /* Damage adjustment for relative unit sizes */
+    char pmindamage;                    /* Minimum damage percentage of dice roll */
+    char smoothings;                    /* Terrain smoothing algorithm iterations */
+    char land_range;                    /* Water displacement check radius */
+    char preject_land;                  /* Percentage chance to reject land placement */
+    char pwater;                        /* Percentage of world that is water */
+    char pmount;                        /* Percentage of land that is mountainous */
+    char pmercval;                      /* Percentage of disbanded units joining mercenaries */
+    char prevolt;                       /* Percentage yearly revolt probability */
+    char pscout;                        /* Percentage chance to capture enemy scouts */
+    char pmonster;                      /* Percentage yearly monster reproduction rate */
+    char pmercmonst;                    /* Percentage of monsters joining mercenaries */
+    char ptrade;                        /* Percentage of sectors with trade goods */
+    char ptgmetal;                      /* Metal trade goods percentage distribution */
+    char ptgjewel;                      /* Jewel trade goods percentage distribution */
+    char ptgspell;                      /* Magic trade goods percentage distribution */
+    char supplylimit;                   /* Maximum supply capacity per unit */
+    char nvsplydist;                    /* Supply distribution distance for navies/caravans */
+    char cityxfdist;                    /* Maximum distance for city resource transfers */
+    uns_char exposelvl;                 /* Combat exposure level (10 = normal) */
+    uns_char maxpts;                    /* Maximum build points per construction */
+    uns_char lizards;                   /* Number of lizard NPCs created at start */
+    uns_char savages;                   /* Number of savage NPCs created at start */
+    uns_char nomads;                    /* Number of nomad NPCs created at start */
+    uns_char pirates;                   /* Number of pirate NPCs created at start */
+    char numrandom;                     /* Number of random events per turn */
+    char numweather;                    /* Number of weather events per turn */
+    long m_mil;                         /* Global mercenary pool size */
+    short m_aplus;                      /* Mercenary attack bonus modifier */
+    short m_dplus;                      /* Mercenary defense bonus modifier */
+    itemtype bribelevel;                /* Standard bribery value threshold */
+    itemtype w_mtrls[MTRLS_NUMBER];     /* Global resource totals across all nations */
+    long w_civ;                         /* Total world civilian population */
+    long w_mil;                         /* Total world military population */
+    long w_sctrs;                       /* Total owned sectors across all nations */
+    long w_score;                       /* Combined score total of all nations */
+    off_t mbox_size;                    /* Size of administrator's mailbox */
+    off_t news_size;                    /* Size of global news file */
+    int num_unum;                       /* Number of default unit numbering schemes */
+    UNUM_PTR dflt_unum;                 /* Default world unit numbering system */
+    uns_char maxdipadj;                 /* Maximum diplomatic adjustment per turn */
+    uns_char latestart;                 /* Grace period turns before password enforcement */
+    uns_char growthrate;                /* Global population growth rate modifier */
 };
 
-/* display information structures */
+/*
+ * struct s_display - User interface display configuration
+ *
+ * Defines the configuration for a specific display mode in the hexagonal
+ * map interface, controlling how information is presented in different
+ * quadrants of the screen and what visual highlighting is applied to
+ * map elements and game entities.
+ *
+ * Usage Patterns:
+ *   - User interface customization and display preferences
+ *   - Multi-quadrant map display configuration
+ *   - Visual highlighting and emphasis control
+ *   - Display mode switching and management
+ *   - Screen layout and information presentation
+ *
+ * Relationships:
+ *   - Used by display system for map rendering
+ *   - Supports hexagonal map interface customization
+ *   - Integrates with highlighting and visual emphasis systems
+ *   - Connected to user preference and configuration management
+ *
+ * Fields:
+ *   name - Human-readable name for this display configuration
+ *   focus - Quadrant number that receives primary user focus
+ *   style[] - Display style selection for each map quadrant
+ *   highlight[] - Highlighting option active in each quadrant
+ *   target[] - Numeric target values for highlighting systems
+ *
+ * Memory Management:
+ *   - Small structure with fixed-size arrays
+ *   - Name string requires null termination
+ *   - Arrays sized based on HXPOS_NUMBER constant
+ *
+ * Thread Safety:
+ *   - Display configurations typically read-only during rendering
+ *   - Modification requires coordination with display system
+ *   - User preference changes need synchronized updates
+ *
+ * Performance Notes:
+ *   - Accessed frequently during map rendering operations
+ *   - Array indexing for quadrant-specific display settings
+ *   - Highlighting calculations may impact rendering performance
+ */
 typedef struct s_display {
-  char name[DISPLAYLTH + 1];	/* the name of the display option */
-  int focus;			/* which quadrant is the focus quadrant */
-  int style[HXPOS_NUMBER];	/* display selection in each quadrant */
-  int highlight[HXPOS_NUMBER];	/* highlight option in each quadrant */
-  int target[HXPOS_NUMBER];	/* numeric target of highlights */
+    char name[DISPLAYLTH + 1];      /* Human-readable name for this display configuration */
+    int focus;                      /* Quadrant number that receives primary user focus */
+    int style[HXPOS_NUMBER];        /* Display style selection for each map quadrant */
+    int highlight[HXPOS_NUMBER];    /* Highlighting option active in each quadrant */
+    int target[HXPOS_NUMBER];       /* Numeric target values for highlighting systems */
 } DISPLAY_STRUCT, *DISPLAY_PTR;
 
-/* the mode structure */
+/*
+ * struct s_dmode - Display mode linked list node
+ *
+ * Provides linked list management for multiple display configurations,
+ * allowing users to maintain several different display modes and switch
+ * between them as needed. This structure wraps the display configuration
+ * with list management capabilities.
+ *
+ * Usage Patterns:
+ *   - Multiple display mode management
+ *   - User preference persistence and switching
+ *   - Display configuration list traversal
+ *   - Dynamic display mode creation and deletion
+ *
+ * Relationships:
+ *   - Contains complete display configuration
+ *   - Managed as linked lists for user preference systems
+ *   - Supports display mode switching and customization
+ *
+ * Fields:
+ *   d - Complete display configuration structure
+ *   next - Linked list pointer to next display mode
+ *
+ * Memory Management:
+ *   - Dynamically allocated as linked lists
+ *   - Contains embedded display structure
+ *   - Cleanup needed when modes are deleted
+ *
+ * Thread Safety:
+ *   - List modifications require synchronization
+ *   - Display configuration access needs coordination
+ *   - Mode switching requires atomic updates
+ *
+ * Performance Notes:
+ *   - Linked list traversal for mode selection
+ *   - Embedded structure accessed during rendering
+ *   - Mode switching involves configuration copying
+ */
 typedef struct s_dmode {
-  DISPLAY_STRUCT d;		/* the actual display information */
-  struct s_dmode *next;		/* the next display for linked lists */
+    DISPLAY_STRUCT d;           /* Complete display configuration structure */
+    struct s_dmode *next;       /* Linked list: next display mode in user's list */
 } DMODE_STRUCT, *DMODE_PTR;
 
 /* Everything below this point is not used by dataX.c */
 #ifndef DATA_DECLARE
 
-/* Name and nickname of update mail messages */
+/* ============================================================================
+ * MAIL SYSTEM CONFIGURATION
+ * ============================================================================
+ * Purpose: Define mail system identification for automated messages
+ * Usage: Message headers, mail processing, system communications
+ * Notes: Used for automated game update notifications and system messages
+ */
+
+/*
+ * CQ_MAIL_NAME - Mail sender name for automated messages
+ *
+ * Standard sender name used for automated game update messages and system
+ * communications. Provides consistent identification for mail from the game.
+ *
+ * Value: "Conquer"
+ * Usage: Mail headers, message identification, system communications
+ * Notes: Displayed to users in mail listings and message headers
+ */
 #define CQ_MAIL_NAME	"Conquer"
+
+/*
+ * CQ_MAIL_NICK - Mail sender nickname for automated messages
+ *
+ * Descriptive nickname used for automated game messages, providing a more
+ * atmospheric and immersive identification for system communications.
+ *
+ * Value: "The Grand Overseer"
+ * Usage: Mail headers, roleplay atmosphere, system message identification
+ * Notes: Adds personality to automated game communications
+ */
 #define CQ_MAIL_NICK	"The Grand Overseer"
 
-/* Various Generic Macros */
+/* ============================================================================
+ * GENERIC UTILITY MACROS
+ * ============================================================================
+ * Purpose: Provide standard utility functions and error handling
+ * Usage: Mathematical operations, bounds checking, error management
+ * Notes: Include guards prevent redefinition conflicts with system libraries
+ */
+
+/*
+ * min - Return minimum of two values
+ *
+ * Standard minimum function macro that safely compares two values and
+ * returns the smaller one. Protected with include guards to prevent
+ * conflicts with system definitions.
+ *
+ * Parameters:
+ *   a - First value to compare
+ *   b - Second value to compare
+ *
+ * Returns: The smaller of the two input values
+ * Notes: Double evaluation of parameters - avoid side effects
+ */
 #ifndef min
 #define min(a,b)	((b) < (a) ? (b) : (a))
 #endif /* min */
+
+/*
+ * max - Return maximum of two values
+ *
+ * Standard maximum function macro that safely compares two values and
+ * returns the larger one. Protected with include guards to prevent
+ * conflicts with system definitions.
+ *
+ * Parameters:
+ *   a - First value to compare
+ *   b - Second value to compare
+ *
+ * Returns: The larger of the two input values
+ * Notes: Double evaluation of parameters - avoid side effects
+ */
 #ifndef max
 #define max(a,b)	((b) > (a) ? (b) : (a))
 #endif /* max */
+
+/*
+ * abs - Return absolute value
+ *
+ * Standard absolute value function macro that returns the positive
+ * representation of a signed value. Protected with include guards to
+ * prevent conflicts with system definitions.
+ *
+ * Parameters:
+ *   a - Value to convert to absolute value
+ *
+ * Returns: Non-negative absolute value of input
+ * Notes: Double evaluation of parameter - avoid side effects
+ */
 #ifndef abs
 #define abs(a)		((a) < 0 ? -(a) : (a))
 #endif /* abs */
 
+/*
+ * abrt - Emergency abort with cleanup and error reporting
+ *
+ * Comprehensive emergency termination macro that performs necessary cleanup
+ * operations before aborting the program. Handles curses interface cleanup,
+ * file closure, communication cleanup, and provides diagnostic information.
+ *
+ * Usage: Critical error conditions requiring immediate program termination
+ * Side Effects:
+ *   - Resets curses interface if active
+ *   - Prints diagnostic error message with file and line information
+ *   - Closes update file if open and not stderr
+ *   - Performs communication hangup if needed
+ *   - Calls abort() for immediate termination
+ *
+ * Notes: Should only be used for unrecoverable errors
+ */
 #define	abrt() { \
 if (in_curses) cq_reset(); \
 fprintf(stderr,"\nSerious Error (File %s, Line %d) - Aborting\n",__FILE__,__LINE__); \
@@ -1386,55 +1722,437 @@ if (need_hangup) hangup(); \
 abort(); \
 }
 
+/*
+ * beep - Audio notification for user attention
+ *
+ * Conditional audio beep that respects user preferences for sound
+ * notifications. Outputs ASCII bell character if beeper is enabled.
+ *
+ * Usage: User attention, error notifications, completion alerts
+ * Side Effects: Outputs bell character (ASCII 7) to stderr if enabled
+ * Notes: Respects conq_beeper global preference setting
+ */
 #define beep()	if (conq_beeper) putc('\007', stderr)
 
-/* macros to determine proper sector */
+/* ============================================================================
+ * MAP COORDINATE VALIDATION MACROS
+ * ============================================================================
+ * Purpose: Validate map coordinates and bounds checking
+ * Usage: Movement validation, array bounds checking, coordinate verification
+ * Notes: Critical for preventing array overruns and invalid map access
+ */
+
+/*
+ * XY_ONMAP - Validate map coordinates within valid bounds
+ *
+ * Complete bounds checking for map coordinates, ensuring both X and Y
+ * coordinates are within valid map boundaries (>= 0 and < maximum).
+ *
+ * Parameters:
+ *   x - X coordinate to validate
+ *   y - Y coordinate to validate
+ *
+ * Returns: True if coordinates are valid, false otherwise
+ * Usage: Movement validation, array access, coordinate verification
+ * Notes: Preferred for complete coordinate validation
+ */
 #define XY_ONMAP(x,y)	(((x) >= 0) && ((y) >= 0) && ((x) < MAPX) && ((y) < MAPY))
+
+/*
+ * XY_INMAP - Validate coordinates within map dimensions (no negative check)
+ *
+ * Simplified bounds checking that only verifies coordinates are less than
+ * maximum dimensions. Does not check for negative values.
+ *
+ * Parameters:
+ *   x - X coordinate to validate
+ *   y - Y coordinate to validate
+ *
+ * Returns: True if coordinates are within dimensions, false otherwise
+ * Usage: Array indexing where negative values are already handled
+ * Notes: Use XY_ONMAP for complete validation
+ */
 #define XY_INMAP(x,y)	(((x) < MAPX) && ((y) < MAPY))
+
+/*
+ * X_ONMAP - Validate X coordinate within valid bounds
+ *
+ * Single-axis bounds checking for X coordinates, ensuring value is
+ * within valid horizontal map boundaries.
+ *
+ * Parameters:
+ *   x - X coordinate to validate
+ *
+ * Returns: True if X coordinate is valid, false otherwise
+ * Usage: Horizontal movement validation, column access verification
+ */
 #define X_ONMAP(x)	(((x) >= 0) && ((x) < MAPX))
+
+/*
+ * Y_ONMAP - Validate Y coordinate within valid bounds
+ *
+ * Single-axis bounds checking for Y coordinates, ensuring value is
+ * within valid vertical map boundaries.
+ *
+ * Parameters:
+ *   y - Y coordinate to validate
+ *
+ * Returns: True if Y coordinate is valid, false otherwise
+ * Usage: Vertical movement validation, row access verification
+ */
 #define Y_ONMAP(y)	(((y) >= 0) && ((y) < MAPY))
 
-/* World Definitions */
+/* ============================================================================
+ * WORLD ACCESS MACROS
+ * ============================================================================
+ * Purpose: Convenient access to global world configuration and state
+ * Usage: Map dimensions, turn tracking, nation limits
+ * Notes: Provides abstraction layer for world structure access
+ */
+
+/*
+ * MAPX - World map width dimension
+ *
+ * Convenient access to the world map width, automatically converting
+ * from zero-based internal representation to one-based size.
+ *
+ * Value: world.mapx + 1 (converted to int)
+ * Usage: Loop bounds, array sizing, coordinate validation
+ * Notes: Adds 1 to convert from max index to dimension size
+ */
 #define MAPX		((int) world.mapx + 1)	/* map size */
+
+/*
+ * MAPY - World map height dimension
+ *
+ * Convenient access to the world map height, automatically converting
+ * from zero-based internal representation to one-based size.
+ *
+ * Value: world.mapy + 1 (converted to int)
+ * Usage: Loop bounds, array sizing, coordinate validation
+ * Notes: Adds 1 to convert from max index to dimension size
+ */
 #define MAPY		((int) world.mapy + 1)
+
+/*
+ * TURN - Current game turn number
+ *
+ * Direct access to the current game turn counter for time-based
+ * calculations and turn processing.
+ *
+ * Value: world.turn
+ * Usage: Turn-based calculations, time tracking, scheduling
+ */
 #define TURN		world.turn		/* game turn storage loc */
+
+/*
+ * START_TURN - Campaign starting turn offset
+ *
+ * Access to the turn number when the campaign began, used for
+ * calculating relative turn numbers and campaign duration.
+ *
+ * Value: world.start_turn
+ * Usage: Campaign duration, relative turn calculations
+ */
 #define START_TURN	world.start_turn	/* relative starting point */
+
+/*
+ * MAXNTN - Maximum number of nations
+ *
+ * Access to the total number of nations configured in the world,
+ * used for nation array bounds and iteration limits.
+ *
+ * Value: world.nations
+ * Usage: Nation array bounds, iteration limits, allocation sizing
+ */
 #define MAXNTN		world.nations
 
-/* edge shortcuts */
+/* ============================================================================
+ * NATION BOUNDARY ACCESS MACROS
+ * ============================================================================
+ * Purpose: Convenient access to current nation's territorial boundaries
+ * Usage: Territory calculations, boundary checks, nation sizing
+ * Notes: Assumes ntn_ptr points to current nation
+ */
+
+/*
+ * LEFTEDGE, RIGHTEDGE, TOPEDGE, BOTTOMEDGE - Nation boundary access
+ *
+ * Convenient access to the current nation's territorial boundaries
+ * for territory calculations and boundary validation.
+ *
+ * Usage: Territory size calculations, boundary checking, region determination
+ * Notes: Requires ntn_ptr to be set to current nation
+ */
 #define LEFTEDGE	ntn_ptr->leftedge
 #define RIGHTEDGE	ntn_ptr->rightedge
 #define TOPEDGE		ntn_ptr->topedge
 #define BOTTOMEDGE	ntn_ptr->bottomedge
 
-/* other nation information definitions */
+/* ============================================================================
+ * NATION ATTRIBUTE ACCESS MACROS
+ * ============================================================================
+ * Purpose: Calculated access to nation attributes with unit conversion
+ * Usage: Economic calculations, nation characteristics
+ * Notes: Assumes ntn_ptr points to current nation
+ */
+
+/*
+ * NTN_D_EATRATE - Nation eating rate as double precision
+ *
+ * Converts the nation's eating rate attribute from integer tenths to
+ * double precision decimal value for precise calculations.
+ *
+ * Value: (ntn_ptr->attribute[BUTE_EATRATE] / 10.0)
+ * Usage: Economic calculations requiring decimal precision
+ * Notes: Requires ntn_ptr to be set to current nation
+ */
 #define NTN_D_EATRATE	(((double) ntn_ptr->attribute[BUTE_EATRATE]) / 10.0)
+
+/*
+ * NTN_I_EATRATE - Nation eating rate as integer
+ *
+ * Converts the nation's eating rate attribute from integer tenths to
+ * integer units for calculations not requiring decimal precision.
+ *
+ * Value: (ntn_ptr->attribute[BUTE_EATRATE] / 10)
+ * Usage: Economic calculations using integer arithmetic
+ * Notes: Requires ntn_ptr to be set to current nation
+ */
 #define NTN_I_EATRATE	(ntn_ptr->attribute[BUTE_EATRATE] / 10)
+
+/*
+ * COMM_D_RANGE - Nation communication range as double precision
+ *
+ * Converts the nation's communication range attribute from integer tenths to
+ * double precision decimal value for precise distance calculations.
+ *
+ * Value: (ntn_ptr->attribute[BUTE_COMMRANGE] / 10.0)
+ * Usage: Communication range calculations requiring decimal precision
+ * Notes: Requires ntn_ptr to be set to current nation
+ */
 #define COMM_D_RANGE	(((double) ntn_ptr->attribute[BUTE_COMMRANGE]) / 10.0)
+
+/*
+ * COMM_I_RANGE - Nation communication range as integer
+ *
+ * Converts the nation's communication range attribute from integer tenths to
+ * integer units for calculations not requiring decimal precision.
+ *
+ * Value: (ntn_ptr->attribute[BUTE_COMMRANGE] / 10)
+ * Usage: Communication range calculations using integer arithmetic
+ * Notes: Requires ntn_ptr to be set to current nation
+ */
 #define COMM_I_RANGE	(ntn_ptr->attribute[BUTE_COMMRANGE] / 10)
 
-/* Army Unit Numbering Schemes */
+/* ============================================================================
+ * UNIT MANAGEMENT CONSTANTS
+ * ============================================================================
+ * Purpose: Special values for unit management and capacity tracking
+ * Usage: Unit state management, capacity validation
+ * Notes: Used throughout unit management systems
+ */
+
+/*
+ * EMPTY_HOLD - Empty cargo hold indicator
+ *
+ * Standard value indicating an empty cargo hold or transport capacity.
+ * Used for naval units, caravans, and other transport mechanisms.
+ *
+ * Value: 0 (no cargo)
+ * Usage: Cargo management, transport capacity, hold validation
+ * Notes: Zero value allows simple boolean testing for empty state
+ */
 #define EMPTY_HOLD	0
 
-/* Nation weighting distributions */
+/* ============================================================================
+ * NATION DISTRIBUTION CALCULATIONS
+ * ============================================================================
+ * Purpose: Calculate array indices for nation placement weighting
+ * Usage: World generation, nation placement algorithms
+ * Notes: Maps 2D coordinates to linear array indexing
+ */
+
+/*
+ * SUM_WEIGHTS - Calculate array index for nation placement weights
+ *
+ * Converts 2D map coordinates to linear array index for accessing
+ * nation placement weighting data. Uses row-major ordering.
+ *
+ * Parameters:
+ *   x - X coordinate on map
+ *   y - Y coordinate on map
+ *
+ * Returns: Linear array index for weight data
+ * Usage: Nation placement, world generation, territory weighting
+ * Notes: Assumes sum_weights array exists with proper dimensions
+ */
 #define SUM_WEIGHTS(x,y)	sum_weights[(x) + MAPX * (y)]
 
-/* Sector location definitions */
+/* ============================================================================
+ * DISPLAY COORDINATE CALCULATIONS
+ * ============================================================================
+ * Purpose: Convert cursor and offset positions to real map coordinates
+ * Usage: Display system, cursor movement, coordinate translation
+ * Notes: Handles map wrapping and coordinate transformation
+ */
+
+/*
+ * XREAL - Calculate real X coordinate from cursor and offset
+ *
+ * Converts cursor position and offset to real map X coordinate,
+ * handling horizontal map wrapping using modulo arithmetic.
+ *
+ * Value: (((xcurs + xoffset) + MAPX) % MAPX)
+ * Usage: Display coordinate translation, cursor positioning
+ * Notes: Handles negative offsets and map wrapping correctly
+ */
 #define	XREAL		(((xcurs + xoffset) + MAPX) % MAPX)
+
+/*
+ * YREAL - Calculate real Y coordinate from cursor and offset
+ *
+ * Converts cursor position and offset to real map Y coordinate.
+ * No wrapping applied for vertical coordinates.
+ *
+ * Value: (ycurs + yoffset)
+ * Usage: Display coordinate translation, cursor positioning
+ * Notes: Simple addition, no wrapping for Y coordinates
+ */
 #define	YREAL		(ycurs + yoffset)
 
-/* File: dataX.c -- global data for both programs */
+/* ============================================================================
+ * GLOBAL VARIABLE DECLARATIONS
+ * ============================================================================
+ * Purpose: External declarations for global variables defined in dataX.c
+ * Usage: Shared state, file handles, configuration, display system
+ * Notes: All variables accessible to both client and server programs
+ */
+
+/* ============================================================================
+ * FILE SYSTEM AND I/O HANDLES
+ * ============================================================================
+ */
+
+/*
+ * Global file handles for game data and communication
+ *
+ * fnews - News file handle for reading/writing game news and announcements
+ * fexe - Executable file handle for program execution and utility access
+ * fm - Mail file handle for player communication and messaging
+ * fupdate - Update file handle for turn processing and game state changes
+ */
 extern FILE *fnews, *fexe, *fm, *fupdate;
+
+/* ============================================================================
+ * GAME STATE AND CONTROL VARIABLES
+ * ============================================================================
+ */
+
+/*
+ * Core game state and control flags
+ *
+ * country - Current nation ID being processed or displayed
+ * global_int - General-purpose global integer for temporary calculations
+ * no_input - Flag indicating input should be disabled or ignored
+ * owneruid - User ID of the game owner/administrator
+ * adjust_made - Flag indicating coordinate adjustments have been made
+ */
 extern int country, global_int, no_input, owneruid, adjust_made;
+
+/*
+ * System state and mode flags
+ *
+ * is_god - Flag indicating current user has god-level privileges
+ * is_update - Flag indicating currently running update/turn processing
+ * in_curses - Flag indicating curses interface is active
+ * need_hangup - Flag indicating communication hangup is required
+ * dosysm_check - Flag indicating system message checking is enabled
+ */
 extern int is_god, is_update, in_curses, need_hangup, dosysm_check;
+
+/* ============================================================================
+ * DISPLAY AND CURSOR MANAGEMENT
+ * ============================================================================
+ */
+
+/*
+ * Display cursor and viewport management
+ *
+ * xcurs, ycurs - Current cursor position in display coordinates
+ * xoffset, yoffset - Display viewport offset from map origin
+ * movemode - Current movement mode for cursor and unit movement
+ */
 extern int xcurs, ycurs, xoffset, yoffset, movemode;
+
+/*
+ * Coordinate adjustment tracking
+ *
+ * adjust_xloc, adjust_yloc - Location coordinates for adjustment operations
+ */
 extern int adjust_xloc, adjust_yloc;
+
+/*
+ * General-purpose global storage
+ *
+ * global_long - General-purpose global long integer for calculations
+ */
 extern long global_long;
+
+/* ============================================================================
+ * GAME DATA STRUCTURE POINTERS
+ * ============================================================================
+ */
+
+/*
+ * Sector data access pointers
+ *
+ * sct_ptr - Current sector pointer for operations
+ * sct_tptr - Temporary sector pointer for calculations
+ */
 extern SCT_PTR sct_ptr, sct_tptr;
+
+/*
+ * Nation data access pointers
+ *
+ * ntn_ptr - Current nation pointer for operations
+ * ntn_tptr - Temporary nation pointer for calculations
+ */
 extern NTN_PTR ntn_ptr, ntn_tptr;
+
+/*
+ * World map data structures
+ *
+ * sct - 2D array of sector structures representing the game world map
+ * world - Global world configuration and state structure
+ */
 extern SCT_STRUCT **sct;
 extern struct s_world world;
+
+/* ============================================================================
+ * DIRECTORY AND PATH CONFIGURATION
+ * ============================================================================
+ */
+
+/*
+ * Game directory and path configuration
+ *
+ * datadir - Primary data directory path for game files
+ * loginname - Current user's login name
+ * defaultdir - Default directory for data file location
+ * datadirname - Name of the data directory
+ */
 extern char datadir[], loginname[], defaultdir[], datadirname[];
+
+/*
+ * Runtime identification and paths
+ *
+ * nationname - Current nation name for display and identification
+ * string - General-purpose string buffer for operations
+ * prog_name - Program name for identification and error messages
+ * helpdir - Directory path for help and documentation files
+ * progdir - Directory path for program executables
+ */
 extern char nationname[], string[], prog_name[], helpdir[], progdir[];
 
 /* declaration of some global strings */
