@@ -17,6 +17,7 @@ tests/regression/regression_*
 Docs/ezconv
 
 # CMake build files
+build/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake

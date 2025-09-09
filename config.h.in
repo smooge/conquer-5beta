@@ -1,0 +1,225 @@
+/*
+ * config.h.in - Conquer Configuration Template
+ * 
+ * This file is processed by CMake to generate config.h
+ * DO NOT EDIT config.h directly - edit config.h.in instead
+ *
+ * Generated configuration header for Conquer Strategy Game
+ * Modernized build system replacing legacy Include/header.h hardcoded values
+ */
+
+#ifndef CONQUER_CONFIG_H
+#define CONQUER_CONFIG_H
+
+/* ==================== VERSION INFORMATION ==================== */
+#define CONQUER_VERSION "@CONQUER_VERSION@"
+#define CONQUER_VERSION_MAJOR @PROJECT_VERSION_MAJOR@
+#define CONQUER_VERSION_MINOR @PROJECT_VERSION_MINOR@
+
+/* ==================== SYSTEM CAPABILITIES ==================== */
+
+/* Core system functions */
+#cmakedefine HAVE_MKDIR
+#cmakedefine HAVE_CRYPT
+#cmakedefine HAVE_FLOCK
+#cmakedefine HAVE_LOCKF
+#cmakedefine HAVE_LRAND48
+#cmakedefine HAVE_RANDOM
+#cmakedefine HAVE_SETREUID
+#cmakedefine HAVE_SETPRIORITY
+#cmakedefine HAVE_UNAME
+#cmakedefine HAVE_GETHOSTNAME
+#cmakedefine HAVE_BZERO
+#cmakedefine HAVE_CUSERID
+#cmakedefine HAVE_GETDTABLESIZE
+#cmakedefine HAVE_GETOPT
+
+/* Header availability */
+#cmakedefine HAVE_STDLIB_H
+#cmakedefine HAVE_UNISTD_H
+#cmakedefine HAVE_STRING_H
+#cmakedefine HAVE_STRINGS_H
+#cmakedefine HAVE_CRYPT_H
+#cmakedefine HAVE_SYS_FILE_H
+#cmakedefine HAVE_SYS_STAT_H
+#cmakedefine HAVE_SYS_TIME_H
+#cmakedefine HAVE_MEMORY_H
+#cmakedefine HAVE_MALLOC_H
+#cmakedefine HAVE_SIGNAL_H
+
+/* String function variants */
+#cmakedefine HAVE_STRCHR
+#cmakedefine HAVE_INDEX
+
+/* Library availability */
+#cmakedefine HAVE_LIBCRYPT
+#cmakedefine HAVE_CRYPT_IN_LIBC
+#cmakedefine HAVE_CURSES_H
+#cmakedefine HAVE_NCURSES_H
+#cmakedefine HAVE_ZLIB
+
+/* Advanced features */
+#cmakedefine HAVE_REGEX_H
+#cmakedefine HAVE_REGEXP
+#cmakedefine HAVE_SIGWINCH
+
+/* ==================== GAME CONFIGURATION ==================== */
+
+/* Feature toggles (replacing hardcoded #defines) */
+#cmakedefine CONQUER_ENABLE_COMPRESSION
+#ifdef CONQUER_ENABLE_COMPRESSION
+#define COMPRESS
+#endif
+
+#cmakedefine CONQUER_LARGE_MAPS
+#ifdef CONQUER_LARGE_MAPS
+#define HUGE_MAP
+#endif
+
+#cmakedefine CONQUER_MANY_UNITS
+#ifdef CONQUER_MANY_UNITS
+#define MANY_UNITS
+#endif
+
+#cmakedefine CONQUER_SECURITY_MODE
+#ifdef CONQUER_SECURITY_MODE
+#define SECURITY
+#endif
+
+#cmakedefine CONQUER_ENABLE_JOINT
+#ifdef CONQUER_ENABLE_JOINT
+#define JOINT
+#endif
+
+#cmakedefine USE_ZLIB_COMPRESSION
+
+/* Game scale parameters */
+#define ABSMAXNTN @CONQUER_MAX_NATIONS@
+
+/* ==================== SYSTEM CONFIGURATION ==================== */
+
+/* Administrative configuration (replacing hardcoded LOGIN/OWNER) */
+#define DEFAULT_ADMIN_USER "@CONQUER_ADMIN_USER@"
+
+/* Installation paths (replacing hardcoded DATADIR/BINDIR) */
+#define CONQUER_DATA_PATH "@CONQUER_DATA_DIR@"
+#define CONQUER_BIN_PATH "@CONQUER_BIN_DIR@"
+
+/* Default system paths (made configurable) */
+#define DEFAULT_EDITOR "/usr/bin/vi"
+#define DEFAULT_SHELL "/bin/sh"
+#define DEFAULT_TMP_DIR "/tmp"
+
+/* File permissions (replacing hardcoded umask values) */
+#define DEFAULT_UMASK 077
+#define CUSTOM_UMASK 066
+
+/* ==================== LEGACY COMPATIBILITY ==================== */
+
+/* Maintain compatibility with existing code expecting these defines */
+#ifdef HAVE_STDLIB_H
+#define STDLIB
+#endif
+
+#ifdef HAVE_UNISTD_H
+#define UNISTD
+#endif
+
+#ifdef HAVE_STRING_H
+#define STRINGSH
+#endif
+
+#ifdef HAVE_BZERO
+#define BZERO
+#endif
+
+#ifdef HAVE_MALLOC_H
+#define MALLOCH
+#endif
+
+#ifdef HAVE_MEMORY_H
+#define MEMORYH
+#endif
+
+#ifdef HAVE_FLOCK
+#define FILELOCK
+#endif
+
+#ifdef HAVE_UNAME
+#define UNAME
+#endif
+
+#ifdef HAVE_CUSERID
+#define CUSERID
+#endif
+
+#ifdef HAVE_GETDTABLESIZE
+#define GETDTABLESIZE
+#endif
+
+#ifdef HAVE_REGEXP
+#define REGEXP
+#endif
+
+#ifdef HAVE_SIGWINCH
+#define WINCH_HANDLER
+#endif
+
+#ifdef HAVE_SETPRIORITY
+#define SETPRIORITY
+#endif
+
+/* Random number function selection */
+#ifdef HAVE_LRAND48
+#define LRAND48
+#define RANDOM_FUNC() lrand48()
+#define SRANDOM_FUNC(x) srand48(x)
+#elif defined(HAVE_RANDOM)
+#define RANDOM
+#define RANDOM_FUNC() random()
+#define SRANDOM_FUNC(x) srandom(x)
+#else
+#define RANDOM_FUNC() rand()
+#define SRANDOM_FUNC(x) srand(x)
+#endif
+
+/* String function selection */
+#ifdef HAVE_STRCHR
+#define STRCHR
+#define STRING_CHR strchr
+#define STRING_RCHR strrchr
+#else
+#define STRING_CHR index
+#define STRING_RCHR rindex
+#endif
+
+/* File locking mechanism selection */
+#ifdef HAVE_FLOCK
+#define LOCK_MECHANISM "flock"
+#elif defined(HAVE_LOCKF)
+#define LOCKF
+#define LOCK_MECHANISM "lockf"
+#else
+#define LOCK_MECHANISM "none"
+#endif
+
+/* ==================== MODERNIZATION NOTES ==================== */
+
+/*
+ * This configuration system replaces the legacy manual platform detection
+ * in Include/sysconf.h with modern CMake-based feature detection.
+ * 
+ * Key improvements:
+ * - Automated feature detection instead of manual platform flags
+ * - Runtime configurable values instead of compile-time hardcoding
+ * - Security improvements (no hardcoded credentials)
+ * - POSIX compliance focus
+ * - Modern C2023 standard support
+ * 
+ * For migration from legacy builds:
+ * 1. Remove manual SYSFLG=-DBSD type flags
+ * 2. Configure options via CMake instead of editing headers
+ * 3. Set admin user via CMake cache instead of hardcoding LOGIN
+ */
+
+#endif /* CONQUER_CONFIG_H */
