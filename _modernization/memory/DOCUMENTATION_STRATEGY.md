@@ -309,10 +309,10 @@ Include/ directory header files (~40 files):
 **Priority 1 Headers: 8/8 complete** (100% complete) ✅ **🎉 MILESTONE ACHIEVED!**
 **Priority 2 Headers: 6/6 complete** (100% complete) ✅ **🎉 MILESTONE ACHIEVED!**
 **Priority 3 Headers: 10/10 complete** (100% complete) ✅ **🎉 MILESTONE ACHIEVED!**
-**Priority 4 Headers: 2/16+ complete** (12.5% complete) 🚧 **IN PROGRESS**
-**Last Completed**: Include/caravanX.h (caravan system data access macros) - **COMPLETE** ✅ 🎯
+**Priority 4 Headers: 4/16+ complete** (25% complete) 🚧 **IN PROGRESS**
+**Last Completed**: Include/executeX.h (command execution definitions and processing types) - **COMPLETE** ✅ 🎯
 **MAJOR ACHIEVEMENT**: **40% OVERALL HEADERS COMPLETE! Priority 1-3 all finished!**
-**Next Target**: Include/keybindG.h (key binding definitions and input mapping)
+**Next Target**: Include/armyX.h (army system definitions and military unit types)
 **Priority 5 Progress**: 32/32 files (Priority 5A: 7/7 complete; Priority 5B: 4/4 complete; Priority 5C: 11/11 complete; Priority 5D: 8/8 complete; Priority 5E: 2/2 complete)
 **🚀 ALL PRIORITY 5 FILES COMPLETE! 100% Src/ directory documentation achieved!**
 
@@ -325,7 +325,7 @@ Include/ directory header files (~40 files):
 - **Include/ Directory**: 40+ header files (.h files) - 3.5/40+ complete (9% ✅)
 - **REVISED TOTAL**: ~108 files need documentation (Src/ + Auxil/ + Docs/ + Include/)
 - **ACTUAL PROGRESS**: 76/108 files complete (~70% done) ✅
-**Phase 4C Header Documentation**: 8/40+ files complete (Priority 1: 8/8 complete - **100%** 🎉)
+**Phase 4C Header Documentation**: 16/40+ files complete (Priority 1: 8/8 complete - **100%** 🎉)
 
 ### ntninfoG.c COMPLETE! 📍
 **ntninfoG.c**: ✅ COMPLETE (Nation information interface - 30+ functions documented)
@@ -559,8 +559,8 @@ Critical data structures and interfaces - **100% COMPLETE MILESTONE ACHIEVED!**:
 4. ✅ **Include/dataX.h** - Extended data structures and core game constants (COMPLETED)
 5. ✅ **Include/combatA.h** - Combat system definitions and battle mechanics (COMPLETED)
 6. ✅ **Include/displayG.h** - Display system definitions and rendering constants (COMPLETED)
-7. ✅ **Include/infoG.h** - Information display definitions and report structures (COMPLETED) 🎯
-8. ✅ **Include/executeX.h** - Command execution definitions and processing types (COMPLETED)
+7. ✅ **Include/infoG.h** - Information display definitions and report structures (COMPLETED)
+8. ✅ **Include/executeX.h** - Command execution definitions and processing types (COMPLETED) 🎯
 
 #### **Priority 2: File and I/O Headers (Sessions 79-84) - 6/6 COMPLETE ✅** 🎉
 Data persistence and file operations:
@@ -573,7 +573,7 @@ Data persistence and file operations:
 
 #### **Priority 3: Game Entity Headers (Sessions 85-94) - 0/10 NEXT TARGET** 🚧
 Specific game components and entities:
-15. ⏳ **Include/armyX.h** - Army system definitions and military unit types (NEXT TARGET)
+15. ⏳ **Include/armyX.h** - Army system definitions and military unit types (NEXT TARGET) 🎯
 16. ⏳ **Include/navyX.h** - Navy system definitions and naval unit types
 17. ⏳ **Include/cityX.h** - City system definitions and settlement types
 18. ⏳ **Include/worldX.h** - World system definitions and geographic types
