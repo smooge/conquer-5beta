@@ -584,12 +584,12 @@ Specific game components and entities:
 23. ⏳ **Include/elevegX.h** - Elevation/vegetation definitions and terrain types
 24. ⏳ **Include/desigX.h** - Designation system definitions and land use types
 
-#### **Priority 4: Interface and Utility Headers (Sessions 95-108+) - 2/16+ NEXT TARGET** 🚧
+#### **Priority 4: Interface and Utility Headers (Sessions 95-108+) - 4/16+ NEXT TARGET** 🚧
 User interface and support systems:
 25. ✅ **Include/xferG.h** - Transfer system definitions and transaction types (COMPLETED)
 26. ✅ **Include/caravanX.h** - Caravan system definitions and trade route types (COMPLETED)
-27. ⏳ **Include/keybindG.h** - Key binding definitions and input mapping (NEXT TARGET)
-28. **Include/ntninfoG.h** - Nation information definitions and display types
+27. ✅ **Include/keybindG.h** - Key binding definitions and input mapping (COMPLETED)
+28. ✅ **Include/ntninfoG.h** - Nation information definitions and display types (COMPLETED)
 29. **Include/mtrlsX.h** - Materials system definitions and resource types
 29. **Include/stringX.h** - String utilities definitions and text processing
 30. **Include/paramX.h** - Parameter definitions and configuration types
