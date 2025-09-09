@@ -703,9 +703,39 @@ At the beginning of each project, Claude must create a `_modernization/` directo
    - `_modernization/claude/reports/TESTING_INFRASTRUCTURE.md`
    - `_modernization/claude/reports/MODERNIZATION_PLAN.md`
 
+### Memory File Naming Convention
+
+**Standard Format:**
+```
+PHASE{N}_{TYPE}_{COMPONENT}_{YYYYMMDD}_{HHMMSS}.md
+```
+
+**Components:**
+- **PHASE{N}**: Current phase number (PHASE4, PHASE5, etc.)
+- **TYPE**: Type of memory file
+  - `SESSION` - Individual session completion
+  - `MILESTONE` - Major milestone achievement  
+  - `STATUS` - Current progress status
+  - `STRATEGY` - Planning and strategy documents
+  - `CHECKPOINT` - Mid-session progress saves
+- **COMPONENT**: What was worked on (e.g., `buildA_h`, `PRIORITY4`, `HEADERS`)
+- **YYYYMMDD**: Date (e.g., `20250909`)
+- **HHMMSS**: Time in 24-hour format (e.g., `143022`)
+
+**Examples:**
+- `PHASE4_SESSION_nclassX_h_20250909_143022.md` - Session completing nclassX.h
+- `PHASE4_MILESTONE_PRIORITY4_25PCT_20250909_143500.md` - 25% milestone for Priority 4
+- `PHASE4_STATUS_CURRENT_20250909_144000.md` - Current status update
+- `PHASE4_CHECKPOINT_buildA_h_20250909_141500.md` - Mid-session checkpoint
+
+**Special Files (no timestamp):**
+- `CURRENT_STATUS.md` - Always current status
+- `DOCUMENTATION_STRATEGY.md` - Always current strategy
+- `NEXT_SESSION_INSTRUCTIONS.md` - Instructions for next session
+
 ### Session End Management
 When the user indicates it's time to end a session, Claude must:
-1. Save current progress to a memory file in `_modernization/memory/` with an appropriate descriptive name
+1. Save current progress to a memory file in `_modernization/memory/` using the naming convention above
 2. Include completed tasks, current status, and next steps
 3. Document any important decisions or discoveries made during the session
 4. Ensure the memory file provides sufficient context for future sessions
