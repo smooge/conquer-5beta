@@ -14,7 +14,9 @@
  * the process.
  *                           Ed Barlow, Adam Bryant
  */
+#define _DEFAULT_SOURCE
 #include "dataX.h"
+#include <unistd.h>
 #ifdef SYS_SIGNAL
 #include <sys/signal.h>
 #else
@@ -311,7 +313,7 @@ fork_edit_on_file PARM_2(char *, fname, char *, pstr)
       setreuid(uid, uid);
 #endif /* SETREUID */
     }
-#endif SWITCHID
+#endif /* SWITCHID */
 
     /* change the default directory */
     if (chdir(TMP_DIR)) {
@@ -1310,6 +1312,7 @@ extend_str PARM_2 (char *, str, int, stype)
 	matches++;
       }
     }
+    break;
   case STR_NAME:
     /* compare with all nation names */
     if (str[0] == 'g') {

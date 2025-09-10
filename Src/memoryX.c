@@ -74,11 +74,8 @@ void
 clr_memory PARM_2(char *, mem_ptr, int, len)
 {
   /* clean out len bytes of data */
-#ifdef BZERO
-  bzero( mem_ptr, len);
-#else
+  /* Use POSIX-compliant memset instead of BSD bzero */
   memset( mem_ptr, 0, len );
-#endif /* BZERO */
 }
 
 /*

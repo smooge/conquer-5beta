@@ -592,7 +592,7 @@ extern DISPLAY_STRUCT display_mode;  /* Current display mode configuration struc
  *   - Legacy interface, consider POSIX regex replacement
  *   - Not thread-safe due to global state
  */
-extern int re_exec();
+extern int re_exec(const char *string);
 
 /*
  * re_comp - Compile regular expression pattern
@@ -609,7 +609,7 @@ extern int re_exec();
  *   - Legacy interface, consider POSIX regex replacement
  *   - Not thread-safe due to global state storage
  */
-extern char *re_comp();
+extern char *re_comp(const char *regex);
 #endif /* REGEXP */
 
 /* ============================================================================
