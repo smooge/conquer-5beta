@@ -42,7 +42,7 @@
  *
  * THIS FILE SHOULD NOT NEED MODIFYING
  *
- * If any changes should be necessary, please send such changes 
+ * If any changes should be necessary, please send such changes
  * along with the OS, and machine type, to conquer-bugs@cs.bu.edu
  */
 
@@ -170,14 +170,14 @@
  * Enables handling of SIGWINCH signals for terminal window resizing.
  * Used for dynamic UI adaptation to terminal size changes.
  */
-/* #define WINCH_HANDLER */	/* system has the SIGWINCH signal handling */
+#define WINCH_HANDLER /* system has the SIGWINCH signal handling */
 
 /*
  * REGEXP - Regular expression pattern matching
  * Enables re_comp() and re_exec() functions for pattern matching.
  * Used for advanced text processing and search functionality.
  */
-/* #define REGEXP */		/* system has the re_exec() function */
+#define REGEXP		/* system has the re_exec() function */
 
 /*
  * NO_PERROR - Missing perror() function indicator
@@ -191,21 +191,21 @@
  * Enables getdtablesize() function for determining maximum file descriptors.
  * Used for resource management and file handle allocation.
  */
-/* #define GETDTABLESIZE */	/* the getdtablesize() function is available */
+#define GETDTABLESIZE	/* the getdtablesize() function is available */
 
 /*
  * SETPRIORITY - Process scheduling priority control
  * Enables setpriority() function for adjusting process scheduling.
  * Used for performance optimization and system resource management.
  */
-/* #define SETPRIORITY */	/* the setpriority() function is available */
+#define SETPRIORITY	/* the setpriority() function is available */
 
 /*
  * SETREUID - Real/effective user ID manipulation
  * Enables setreuid() function for changing user identity.
  * Used for privilege management and security operations.
  */
-/* #define SETREUID */		/* the setreuid() function is available */
+#define SETREUID		/* the setreuid() function is available */
 
 /*
  * SWITCHID - Automatic user ID switching capability
@@ -219,63 +219,63 @@
  * Enables bzero() function for clearing memory blocks.
  * Alternative to memset() on BSD-derived systems.
  */
-/* #define BZERO */		/* has the BSD bzero() memory clearing */
+#define BZERO		/* has the BSD bzero() memory clearing */
 
 /*
  * CUSERID - Current user identification
  * Enables cuserid() function for retrieving current user name.
  * Used for user identification and access control.
  */
-/* #define CUSERID */		/* the cuserid() function is available */
+#define CUSERID		/* the cuserid() function is available */
 
 /*
  * UNAME - System information inquiry
  * Enables uname() function for system identification.
  * Used for platform detection and system information display.
  */
-/* #define UNAME */		/* the uname() function for system info */
+#define UNAME		/* the uname() function for system info */
 
 /*
  * STRCHR - ANSI C string search functions
  * Indicates system uses strchr() instead of index() for string searching.
  * Part of ANSI C standardization transition from BSD functions.
  */
-/* #define STRCHR */		/* use strchr() not index() */
+#define STRCHR		/* use strchr() not index() */
 
 /*
  * MALLOCH - malloc.h header availability
  * Indicates system provides <malloc.h> header for memory allocation.
  * Alternative location for malloc() prototypes on some systems.
  */
-/* #define MALLOCH */		/* system has <malloc.h> in /usr/include */
+#define MALLOCH		/* system has <malloc.h> in /usr/include */
 
 /*
  * MEMORYH - memory.h header availability
  * Indicates system provides <memory.h> header for memory functions.
  * Contains memcpy(), memmove(), and related memory manipulation functions.
  */
-/* #define MEMORYH */		/* system has <memory.h> in /usr/include */
+#define MEMORYH		/* system has <memory.h> in /usr/include */
 
 /*
  * STRINGSH - BSD-style string header selection
  * Indicates system uses <strings.h> instead of <string.h>.
  * BSD systems used different header organization than ANSI C.
  */
-/* #define STRINGSH */		/* system uses <strings.h> not <string.h> */
+#define STRINGSH		/* system uses <strings.h> not <string.h> */
 
 /*
  * SYS_SIGNAL - signal.h location specification
  * Indicates system places signal.h in sys subdirectory.
  * Platform-specific header organization variation.
  */
-/* #define SYS_SIGNAL */	/* system has signal.h in the sys subdir */
+#define SYS_SIGNAL	/* system has signal.h in the sys subdir */
 
 /*
  * SIZET_FREAD - size_t return type for file I/O
  * Indicates system declares fread()/fwrite() returning size_t.
  * Part of ANSI C standardization (older systems used int).
  */
-/* #define SIZET_FREAD */	/* system declares fread() as size_t */
+#define SIZET_FREAD	/* system declares fread() as size_t */
 
 /*
  * Function Declaration Groups - Platform-specific prototype requirements
@@ -326,73 +326,6 @@
 #endif /* MACHOS */
 
 /* ============================================================================
- * SUN OS 4.1.x SYSTEMS
- * ============================================================================
- * Platform: Sun SPARC workstations running SunOS 4.1.x
- * Characteristics: Mature BSD-derived system with comprehensive features
- * Capabilities: Full feature set including regex, user ID control, windowing
- */
-
-/*
- * SUN41_CONFIGURATION - SunOS 4.1.x comprehensive feature configuration
- *
- * SunOS 4.1.x represents a mature Unix implementation with extensive BSD
- * compatibility and additional Sun-specific enhancements. These systems
- * provide the most complete feature set supported by the game.
- *
- * Feature Set:
- *   - Complete window management with SIGWINCH support
- *   - Regular expression processing with re_comp()/re_exec()
- *   - Full user ID manipulation for privilege management
- *   - BSD memory management and string functions
- *   - Alternative header locations for malloc and memory functions
- *   - Comprehensive function declaration requirements
- */
-#ifdef SUN41
-#define WINCH_HANDLER		/* SIGWINCH signal for window resize events */
-#define REGEXP			/* re_comp()/re_exec() regular expressions */
-#define SETREUID		/* setreuid() for user ID manipulation */
-#define CUSERID			/* cuserid() for current user identification */
-#define GETDTABLESIZE		/* getdtablesize() for file descriptor limits */
-#define SETPRIORITY		/* setpriority() for process scheduling */
-#define BZERO			/* BSD bzero() memory clearing function */
-#define MALLOCH			/* <malloc.h> header for memory allocation */
-#define MEMORYH			/* <memory.h> header for memory functions */
-#define STRINGSH		/* <strings.h> instead of <string.h> */
-#define DCLR_C			/* third set of function declarations */
-#define DCLR_D			/* fourth set of function declarations */
-#endif /* SUN41 */
-
-/* ============================================================================
- * SYSTEM V RELEASE 3 (SVR3)
- * ============================================================================
- * Platform: AT&T System V Release 3 and derivatives
- * Characteristics: Commercial Unix with ANSI C support but limited features
- * Focus: Basic ANSI C compliance with alternative header organization
- */
-
-/*
- * SYSV3_CONFIGURATION - System V R3 minimal feature configuration
- *
- * System V Release 3 provides basic ANSI C support but lacks many BSD
- * extensions. These systems use different header organization and provide
- * minimal system functionality compared to BSD derivatives.
- *
- * Feature Set:
- *   - Alternative memory and malloc headers
- *   - System identification via uname()
- *   - ANSI C string functions (strchr vs index)
- *   - Limited function declaration requirements
- */
-#ifdef SYSV3
-#define MEMORYH			/* <memory.h> for memory manipulation functions */
-#define MALLOCH			/* <malloc.h> for memory allocation functions */
-#define UNAME			/* uname() for system identification */
-#define STRCHR			/* ANSI C strchr() instead of BSD index() */
-#define DCLR_C			/* third set of function declarations */
-#endif /* SYSV3 */
-
-/* ============================================================================
  * SYSTEM V RELEASE 4 (SVR4)
  * ============================================================================
  * Platform: AT&T System V Release 4 and derivatives (Solaris 2.x base)
@@ -424,55 +357,6 @@
 #endif /* SYSV4 */
 
 /* ============================================================================
- * DEC ULTRIX SYSTEMS
- * ============================================================================
- * Platform: Digital Equipment Corporation Ultrix (MIPS and VAX)
- * Characteristics: DEC's Unix variant with BSD heritage and DEC enhancements
- * Specifics: ANSI C file I/O, BSD memory functions, comprehensive declarations
- */
-
-/*
- * ULTRIX_CONFIGURATION - DEC Ultrix feature configuration
- *
- * Digital Ultrix provides a BSD-based Unix implementation with DEC-specific
- * enhancements. These systems support ANSI C file I/O conventions and
- * require comprehensive function declarations for proper compilation.
- */
-#ifdef ULTRIX
-#define BZERO			/* BSD bzero() memory clearing function */
-#define SETPRIORITY		/* setpriority() process scheduling control */
-#define SIZET_FREAD		/* ANSI C size_t return type for fread() */
-#define DCLR_D			/* fourth set of function declarations */
-#endif /* ULTRIX */
-
-/* ============================================================================
- * HP-UX SYSTEMS
- * ============================================================================
- * Platform: Hewlett-Packard Unix (PA-RISC and later Itanium)
- * Characteristics: Commercial Unix with HP-specific limitations and features
- * Issues: No file locking, missing perror(), alternative I/O functions
- */
-
-/*
- * HPUX_CONFIGURATION - HP-UX platform-specific adaptations
- *
- * HP-UX systems lack certain standard Unix features like file locking and
- * have alternative implementations for some I/O functions. These systems
- * require special handling for buffered I/O and error reporting.
- *
- * Notable Limitations:
- *   - No flock() support (file locking disabled)
- *   - No perror() function available
- *   - Alternative buffered I/O function names
- */
-#ifdef HPUX
-#undef FILELOCK		/* HP-UX lacks flock() file locking capability */
-#define REGEXP			/* re_comp()/re_exec() regular expressions */
-#define NO_PERROR		/* perror() function not available */
-#define SIZET_FREAD		/* ANSI C size_t return type for fread() */
-#endif /* HPUX */
-
-/* ============================================================================
  * BSD GENERIC SYSTEMS
  * ============================================================================
  * Platform: Generic BSD Unix (4.3BSD and derivatives)
@@ -494,8 +378,6 @@
  *   - Maximum function declaration requirements
  */
 #ifdef BSD
-#undef UNISTD			/* BSD predates <unistd.h> standardization */
-#undef STDLIB			/* BSD predates <stdlib.h> standardization */
 #undef LRAND48			/* BSD uses random() instead of lrand48() */
 #define WINCH_HANDLER		/* SIGWINCH signal for window resize events */
 #define SETREUID		/* setreuid() user ID manipulation */
@@ -508,48 +390,6 @@
 #define DCLR_C			/* third set of function declarations */
 #define DCLR_D			/* fourth set of function declarations */
 #endif /* BSD */
-
-/* ============================================================================
- * IBM AIX SYSTEMS
- * ============================================================================
- * Platform: IBM AIX (RS/6000 and POWER systems)
- * Characteristics: Commercial Unix with IBM-specific features and limitations
- * Focus: Alternative memory headers, process control, ANSI C file I/O
- */
-
-/*
- * AIX_CONFIGURATION - IBM AIX feature configuration
- *
- * IBM AIX provides a commercial Unix implementation with alternative header
- * organization and ANSI C compliance. These systems support process priority
- * control and use size_t return types for file operations.
- */
-#ifdef AIX
-#define MALLOCH			/* <malloc.h> for memory allocation functions */
-#define SETPRIORITY		/* setpriority() process scheduling control */
-#define SIZET_FREAD		/* ANSI C size_t return type for fread() */
-#endif /* AIX */
-
-/* ============================================================================
- * IBM AIX/370 MAINFRAME SYSTEMS
- * ============================================================================
- * Platform: IBM AIX on System/370 mainframe architecture
- * Characteristics: Mainframe variant of AIX with specialized requirements
- * Inheritance: Based on standard AIX configuration with architecture specifics
- */
-
-/*
- * AIX370_CONFIGURATION - IBM AIX/370 mainframe configuration
- *
- * AIX/370 runs IBM's Unix implementation on System/370 mainframe hardware.
- * This configuration inherits standard AIX features while defining the
- * base AIX macro for compatibility with AIX-specific code sections.
- */
-#ifdef AIX370
-#define MALLOCH			/* <malloc.h> for memory allocation functions */
-#define SETPRIORITY		/* setpriority() process scheduling control */
-#define AIX			/* identify as AIX system for compatibility */
-#endif /* AIX370 */
 
 /* ============================================================================
  * FEATURE DEPENDENCY RESOLUTION
@@ -607,6 +447,7 @@
 #endif /* stdin */
 #include <ctype.h>		/* character classification functions */
 #include <sys/time.h>		/* timing and interval timer functions */
+#include <sys/stat.h>		/* file status and directory functions (umask, mkdir) */
 
 /*
  * ANSI_C_HEADERS - Standard library headers for ANSI C compliant systems
@@ -640,24 +481,10 @@
  */
 #ifdef STRINGSH
 #include <strings.h>		/* BSD-style string functions */
+#include <string.h>		/* ANSI C string functions */
 #else
 #include <string.h>		/* ANSI C string functions */
 #endif /* STRINGSH */
-
-/*
- * SYSTEM_TYPE_HEADERS - System data types and file status headers
- *
- * Include headers for system data types and file operations. VMS systems
- * use different header organization than Unix systems, requiring special
- * handling for file status and type definitions.
- */
-#ifndef VMS
-#include <sys/types.h>		/* Unix system data types */
-#include <sys/stat.h>		/* Unix file status structures */
-#else
-#include <types.h>		/* VMS system data types */
-#include <stat.h>		/* VMS file status structures */
-#endif /* VMS */
 
 /*
  * MEMORY_ALLOCATION_HEADERS - Memory management function headers
@@ -686,211 +513,23 @@
  * by automated CMake configuration detection.
  */
 
-/*
- * CURSES_FUNCTION_PROTOTYPES - Terminal I/O function declarations (DISABLED)
- *
- * These curses function prototypes are commented out because modern systems
- * provide complete prototypes in <curses.h>. Historically, these were needed
- * for systems with incomplete curses headers.
- *
- * Historical Note: Early Unix systems often had incomplete or missing function
- * prototypes, requiring manual declaration for proper compilation.
- */
-/*extern int printw(), mvprintw(), waddch(), waddstr(), wrefresh(), wmove(); */
-/*extern int wclear(), wclrtobot(), wclrtoeol(), wstandout(), wstandend();*/
-/*extern int wgetch(), gtty(), stty(), ioctl(), endwin();*/
-/*extern int winsertln(), scroll();*/
-
-/*
- * STANDARD_SYSTEM_PROTOTYPES - Basic system function prototypes
- *
- * Provides prototypes for standard system functions that may be missing
- * from system headers on older platforms. These functions are fundamental
- * to system operation and process management.
- *
- * Functions:
- *   getpass() - Secure password input with echo disabled
- *   perror() - Error message output to stderr
- *   fclose(), pclose() - File and pipe stream closing
- *   system() - Execute shell commands
- *   fputs(), getopt() - String output and command-line parsing
- *   time() - System time retrieval (platform-specific availability)
- */
-extern char *getpass();		/* secure password input function */
-extern void perror();		/* system error message output */
-extern int fclose(), pclose(), system();	/* file and process operations */
-extern int fputs(), getopt();	/* string output and argument parsing */
-#ifndef VAXC
-#ifndef ULTRIX
-extern long time();		/* system time (excluded on VAX C and Ultrix) */
-#endif /* ULTRIX */
-#endif /* VAXC */
-
 /* System Dependent Definitions */
-
-/* Things not properly declared on BSD systems */
-#ifdef DCLR_A
-/*extern int getuid(), geteuid(), sleep(), umask();*/
-#endif /* DCLR_A */
-#ifdef DCLR_B
-extern int exit(), abort();
-extern int setuid(), chdir(), fprintf(), free(), unlink(), stat();
-extern int sscanf(), close(), link(), mkdir();
-extern char *malloc(), *getenv();
-#endif /* DCLR_B */
-
-#ifdef GETDTABLESIZE
-extern int getdtablesize();
-#endif /* GETDTABLESIZE */
-
-#ifdef __mips__
-#ifndef mips
-#define mips
-#endif /* mips */
-#endif /* __mips__ */
-#ifdef __LANGUAGE_C__
-#ifndef LANGUAGE_C
-#define LANGUAGE_C
-#endif /* LANGUAGE_C */
-#endif /* __LANGUAGE_C__ */
-
-#ifndef AIX
-#ifndef SYSV4
-/*extern int open();*/
-#endif /* SYSV4 */
-#endif /* AIX */
-
-#ifdef HPUX
-extern int __flsbuf(),__filbuf();
-extern void scrollok();
-extern void crmode(),nocrmode(),echo(),noecho();
-#else /* HPUX */
-extern int _flsbuf(), _filbuf();
-#endif /* HPUX */
-
-#ifdef DCLR_C
-/* Ultrix and AIX already have these defined? */
-extern int scanf(), sscanf(), fscanf(), printf(), fprintf();
-#endif /* DCLR_C */
-
-#ifdef DCLR_D
-/* the system timing stuff */
-extern int setitimer(), gethostname();
-#ifdef SETPRIORITY
-extern int setpriority();
-#endif /* SETPRIORITY */
-#endif /* DCLR_D */
 
 /* Index/strchr weirdness */
 #ifdef STRCHR
 #define index(s,c)	strchr(s,c)
 #endif /* STRCHR */
 
-/* check the ctype "function"s */
-#ifndef toupper
-extern int toupper();
-#endif /* toupper */
-#ifndef isprint
-extern int isprint();
-#endif /* isprint */
-#ifndef isdigit
-extern int isdigit();
-#endif /* isdigit */
-#ifndef islower
-extern int islower();
-#endif /* islower */
-#ifndef isalpha
-extern int isalpha();
-#endif /* isalpha */
-#ifndef isspace
-extern int isspace();
-#endif /* isspace */
-
 /* the memory function and sprintf weirdness */
 #ifdef MEMORYH
 /* grab the system definitions */
 #include <memory.h>
-#else
-#ifndef ULTRIX
-#ifdef BSD
-#ifdef MACHOS
-extern char *sprintf();
-#endif /* MACHOS */
-#else
-#ifndef AIX
-extern int sprintf();
-#endif /* AIX */
-#endif /* BSD */
-#endif /* ULTRIX */
 #endif /* MALLOCH */
-
-#ifdef BZERO
-extern void bzero();
-#endif /* BSD */
-
-/* so, VAX C doesn't like unlink or uid stuff, huh? */
-#ifdef VAXC
-extern char *cuserid();
-extern int rename(), remove(), sleep();
-#ifndef SIZET_FREAD
-#define SIZET_FREAD
-#endif
-#define unlink remove
-#else
-#endif /* VAXC */
-
-#ifdef SETREUID
-extern int setreuid();
-#endif /* SETREUID */
-
-#ifdef SIZET_FREAD
-extern size_t fread(), fwrite();
-#else
-#ifndef HPUX
-#ifndef MACHOS
-/*extern int fread(), fwrite();*/
-#endif /* MACHOS */
-#endif /* HPUX */
-#endif /* SIZET_FREAD */
-
-/* Optional routine usage */
 
 /* Let's be paranoid */
 #ifdef CRYPT
-extern char *crypt();
+#include <crypt.h>
 #endif /* CRYPT */
-
-/* Randomizer */
-#ifdef LRAND48
-extern long lrand48();
-extern void srand48();
-#else
-#ifdef RANDOM
-extern long random();
-extern void srandom();
-#endif /* RANDOM */
-#endif /* LRAND48 */
-
-/* File locking */
-#ifdef FILELOCK
-#ifdef LOCKF
-extern int lockf();
-#else
-extern int flock();
-#endif /* LOCKF */
-#endif /* FILELOCK */
-
-/* Regular expression handlers */
-#ifdef REGEXP
-extern char *re_comp();
-extern int re_exec();
-#endif /* REGEXP */
-
-/* The user listing stuff */
-#ifdef LISTUSERS
-extern int read(), write();
-extern char *ttyname();
-#endif /* LISTUSERS */
 
 /* ============================================================================
  * GAME DATA TYPE ABSTRACTIONS AND SCALABILITY CONFIGURATION

@@ -777,7 +777,7 @@ extern void dflt_disp_setup PL_(( char * str, char * fstr, int lnum ));
 extern void display_setup PL_(( char * str, char * fstr, int lnum ));
 
 /* hangup - Signal handler for connection termination */
-extern void hangup PL_(( void ));
+extern void hangup PL_(( int sig ));
 
 /* keysys_setup - Configure keyboard binding system */
 extern void keysys_setup PL_(( int type, char * str, char * fstr, int lnum ));

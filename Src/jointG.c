@@ -760,7 +760,7 @@ bind_func PARM_1(int, which)
  *   - Uses PARM_X macro for K&R style function parameters
  */
 void
-hangup PARM_0(void)
+hangup PARM_1(int, sig)
 {
   /* finish up the nation */
   if (movemode != MOVE_NOMOVE) {

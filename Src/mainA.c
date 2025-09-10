@@ -340,7 +340,9 @@ main PARM_2 (int, argc, char **, argv)
       fprintf(fupdate, "entering just a single period:\n");
       do {
 	fprintf(fupdate, "msg> ");
-	if (gets(string) == NULL) break;
+	if (fgets(string, BIGLTH, stdin) == NULL) break;
+	/* Remove trailing newline from fgets() */
+	string[strcspn(string, "\n")] = '\0';
 	if (strcmp(string, ".") != 0) {
 	  fprintf(fexe, "  %s\n", string);
 	}
@@ -672,7 +674,12 @@ main PARM_2 (int, argc, char **, argv)
 
       /* get password and perform any encryption */
       fprintf(fupdate, "\nWhat is the Conquer Add Nation Password:");
-      strncpy(tmppass, getpass(""), PASSLTH + 1);
+      if (fgets(tmppass, PASSLTH + 1, stdin) != NULL) {
+        /* Remove trailing newline from fgets() */
+        tmppass[strcspn(tmppass, "\n")] = '\0';
+      } else {
+        tmppass[0] = '\0';
+      }
 #ifdef CRYPT
       strncpy(string, crypt(tmppass, SALT), PASSLTH);
 #else

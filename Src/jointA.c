@@ -290,9 +290,9 @@ bind_func PARM_1(int, which)
  *   - Called automatically by the system when signals are received
  */
 void
-hangup PARM_0(void)
+hangup PARM_1(int, sig)
 {
-  extern addlocknum, uplocknum;
+  extern int addlocknum, uplocknum;
   extern char lock_string[FILELTH];
 
   /* close any locks that are set */
