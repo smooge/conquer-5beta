@@ -16,6 +16,7 @@ Usage: python3 analyze_compilation_failures.py
 import subprocess
 import sys
 import os
+import tempfile
 from pathlib import Path
 from datetime import datetime
 
@@ -26,12 +27,16 @@ COMPILE_CMD = [
 ]
 INCLUDE_PATH = "-I./Include"
 
-def test_file_compilation(source_file):
+def test_file_compilation(source_file, temp_dir):
     """
     Test compilation of a single source file.
     Returns (success, error_output, warnings)
     """
-    cmd = COMPILE_CMD + [INCLUDE_PATH, source_file]
+    # Create output file path in temp directory
+    source_path = Path(source_file)
+    output_file = temp_dir / f"{source_path.stem}.o"
+    
+    cmd = COMPILE_CMD + [INCLUDE_PATH, "-o", str(output_file), source_file]
     
     try:
         result = subprocess.run(
@@ -105,57 +110,64 @@ def analyze_all_files():
     print(f"Starting analysis at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print()
     
-    # Find all source files
-    src_files = list(Path("Src").glob("*.c"))
-    auxil_files = list(Path("Auxil").glob("*.c"))
-    all_files = src_files + auxil_files
-    
-    print(f"Found {len(src_files)} files in Src/")
-    print(f"Found {len(auxil_files)} files in Auxil/")
-    print(f"Total files to analyze: {len(all_files)}")
-    print()
-    
-    # Analysis results
-    results = {
-        "success": [],
-        "warnings_only": [],
-        "errors": [],
-        "error_categories": {},
-        "file_details": {}
-    }
-    
-    # Test each file
-    for i, source_file in enumerate(all_files, 1):
-        print(f"[{i:2d}/{len(all_files)}] Testing {source_file}...", end=" ")
+    # Create temporary directory for object files
+    with tempfile.TemporaryDirectory(prefix="conquer_compile_") as temp_dir_str:
+        temp_dir = Path(temp_dir_str)
+        print(f"Using temporary directory: {temp_dir}")
+        print()
         
-        success, error_output, warnings = test_file_compilation(str(source_file))
+        # Find all source files
+        src_files = list(Path("Src").glob("*.c"))
+        auxil_files = list(Path("Auxil").glob("*.c"))
+        all_files = src_files + auxil_files
         
-        # Store detailed results
-        results["file_details"][str(source_file)] = {
-            "success": success,
-            "error_output": error_output,
-            "warnings": warnings
+        print(f"Found {len(src_files)} files in Src/")
+        print(f"Found {len(auxil_files)} files in Auxil/")
+        print(f"Total files to analyze: {len(all_files)}")
+        print()
+        
+        # Analysis results
+        results = {
+            "success": [],
+            "warnings_only": [],
+            "errors": [],
+            "error_categories": {},
+            "file_details": {}
         }
         
-        if success:
-            if warnings:
-                results["warnings_only"].append(str(source_file))
-                print(f"OK (with {len(warnings)} warnings)")
-            else:
-                results["success"].append(str(source_file))
-                print("OK")
-        else:
-            results["errors"].append(str(source_file))
-            print("FAIL")
+        # Test each file
+        for i, source_file in enumerate(all_files, 1):
+            print(f"[{i:2d}/{len(all_files)}] Testing {source_file}...", end=" ")
             
-            # Categorize errors
-            categories = categorize_error(error_output)
-            for category in categories:
-                if category not in results["error_categories"]:
-                    results["error_categories"][category] = []
-                results["error_categories"][category].append(str(source_file))
-    
-    return results
+            success, error_output, warnings = test_file_compilation(str(source_file), temp_dir)
+            
+            # Store detailed results
+            results["file_details"][str(source_file)] = {
+                "success": success,
+                "error_output": error_output,
+                "warnings": warnings
+            }
+            
+            if success:
+                if warnings:
+                    results["warnings_only"].append(str(source_file))
+                    print(f"OK (with {len(warnings)} warnings)")
+                else:
+                    results["success"].append(str(source_file))
+                    print("OK")
+            else:
+                results["errors"].append(str(source_file))
+                print("FAIL")
+                
+                # Categorize errors
+                categories = categorize_error(error_output)
+                for category in categories:
+                    if category not in results["error_categories"]:
+                        results["error_categories"][category] = []
+                    results["error_categories"][category].append(str(source_file))
+        
+        print(f"\nTemporary files automatically cleaned up from: {temp_dir}")
+        return results
 
 def generate_report(results):
     """
