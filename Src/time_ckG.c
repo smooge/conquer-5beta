@@ -440,7 +440,7 @@ doupexit PARM_0(void)
     return;
   }
   bottommsg("Exiting for a update");
-  hangup();
+  hangup(0);
   /*NOTREACHED*/
 }
 
@@ -477,7 +477,7 @@ doexit PARM_0(void)
     return;
   }
   bottommsg("Game is closed down");
-  hangup();
+  hangup(0);
   /*NOTREACHED*/
 }
 
@@ -511,7 +511,7 @@ doexit PARM_0(void)
  *   - Error handling minimal due to signal context restrictions
  */
 static void
-alrm_handler PARM_0(void)
+alrm_handler PARM_1(int, sig)
 {
   /* reset the alarm, can't worry about failure here */
   signal(SIGALRM, alrm_handler);

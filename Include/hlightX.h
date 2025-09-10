@@ -186,7 +186,7 @@
  *   3. Tests bit with bitwise AND operation
  *
  * Usage Example:
- *   if (HIGH_CHECK(x, y, HI_DIPLOMACY)) { /* sector highlighted */ }
+ *   if (HIGH_CHECK(x, y, HI_DIPLOMACY)) { sector highlighted }
  */
 #define HIGH_CHECK(x,y,T)	(_VD_(x,y) & (1 << (T + SCTR_SKIP)))
 

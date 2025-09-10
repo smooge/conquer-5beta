@@ -20,6 +20,7 @@
 #else
 #include <signal.h>
 #endif /* SYS_SIGNAL */
+#include <unistd.h>
 #include "armyX.h"
 #include "cityX.h"
 #include "navyX.h"
@@ -112,7 +113,7 @@ send_dummy_char()
  *   - Critical for maintaining proper display in resizable terminals
  */
 void
-win_size_change PARM_0(void)
+win_size_change PARM_1(int, sig)
 {
 #ifdef WINCH_HANDLER
   struct winsize w;

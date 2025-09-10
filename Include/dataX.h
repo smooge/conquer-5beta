@@ -418,6 +418,18 @@
 #define CONQRC_FILE	".conqrc"
 
 /*
+ * CONQ_SORT - Name of external sorting program
+ *
+ * Specifies the name of the auxiliary program used to sort news files.
+ * The program is expected to be in the program directory.
+ *
+ * Value: "conqsort"
+ * Usage: News file sorting operations
+ * Notes: External dependency, must be built from Auxil/sort.c
+ */
+#define CONQ_SORT	"conqsort"
+
+/*
  * CQRC_TAG - Configuration file tag (duplicate definition)
  *
  * Duplicate definition of configuration file name. May be legacy

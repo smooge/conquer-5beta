@@ -312,7 +312,7 @@ extern void push_char PL_(( int ch_in )); /* Push character onto input stack */
 extern void show_char PL_(( char ch, int full )); /* Display character at cursor */
 extern void show_str PL_(( char * str, int full )); /* Display string at cursor */
 extern void unshow_char PL_(( char ch, int full )); /* Remove character from display */
-extern void win_size_change PL_(( void )); /* Handle window size change signal */
+extern void win_size_change PL_(( int sig )); /* Handle window size change signal */
 extern int y_or_n PL_(( void )); /* Check for 'y' or 'Y' response */
 
 /* ============================================================================
