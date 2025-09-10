@@ -47,34 +47,6 @@
  */
 
 /* ============================================================================
- * SGI SYSTEM COMPATIBILITY
- * ============================================================================
- * Purpose: Enable ANSI C extensions on SGI IRIX systems
- * Problem: SGI systems require explicit __EXTENSIONS__ definition
- * Solution: Define __EXTENSIONS__ when ANSI C is available
- */
-
-/*
- * SGI_EXTENSIONS_FIX - Enable ANSI C extensions on SGI IRIX systems
- *
- * SGI IRIX systems require the __EXTENSIONS__ macro to be defined to access
- * standard ANSI C library functions and features. This workaround enables
- * proper compilation on SGI workstations by detecting ANSI C support and
- * automatically enabling the required extensions.
- *
- * Historical Context:
- *   - SGI IRIX had non-standard approach to ANSI C feature detection
- *   - Required manual extension enabling rather than automatic detection
- *   - This was a common source of compilation failures on SGI systems
- */
-#ifdef SGI
-/* Enable ANSI C extensions when ANSI C compiler is detected */
-#ifdef __STDC__
-#define __EXTENSIONS__
-#endif /* __STDC__ */
-#endif /* SGI */
-
-/* ============================================================================
  * UNIVERSAL FEATURE DEFINITIONS
  * ============================================================================
  * Purpose: Define standard capabilities assumed available on most systems
@@ -128,7 +100,7 @@
  * number generation with better distribution than rand().
  * Preferred over RANDOM when available. Used for game mechanics.
  */
-#define LRAND48		/* system has the lrand48() function available */
+/* #define LRAND48 */		/* system has the lrand48() function available */
 
 /*
  * RANDOM - Alternative random number generation
@@ -137,7 +109,7 @@
  * Used as fallback when LRAND48 is not available.
  * Note: LRAND48 takes precedence if both are defined.
  */
-#define RANDOM		/* system has random(), #if LRAND48, lrand48() used */
+/* #define RANDOM */		/* system has random(), #if LRAND48, lrand48() used */
 
 /*
  * FILELOCK - File locking capability for multi-user coordination
@@ -191,7 +163,7 @@
  * Enables getdtablesize() function for determining maximum file descriptors.
  * Used for resource management and file handle allocation.
  */
-#define GETDTABLESIZE	/* the getdtablesize() function is available */
+/* #define GETDTABLESIZE */	/* the getdtablesize() function is available */
 
 /*
  * SETPRIORITY - Process scheduling priority control
@@ -205,7 +177,7 @@
  * Enables setreuid() function for changing user identity.
  * Used for privilege management and security operations.
  */
-#define SETREUID		/* the setreuid() function is available */
+/* #define SETREUID */	/* the setreuid() function is available */
 
 /*
  * SWITCHID - Automatic user ID switching capability
@@ -432,61 +404,20 @@
  * including terminal I/O, character classification, and timing functions.
  * The inclusion order is carefully arranged to handle dependencies.
  */
-#include <curses.h>		/* terminal I/O and screen management */
-#ifndef stdin			/* stdio.h should be included by curses.h */
-#include <stdio.h>		/* standard I/O functions (fallback) */
-#endif /* stdin */
-#include <ctype.h>		/* character classification functions */
-#include <sys/time.h>		/* timing and interval timer functions */
-#include <sys/stat.h>		/* file status and directory functions (umask, mkdir) */
 
-/*
- * ANSI_C_HEADERS - Standard library headers for ANSI C compliant systems
- *
- * Include ANSI C standard library headers when available and when the
- * compiler supports ANSI C (__STDC__ defined). This provides access to
- * modern standard library functions and proper prototypes.
- */
-#ifdef __STDC__
-#ifdef STDLIB
+#include <stdio.h>		/* standard I/O functions */
 #include <stdlib.h>		/* ANSI C standard library functions */
-#endif /* STDLIB */
-#endif /* __STDC__ */
-
-/*
- * POSIX_HEADERS - POSIX system call interface headers
- *
- * Include POSIX-compliant system call headers when available. These provide
- * access to standardized Unix system calls and process management functions.
- */
-#ifdef UNISTD
-#include <unistd.h>		/* POSIX system calls and constants */
-#endif /* UNISTD */
-
-/*
- * STRING_FUNCTION_HEADERS - String manipulation function headers
- *
- * Include appropriate string function headers based on platform conventions.
- * BSD systems traditionally used <strings.h> while ANSI C uses <string.h>.
- * The platform configuration determines which is appropriate.
- */
-#ifdef STRINGSH
-#include <strings.h>		/* BSD-style string functions */
 #include <string.h>		/* ANSI C string functions */
-#else
-#include <string.h>		/* ANSI C string functions */
-#endif /* STRINGSH */
-
-/*
- * MEMORY_ALLOCATION_HEADERS - Memory management function headers
- *
- * Include memory allocation headers when the platform provides <malloc.h>
- * as an alternative or supplementary location for malloc() prototypes.
- * Some systems require this for proper memory management function access.
- */
-#ifdef MALLOCH
+#include <crypt.h>
+#include <ctype.h>		/* character classification functions */
+#include <curses.h>		/* terminal I/O and screen management */
 #include <malloc.h>		/* alternative memory allocation prototypes */
-#endif /* MALLOCH */
+#include <memory.h>
+#include <strings.h>		/* BSD-style string functions */
+#include <sys/stat.h>		/* file status and directory functions (umask, mkdir) */
+#include <sys/time.h>		/* timing and interval timer functions */
+#include <time.h>
+#include <unistd.h>		/* POSIX system calls and constants */
 
 /* ============================================================================
  * LEGACY FUNCTION PROTOTYPE DECLARATIONS
@@ -510,17 +441,6 @@
 #ifdef STRCHR
 #define index(s,c)	strchr(s,c)
 #endif /* STRCHR */
-
-/* the memory function and sprintf weirdness */
-#ifdef MEMORYH
-/* grab the system definitions */
-#include <memory.h>
-#endif /* MALLOCH */
-
-/* Let's be paranoid */
-#ifdef CRYPT
-#include <crypt.h>
-#endif /* CRYPT */
 
 /* ============================================================================
  * GAME DATA TYPE ABSTRACTIONS AND SCALABILITY CONFIGURATION
@@ -674,3 +594,12 @@ typedef uns_char maptype;		/* 8-bit map coordinates (max 255) */
  * Purpose: Prevent indefinite lock file persistence from crashed processes
  */
 #define TIME_DEAD 3600			/* dead lock file age threshold (seconds) */
+
+/* Features added to deal with single file compilation tests.  They should be defined in the Makefile */
+#ifndef DEFAULTDIR
+#define DEFAULTDIR "/var/tmp/conquer/lib"
+#endif
+
+#ifndef EXEDIR
+#define EXEDIR "/var/tmp/conquer/bin"
+#endif

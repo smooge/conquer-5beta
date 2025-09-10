@@ -400,7 +400,13 @@ main PARM_2 (int, argc, char **, argv)
       fprintf(stderr, "\t\tgodadd   - to remove player addition lock\n");
       fprintf(stderr, "\t\t*        - to remove all lock files\n\n");
       fprintf(stderr, "Remove which lock file(s)? ");
-      gets(nationname);
+      if (fgets(nationname, NAMELTH+1, stdin) != NULL) {
+        /* Remove trailing newline if present */
+        size_t len = strlen(nationname);
+        if (len > 0 && nationname[len-1] == '\n') {
+          nationname[len-1] = '\0';
+        }
+      }
     }
     if (strcmp(nationname, "*") != 0) {
       sprintf(lfilestr, "%s.%s", nationname, isontag);
@@ -586,7 +592,13 @@ main PARM_2 (int, argc, char **, argv)
     if (pflag || Pflag)
       fprintf(stderr, "Display map for what nation: ");
     else fprintf(stderr, "What nation would you like to be: ");
-    gets(nationname);
+    if (fgets(nationname, NAMELTH+1, stdin) != NULL) {
+      /* Remove trailing newline if present */
+      size_t len = strlen(nationname);
+      if (len > 0 && nationname[len-1] == '\n') {
+        nationname[len-1] = '\0';
+      }
+    }
   }
 
   /* validate god login */
@@ -638,7 +650,15 @@ main PARM_2 (int, argc, char **, argv)
 
   /* get password and perform any encryption */
   fprintf(stderr, "\nWhat is your Nation's Password: ");
-  strncpy(tmppass, getpass(""), PASSLTH + 1);
+  if (fgets(tmppass, PASSLTH + 1, stdin) != NULL) {
+    /* Remove trailing newline if present */
+    size_t len = strlen(tmppass);
+    if (len > 0 && tmppass[len-1] == '\n') {
+      tmppass[len-1] = '\0';
+    }
+  } else {
+    tmppass[0] = '\0';
+  }
 #ifdef CRYPT
   strncpy(passwd, crypt(tmppass, SALT), PASSLTH);
 #else
@@ -652,7 +672,15 @@ main PARM_2 (int, argc, char **, argv)
 
     /* check again */
     fprintf(stderr, "\nError: Reenter your Nation's Password: ");
-    strncpy(tmppass, getpass(""), PASSLTH + 1);
+    if (fgets(tmppass, PASSLTH + 1, stdin) != NULL) {
+      /* Remove trailing newline if present */
+      size_t len = strlen(tmppass);
+      if (len > 0 && tmppass[len-1] == '\n') {
+        tmppass[len-1] = '\0';
+      }
+    } else {
+      tmppass[0] = '\0';
+    }
 #ifdef CRYPT
     strncpy(passwd, crypt(tmppass, SALT), PASSLTH);
 #else
