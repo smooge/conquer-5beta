@@ -213,6 +213,10 @@ target_link_libraries(cmake_test ${REQUIRED_LIBS})
 #     COMPILE_DEFINITIONS "CONQUER_ADMIN_INTERFACE"
 # )
 
+# Testing infrastructure - Phase 7A.2 Unity framework
+enable_testing()
+add_subdirectory(tests)
+
 # Installation targets (commented out until code modernization)
 # install(TARGETS conquer conqrun
 #     RUNTIME DESTINATION bin

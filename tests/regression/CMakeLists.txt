@@ -7,5 +7,8 @@
 # Basic input validation regression test
 add_conquer_test(regression_input_validation test_input_validation.c)
 
+# Compilation verification regression test - validates Phase 7A.1 success
+add_conquer_test(regression_compilation_verification test_compilation_verification.c)
+
 # Additional regression tests will be added during modernization
 message(STATUS "Regression test directory configured with initial validation tests")
