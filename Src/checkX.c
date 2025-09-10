@@ -52,6 +52,8 @@
 #include "dstatusX.h"
 #define F_TLOCK 2
 #include <unistd.h>
+#include <stdio.h>
+#include <sys/file.h>
 #ifndef VAXC
 #include <pwd.h>
 #ifdef cyber
@@ -1192,7 +1194,19 @@ get_userid PARM_1(char *, outname)
   }
   return(outname);
 #else
-  /* use this as a preference */
-  return(cuserid(outname));
+  /* use portable getpwuid implementation instead of deprecated cuserid */
+  struct passwd *pwtemp;
+  
+  if ((pwtemp = getpwuid(getuid())) == NULL) {
+    return(NULL);
+  } else {
+    if (outname == NULL) {
+      if ((outname = (char *) malloc(sizeof(char) * 12)) == NULL) {
+        return(NULL);
+      }
+    }
+    strcpy(outname, pwtemp->pw_name);
+  }
+  return(outname);
 #endif /* CUSERID */
 }

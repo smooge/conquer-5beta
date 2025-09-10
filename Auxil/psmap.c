@@ -6,12 +6,14 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "psmap.h"
 
 char buffer[BUFSIZ];
 int c, xsize, ysize;
 int xmin, ymin, xmax, ymax, centx, centy;
-FILE *infile, *outfile, *fh, *fopen();
+FILE *infile, *outfile, *fh;
 int grid = TRUE, sqsize = 9, maptype = SIMPLE, onepage = FALSE;
 int verbose = FALSE, coords = TRUE, center = TRUE, note = FALSE;
 int pagewidth, pageheight, xoffset, yoffset;

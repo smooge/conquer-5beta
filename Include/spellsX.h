@@ -154,9 +154,9 @@ typedef enum spelltype {
  * Returns: Non-zero if spell has the specified requirement, zero otherwise
  *
  * Usage Examples:
- *   if (si_needcaster(spell_id)) { /* verify unit is spellcaster */ }
- *   if (si_needfull(spell_id)) { /* verify unit is full magician */ }
- *   if (si_nonmonster(spell_id) && is_monster(unit)) { /* deny casting */ }
+ *   if (si_needcaster(spell_id)) { verify_unit_is_spellcaster }
+ *   if (si_needfull(spell_id)) { verify_unit_is_full_magician }
+ *   if (si_nonmonster(spell_id) && is_monster(unit)) { deny_casting }
  *
  * Note: These macros provide read-only access to spell requirements and should
  * be used for casting validation. Spell modification should be done through

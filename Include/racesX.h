@@ -106,9 +106,9 @@
  * Returns: Non-zero if race has the specified trait, zero otherwise
  *
  * Usage Examples:
- *   if (r_magicskill(player_race)) { /* apply magic bonus */ }
- *   if (r_fighters(army_race)) { /* enhanced combat effectiveness */ }
- *   if (r_traders(nation_race)) { /* improved trade prices */ }
+ *   if (r_magicskill(player_race)) { apply_magic_bonus }
+ *   if (r_fighters(army_race)) { enhanced_combat_effectiveness }
+ *   if (r_traders(nation_race)) { improved_trade_prices }
  *
  * Note: These macros provide read-only access to racial traits and should
  * not be used for trait modification. Direct manipulation of race_info[]

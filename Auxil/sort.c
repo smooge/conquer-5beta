@@ -39,14 +39,10 @@
 
 #include <stdio.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <string.h>
 
-/* function checker */
-#ifndef toupper
-extern int toupper();
-#endif /* toupper */
-#ifndef islower
-extern int islower();
-#endif /* islower */
+/* function checker - using standard library headers */
 
 /* system definitions just in case */
 #ifndef FALSE
@@ -100,19 +96,8 @@ FILE *infile, *outfile;
 #else
 #include <string.h>
 #endif /* BSD */
-#ifndef ULTRIX
-#ifndef AIX
-extern int fprintf();
-#endif /* AIX */
-#endif /* ULTRIX */
-#ifdef HPUX
-extern int __filbuf();
-#else
-extern int _filbuf();
-#endif /* HPUX */
-extern int fclose();
-extern void exit();
-extern char *malloc();
+/* fprintf provided by stdio.h */
+/* Standard library functions provided by system headers */
 
 /*
  * main - Conquer-specific sorting utility with duplicate detection
@@ -164,7 +149,6 @@ main(argc, argv)
 {
   /* declare temporary variables and functions */
   int i, j, num_args = 0, l, innum = 0,outnum = 0;
-  FILE *fopen();
   int get_line();
   void place(), send_out();
 

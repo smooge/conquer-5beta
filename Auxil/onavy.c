@@ -1,4 +1,6 @@
 
+#include <curses.h>
+
 /*
  * get_cargo - Prompt user to select cargo type (army or people)
  *

@@ -1439,7 +1439,7 @@ get_mtrls PARM_1(itemtype *, m1_ptr)
 void
 copyscreen PARM_0(void)
 {
-  FILE *timefp, *fopen();
+  FILE *timefp;
 
   standout();
   sprintf(string, "Conquer %s.%d", VERSION, PATCHLEVEL);

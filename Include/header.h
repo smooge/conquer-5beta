@@ -353,7 +353,8 @@
  * Notes: Essential for data integrity when game files are on NFS mounts
  * Modernization: Ensure compatibility with modern NFS implementations
  */
-#define LOCKF		/* If your site uses NFS file locking routines
+/* #define LOCKF		-- DISABLED: lockf() not portable, using flock() instead
+			   If your site uses NFS file locking routines
 			   and has the lockd daemon running */
 
 /*
