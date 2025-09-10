@@ -45,7 +45,7 @@ char AU_passwd[PASSLTH+1], AU_name[NAMELTH+1], AU_lname[LEADERLTH+1];
 char *AU_prompt[]= { "<ADD", "SUB>" };
 char *AU_LType[]={ "Oops", "Random", "Fair", "Good", "Excellent" };
 
-char *AU_labels[]= { 
+char *AU_labels[]= {
   "Population", "Treasury", "Location",
   "Military", "Attack Bonus", "Defense Bonus", "Reproduction",
   "Movement", "Magic Powers", "Leaders", "Raw Materials"
@@ -106,7 +106,7 @@ long AU_values[]= {
  *
  * Notes:
  *   - Mountaineer races: Create mountains/hills with metal resources
- *   - Woodwinter races: Create forests/woods with jewel resources  
+ *   - Woodwinter races: Create forests/woods with jewel resources
  *   - Monsterly races: Create rough terrain with mixed resources
  *   - Other races: Create clear/good terrain with balanced resources
  *   - Resource generation based on food value and global_int probability
@@ -195,7 +195,7 @@ tera_convert PARM_2(int, x, int, y)
  *
  * Parameters:
  *   x - X coordinate of capital sector
- *   y - Y coordinate of capital sector  
+ *   y - Y coordinate of capital sector
  *   range - Radius of terraforming effect (sectors from capital)
  *   chance - Probability percentage for terrain modifications (0-100)
  *
@@ -208,7 +208,7 @@ tera_convert PARM_2(int, x, int, y)
  *   - Forces capital sector to have racially appropriate terrain:
  *     * Mountaineer: Hills
  *     * Woodwinter: Forest on clear land
- *     * Monsterly: Hills  
+ *     * Monsterly: Hills
  *     * Others: Clear land
  *
  * Notes:
@@ -258,7 +258,7 @@ teraform PARM_4( int, x, int, y, int, range, int, chance)
  *
  * Notes:
  *   - Uses AU_LType[] for location quality descriptions
- *   - Uses AU_items[] for unit names  
+ *   - Uses AU_items[] for unit names
  *   - Raw materials display uses conditional compilation for resource ratios
  *   - Output includes trailing period for non-raw-materials items
  */
@@ -635,7 +635,7 @@ point_cost PARM_0(void)
 {
   float points = 0.0;
   int i;
-  
+
   /* calculate cost for all so far */
   for (i = 0; i < AU_NUMBER; i++) {
     points += AU_cost[i] * (float) spent[i] / AU_units[i];
@@ -648,7 +648,7 @@ point_cost PARM_0(void)
       num_bits_on(race_info[AU_race].pow_start[i] |
 		  nclass_list[AU_class].pow_given[i]);
   }
-  
+
   /* extra points for starting late */
   points -= (float) (TURN - world.start_turn - 1) / LATESTART;
 
@@ -1015,7 +1015,7 @@ pl_chown PARM_2(int, x, int, y)
  *
  * Parameters:
  *   xloc - Desired X coordinate (-1 for automatic placement)
- *   yloc - Desired Y coordinate (-1 for automatic placement) 
+ *   yloc - Desired Y coordinate (-1 for automatic placement)
  *
  * Returns:
  *   TRUE if nation was successfully placed
@@ -1292,7 +1292,7 @@ place PARM_2(int, xloc, int, yloc)
  * do_class - Initialize leader count based on selected nation class
  *
  * Sets the appropriate number of leaders for the nation based on the chosen
- * class. Different classes have different leadership requirements and 
+ * class. Different classes have different leadership requirements and
  * organizational structures.
  *
  * Parameters:
@@ -1355,7 +1355,7 @@ getclass PARM_1 (int, race)
   short tmp = 0;
   short ypos = 4;
   int i, j;
-  
+
   mvaddstr(ypos, 0, "The list of possible nation classes:");
   ypos += 2;
   mvprintw(ypos++,0,"     %-12s %4s %15s %12s %4s", "Class", "Race",
@@ -1472,7 +1472,7 @@ newlogin PARM_1(int, makenpcs)
   int no_save = FALSE, more = TRUE;
   long x;
   char tmp_passwd[PASSLTH+1];
-  register i;
+  register int i;
 
   /* setup curses display */
   cq_init("cqadd");
@@ -1644,7 +1644,7 @@ newlogin PARM_1(int, makenpcs)
       AU_passwd[PASSLTH] = '\0';
     }
     bottommsg("");
-    
+
     /*get your name*/
     valid = FALSE;
     while (valid == FALSE) {
@@ -2120,7 +2120,7 @@ newlogin PARM_1(int, makenpcs)
 	  /* setup values for nation attributes */
 	  upd_nations(country);
 	  fclose(fexe);
-	  
+
 	  num_built++;
 
 	}

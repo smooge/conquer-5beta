@@ -215,13 +215,6 @@
 /* #define SWITCHID */		/* switch uids when appropriate */
 
 /*
- * BZERO - BSD-style memory clearing function
- * Enables bzero() function for clearing memory blocks.
- * Alternative to memset() on BSD-derived systems.
- */
-#define BZERO		/* has the BSD bzero() memory clearing */
-
-/*
  * CUSERID - Current user identification
  * Enables cuserid() function for retrieving current user name.
  * Used for user identification and access control.
@@ -320,7 +313,6 @@
 #ifdef MACHOS
 #undef LRAND48			/* NeXT lacks lrand48(), use random() instead */
 #define SYS_SIGNAL		/* signal.h located in sys/ subdirectory */
-#define BZERO			/* BSD bzero() available for memory clearing */
 #define SETPRIORITY		/* setpriority() available for process control */
 #define DCLR_A			/* require basic function declarations */
 #endif /* MACHOS */
@@ -383,7 +375,6 @@
 #define SETREUID		/* setreuid() user ID manipulation */
 #define GETDTABLESIZE		/* getdtablesize() file descriptor limits */
 #define REGEXP			/* re_comp()/re_exec() regular expressions */
-#define BZERO			/* BSD bzero() memory clearing function */
 #define SETPRIORITY		/* setpriority() process scheduling */
 #define DCLR_A			/* first set of function declarations */
 #define DCLR_B			/* second set of function declarations */
