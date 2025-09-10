@@ -762,29 +762,839 @@
 				   Simulates the players ability to tell cities
 				   via movement. */
 
-/* ============================================================================ * CORE GAME BALANCE PARAMETERS * ============================================================================ * Purpose: Fundamental game balance constants that control core mechanics * Usage: These values affect game difficulty, progression, and strategic balance * Notes: Changes significantly impact gameplay balance and should be tested carefully */ /* * NRAND_DIGITS - Non-random number precision * * Number of decimal digits used in "non-random" number generation systems. * This affects the precision of deterministic calculations and pseudo-random * sequences used for game balance and reproducible random events. * * Value: 9 digits (maximum precision without overflow in 32-bit integers) * Usage: Deterministic random number generation and game balance calculations * Notes: Limited to 9 digits to prevent integer overflow in calculations * Modernization: Consider using 64-bit integers for higher precision */ #define NRAND_DIGITS 9	/* decimal digits in "non-random" number [<= 9]	*/ /* * MIN_WORLD_SIZE - Minimum world dimension * * Minimum allowed value for either axis of the game world map. This ensures * that generated worlds are large enough to provide meaningful gameplay and * prevent degenerate cases in world generation algorithms. * * Value: 24 sectors (minimum world axis size) * Usage: World generation validation and minimum size enforcement * Notes: Ensures sufficient space for nations and strategic gameplay * Modernization: Consider dynamic sizing based on player count */ #define MIN_WORLD_SIZE 24	/* minimum value for a world axis.	*/ /* * MAXFORTVAL - Maximum fortification level * * Maximum internal value for sector fortification. Higher fortification * provides better defensive bonuses but requires more resources to achieve. * This limit prevents excessive defensive advantages and maintains game balance. * * Value: 24 (maximum fortification points) * Usage: Fortification construction limits and defensive bonus calculations * Notes: Affects combat balance and siege warfare dynamics * Modernization: Consider making fortification limits configurable */ #define MAXFORTVAL 24	/* the maximum internal value for fortification	*/ /* * MAXCHARITY - Maximum charity/reputation level * * Absolute limit for charity or reputation values that nations can achieve. * This affects diplomatic relations, trade bonuses, and certain game mechanics * that depend on a nation's reputation with others. * * Value: 25 (maximum charity/reputation points) * Usage: Diplomatic calculations and reputation-based game mechanics * Notes: Affects diplomatic and economic interactions between nations * Modernization: Consider more nuanced reputation systems */ #define MAXCHARITY 25	/* absolute limit which charity may reach.	*/ /* * MAXTAX - Maximum taxation rate * * Maximum allowable taxation rate that can be set by nations. Higher taxation * generates more revenue but may cause population unrest or economic penalties. * This limit prevents excessive taxation that could break game balance. * * Value: 20 (maximum tax rate percentage) * Usage: Economic policy limits and revenue calculations * Notes: Affects economic balance and population happiness * Modernization: Consider dynamic tax limits based on government type */ #define MAXTAX 20	/* maximum setting of the taxation rate.	*/ /* * MAXNEWS - News history retention * * Total number of game turns worth of news and events that are saved and * available for players to review. This affects memory usage and provides * a reasonable history window for players to track important events. * * Value: 12 turns (news retention period) * Usage: News system storage limits and historical event tracking * Notes: Balance between useful history and memory consumption * Modernization: Consider configurable retention based on server capacity */ #define MAXNEWS 12	/* total number of turns worth of news saved.	*/ /* ============================================================================ * LEADERSHIP AND EXPERIENCE MECHANICS * ============================================================================ * Purpose: Control character development and leadership advancement * Usage: Affects long-term character progression and strategic planning * Notes: These values influence the pace of character development */ /* * PLEADER_EXP - Leader experience gain probability * * Percentage chance for a leader to gain 1 experience point per year. * This controls the rate of character development and long-term strategic * planning around leader advancement and capabilities. * * Value: 100% (guaranteed experience gain per year) * Usage: Annual leader development and experience point calculations * Notes: Affects long-term strategic planning and character progression * Modernization: Consider more varied experience gain mechanisms */ #define PLEADER_EXP 100	/* % chance for leader to gain 1 exp pt / year	*/ /* ============================================================================ * MOVEMENT AND ATTRITION MECHANICS * ============================================================================ * Purpose: Control unit movement costs and attrition rates * Usage: Affects strategic mobility and resource management * Notes: These values significantly impact tactical and strategic gameplay */ /* * LONGTRIP - Naval civilian attrition threshold * * Navy trip length at which 100% attrition of civilians occurs. Longer * naval journeys become increasingly dangerous for civilian passengers, * encouraging strategic planning of naval operations and supply lines. * * Value: 100 (trip length for maximum civilian attrition) * Usage: Naval attrition calculations and civilian transport mechanics * Notes: Encourages strategic naval base placement and route planning * Modernization: Consider more sophisticated attrition models */ #define LONGTRIP 100	/* navy trip lth for 100% attrition of civs	*/ /* * SPEEDUP_COST - Movement speed increase cost * * Movement point decrease applied just before increasing unit speed. * This creates a cost for achieving higher movement rates and balances * the advantage of increased mobility against resource expenditure. * * Value: 1 (movement point cost for speed increase) * Usage: Movement speed calculations and mobility cost balancing * Notes: Affects tactical movement decisions and resource allocation * Modernization: Consider variable costs based on unit type and terrain */ #define SPEEDUP_COST 1	/* move decrease just before increasing speed	*/ /* ============================================================================ * POPULATION AND RESOURCE MANAGEMENT * ============================================================================ * Purpose: Control population dynamics and resource consumption * Usage: Affects economic planning and resource allocation strategies * Notes: These percentages significantly impact economic game balance */ /* * PSTARVE - Starvation mortality rate * * Percentage of population that dies when not adequately fed. This creates * pressure for food production and distribution, making agriculture and * trade essential for maintaining large populations. * * Value: 25% (population loss rate during starvation) * Usage: Population management and food requirement calculations * Notes: Critical for economic balance and food production incentives * Modernization: Consider graduated starvation effects */ #define PSTARVE	25	/* % of population that starves if not fed	*/ /* * PCOLLAPSE - Infrastructure deterioration rate * * Percentage chance of unsupplied sector infrastructure deteriorating per turn. * This creates ongoing maintenance requirements and prevents players from * ignoring infrastructure after initial construction. * * Value: 10% (deterioration chance for unsupplied infrastructure) * Usage: Infrastructure maintenance calculations and decay mechanics * Notes: Encourages ongoing resource allocation to infrastructure * Modernization: Consider variable decay rates based on infrastructure type */ #define PCOLLAPSE 10	/* % change of unsupplied sector deterioration	*/ /* * PDISBAND - Unit desertion rate * * Percentage of a military unit that disbands when lacking adequate supplies. * This creates logistical pressure and prevents indefinite maintenance of * large armies without proper supply lines. * * Value: 10% (unit strength loss rate without supplies) * Usage: Military supply calculations and unit maintenance mechanics * Notes: Critical for military logistics and strategic planning * Modernization: Consider morale-based desertion mechanics */ #define PDISBAND 10	/* % of a unit that disbands w/out supplies.	*/ /* * PVOLUNTEERS - Military recruitment rate * * Percentage of a sector's population available for military duty. This * controls the rate at which civilian populations can be converted to * military forces, affecting military buildup capabilities. * * Value: 20% (population available for military recruitment) * Usage: Military recruitment calculations and population mobilization * Notes: Affects military buildup speed and population economics * Modernization: Consider variable rates based on government type and crisis */ #define PVOLUNTEERS 20	/* % of a sector population available for duty	*/ /* * PBARNICLES - Naval maintenance failure rate * * Percentage chance for ship damage when naval units lack adequate supplies. * This represents hull fouling, equipment failure, and other maintenance * issues that affect naval readiness and operational capability. * * Value: 2% (chance of ship damage without proper maintenance) * Usage: Naval maintenance calculations and fleet readiness mechanics * Notes: Encourages regular naval supply and maintenance operations * Modernization: Consider cumulative damage over time */ #define PBARNICLES 2	/* % chance for ship damage w/out supplies	*/ /* ============================================================================ * NEW PLAYER MECHANICS * ============================================================================ * Purpose: Control late-joining player compensation and balance * Usage: Affects game balance when new players join ongoing games * Notes: Helps maintain competitive balance for late-starting nations */ /* * LATESTART - Late starter compensation rate * * Compensation rate for new nations that start after the game has begun. * New nations receive 1 point per LATESTART turns to help them catch up * to established nations and remain competitive in ongoing games. * * Value: 2 (1 point per 2 turns of late start compensation) * Usage: New player compensation calculations and game balance mechanics * Notes: Helps maintain competitive gameplay for late-joining players * Modernization: Consider more sophisticated catch-up mechanics */ #define	LATESTART 2	/* 1 pt / LATESTART turns after beginning for
-			   new nations when they start late in the game	*/ /* ============================================================================ * COMBAT STRENGTH AND BONUS MECHANICS * ============================================================================ * Purpose: Control combat effectiveness and strength-based bonuses * Usage: Affects combat calculations and unit effectiveness scaling * Notes: These values significantly impact combat balance and unit utility */ /* * MIN_GAIN_STR - Minimum strength for attack bonus * * Minimum unit strength required before gaining attack bonus benefits. * Units below this threshold fight at base effectiveness, while stronger * units receive combat bonuses that scale with their strength. * * Value: 250 (minimum strength for bonus eligibility) * Usage: Combat bonus calculations and unit effectiveness thresholds * Notes: Creates meaningful distinction between weak and strong units * Modernization: Consider more granular strength thresholds */ #define MIN_GAIN_STR 250 /* minimum strength needed to gain attack bonus */ /* * PROB_GAIN_STR - Full attack bonus threshold * * Unit strength at which there is 100% chance to gain attack bonus. * This creates a scaling system where stronger units are increasingly * likely to receive combat bonuses, up to guaranteed bonuses at this threshold. * * Value: 1500 (strength for guaranteed attack bonus) * Usage: Combat bonus probability calculations and unit scaling mechanics * Notes: Provides linear scaling for combat effectiveness with unit strength * Modernization: Consider non-linear scaling or cap effects */ #define PROB_GAIN_STR 1500 /* 100% chance to gain attack bonus for strength */
+/* ============================================================================
+ * CORE GAME BALANCE PARAMETERS *
+ ============================================================================
+ * Purpose: Fundamental game balance constants that control core
+ * mechanics
+ * Usage: These values affect game difficulty, progression, and
+ * strategic balance
+ * Notes: Changes significantly impact gameplay balance and should be tested carefully */
 
-/* ============================================================================ * VISIBILITY AND ENGAGEMENT RANGES * ============================================================================ * Purpose: Control visual range, engagement distances, and strategic awareness * Usage: Affects tactical planning, reconnaissance, and strategic positioning * Notes: Larger values increase CPU usage but provide more tactical depth */ /* * LANDSEE - Land-based visibility range * * How far players can see from land-based sectors they control. This affects * reconnaissance capabilities, early warning systems, and strategic planning * around controlled territory. * * Value: 2 sectors (land-based sight range) * Usage: Map visibility calculations and territorial awareness * Notes: CPU usage increases with larger values; affects strategic positioning * Modernization: Consider terrain-based visibility modifiers */ #define LANDSEE 2	/* how far you can see from your land		*/ /* * NAVYSEE - Naval unit visibility range * * How far naval units can see around their current position. This affects * naval reconnaissance, threat detection, and strategic naval positioning * for both offensive and defensive operations. * * Value: 1 sector (naval unit sight range) * Usage: Naval reconnaissance and threat detection calculations * Notes: Limited range encourages close-range naval tactics * Modernization: Consider ship type and weather effects on visibility */ #define NAVYSEE 1	/* how far navies can see around them		*/ /* * ARMYSEE - Army unit visibility range * * How far army units can see around their current position. This affects * military reconnaissance, tactical awareness, and early warning capabilities * for land-based military operations. * * Value: 2 sectors (army unit sight range) * Usage: Military reconnaissance and tactical awareness calculations * Notes: Larger range than naval units reflects land-based advantage * Modernization: Consider unit type and terrain effects on visibility */ #define ARMYSEE 2	/* how far armies can see around them		*/ /* * CVNSEE - Caravan visibility range * * How far caravan units can see around their current position. Limited * visibility reflects the civilian nature of caravans and their focus * on trade rather than reconnaissance activities. * * Value: 1 sector (caravan sight range) * Usage: Trade route reconnaissance and threat awareness * Notes: Limited range reflects civilian/commercial nature * Modernization: Consider escort effects on caravan visibility */ #define CVNSEE 1	/* how far caravans can see around them		*/ /* * PRTZONE - Pirate operational range * * Maximum distance pirates will roam from their base camp when conducting * raids and attacks. This controls pirate behavior and creates predictable * safe zones at sufficient distance from pirate bases. * * Value: 3 sectors (pirate operational radius) * Usage: Pirate AI behavior and threat zone calculations * Notes: Creates tactical considerations for trade route planning * Modernization: Consider dynamic ranges based on pirate strength */ #define PRTZONE	3	/* how far pirates roam from their basecamp	*/ /* * MEETNTN - Diplomatic contact range * * Maximum distance between nations required for diplomatic status adjustments. * Nations must be within this range to establish or modify diplomatic * relationships, encouraging geographic proximity for diplomacy. * * Value: 2 sectors (diplomatic contact range) * Usage: Diplomatic system calculations and relationship management * Notes: Encourages geographic considerations in diplomacy * Modernization: Consider communication technology effects on range */ #define MEETNTN	2	/* how close nations must be to adjust status	*/ /* * NAVYRANGE - Naval engagement range * * Maximum distance at which naval fleets can engage each other in combat. * This controls naval tactical positioning and determines when naval * battles can be initiated between opposing fleets. * * Value: 3 sectors (naval engagement range) * Usage: Naval combat initiation and tactical positioning calculations * Notes: Longer range than visibility allows for strategic positioning * Modernization: Consider ship type and weapon technology effects */ #define NAVYRANGE 3	/* how close fleets need to be to engage	*/ /* * VISRANGE - Sector identification range * * Range within which sector numbers are automatically known to players. * This provides basic geographic awareness of nearby areas without * requiring detailed reconnaissance or exploration. * * Value: 4 sectors (automatic sector identification range) * Usage: Map display and geographic awareness calculations * Notes: Provides basic navigation information for strategic planning * Modernization: Consider map-making technology and exploration bonuses */ #define VISRANGE 4	/* sector number known if within this range	*/
+/* NRAND_DIGITS - Non-random number precision
+ * Number of decimal digits used in "non-random" number generation
+ * systems.
+ * This affects the precision of deterministic calculations and
+ * pseudo-random sequences used for game balance and reproducible
+ * random events.
+ * Value: 9 digits (maximum precision without overflow in 32-bit
+ * integers)
+ * Usage: Deterministic random number generation and game balance
+ * calculations
+ * Notes: Limited to 9 digits to prevent integer overflow in
+ * calculations
+ * Modernization: Consider using 64-bit integers for higher
+ * precision
+*/
 
-/* ============================================================================ * PAGER INTERFACE CONFIGURATION * ============================================================================ * Purpose: Control the built-in text pager system for viewing large files * Usage: Affects user interface behavior when displaying large text content * Notes: These settings balance usability with memory consumption */ /* * MAX_FILE_LINES - Maximum pager file size * * Maximum number of lines that the internal pager system will read and * display from a single file. This prevents excessive memory usage when * viewing very large files while providing reasonable file viewing capabilities. * * Value: 5000 lines (maximum file size for pager) * Usage: File size validation before loading into pager system * Notes: Balance between functionality and memory consumption * Modernization: Consider dynamic sizing based on available memory */ #define MAX_FILE_LINES 5000	/* max file size for pager to read in	*/ /* * D_PAGEOFF - Default pager offset * * Default offset of the current line from the top of the display in the * pager interface. This controls the initial positioning when opening * files in the pager system. * * Value: 0 (start at top of file) * Usage: Initial pager display positioning and default view settings * Notes: Starting at top provides predictable user experience * Modernization: Consider user-configurable default positioning */ #define D_PAGEOFF 0	/* offset of current line from the top in pager	*/ /* * D_PAGETAB - Tab spacing in pager * * Number of spaces used for tab character expansion in the pager display. * This controls text formatting and alignment when viewing files that * contain tab characters. * * Value: 8 spaces (standard tab width) * Usage: Tab expansion and text formatting in pager display * Notes: Standard 8-space tabs provide consistent formatting * Modernization: Consider configurable tab stops for user preference */ #define D_PAGETAB 8	/* spacing for tabs in the pager		*/
+#define NRAND_DIGITS 9	/* decimal digits in "non-random" number [<= 9]	*/
 
-/* ============================================================================ * SECTOR MANAGEMENT AND POPULATION LIMITS * ============================================================================ * Purpose: Control sector development, population dynamics, and resource management * Usage: Affects economic planning, population growth, and resource extraction * Notes: These limits significantly impact economic game balance and strategy */ /* * DESFOOD - Minimum food for sector redesignation * * Minimum food production value required before a sector can be redesignated * to a different type. This prevents wasteful redesignation of productive * agricultural sectors and encourages thoughtful economic planning. * * Value: 4 (minimum food production for redesignation) * Usage: Sector redesignation validation and economic planning * Notes: Protects food production from accidental or wasteful changes * Modernization: Consider variable requirements based on sector type */ #define DESFOOD	4		/* min food val to redesignate sector	*/ /* * TOOMANYPEOPLE - Population efficiency threshold * * Population level at which a sector becomes overcrowded, resulting in * reduced reproduction rates and production efficiency. This encourages * population distribution and city development for large populations. * * Value: 5000 people (overcrowding threshold for non-city sectors) * Usage: Population efficiency calculations and reproduction rate adjustments * Notes: Does not apply to cities, which can handle larger populations efficiently * Modernization: Consider sector type and infrastructure effects on capacity */ #define TOOMANYPEOPLE 5000L	/* too many people in sector - 1/2 repro
-				   and 1/2 production; not in cities.	*/ /* * ABSMAXPEOPLE - Absolute population limit * * Hard limit on the maximum number of people that can exist in any single * sector, including cities. This prevents infinite population growth and * maintains game balance by forcing territorial expansion. * * Value: 50000 people (absolute maximum population per sector) * Usage: Population growth limits and sector capacity enforcement * Notes: Applies to all sector types including cities * Modernization: Consider dynamic limits based on infrastructure development */ #define ABSMAXPEOPLE 50000L	/* absolute max people in any sector	*/ /* * MILLSIZE - Minimum workforce for mill operation * * Minimum number of people required to operate a mill effectively. This * creates workforce requirements for industrial development and encourages * population growth in industrial sectors. * * Value: 500 people (minimum mill workforce) * Usage: Industrial development calculations and workforce requirements * Notes: Affects industrial development strategy and population allocation * Modernization: Consider technology effects on workforce requirements */ #define	MILLSIZE 500L		/* min number of people to work a mill	*/ /* * TOOMUCHMINED - Metal depletion threshold * * Number of metal units that must be mined for a 100% chance of metal * depletion in a sector. The actual depletion chance is prorated based * on the amount mined relative to this threshold. * * Value: 50000 units (threshold for guaranteed metal depletion) * Usage: Resource depletion calculations and mining sustainability * Notes: Encourages sustainable mining practices and resource management * Modernization: Consider regeneration mechanics for depleted resources */ #define TOOMUCHMINED 50000L	/* units mined for 100% chance of metal
+/* MIN_WORLD_SIZE - Minimum world dimension
+ Minimum allowed value for either axis of the game world map. This
+ ensures that generated worlds are large enough to provide
+ meaningful gameplay and prevent degenerate cases in world
+ generation algorithms.
+ Value: 24 sectors (minimum world axis size)
+ Usage: World generation validation and minimum size enforcement
+ Notes: Ensures sufficient space for nations and strategic
+        gameplay
+ Modernization: Consider dynamic sizing based on player count
+*/
+#define MIN_WORLD_SIZE 24  /* minimum value for a world axis.	*/
+
+/* MAXFORTVAL - Maximum fortification level * Maximum internal
+   value for sector fortification. Higher fortification provides
+   better defensive bonuses but requires more resources to
+   achieve. This limit prevents excessive defensive advantages and
+   maintains game balance.
+   Value: 24 (maximum fortification points)
+   Usage: Fortification construction limits and defensive bonus
+          calculations
+   Notes: Affects combat balance and siege warfare dynamics
+   Modernization: Consider making fortification limits configurable */
+#define MAXFORTVAL 24 	/* the maximum internal value for fortification	*/
+
+/* MAXCHARITY - Maximum charity/reputation level
+ Absolute limit for charity or reputation values that nations can
+ achieve. This affects diplomatic relations, trade bonuses, and
+ certain game mechanics that depend on a nation's reputation with
+ others.
+ Value: 25 (maximum charity/reputation points)
+ Usage: Diplomatic calculations and reputation-based game mechanics
+ Notes: Affects diplomatic and economic interactions between nations
+ Modernization: Consider more nuanced reputation systems */
+#define MAXCHARITY 25	/* absolute limit which charity may reach.*/
+
+/* * MAXTAX - Maximum taxation rate * * Maximum allowable taxation
+     rate that can be set by nations. Higher taxation generates more
+     revenue but may cause population unrest or economic penalties. *
+     This limit prevents excessive taxation that could break game
+     balance. * * Value: 20 (maximum tax rate percentage) * Usage:
+     Economic policy limits and revenue calculations * Notes: Affects
+     economic balance and population happiness * Modernization:
+     Consider dynamic tax limits based on government type */
+#define MAXTAX 20	/* maximum setting of the taxation rate.	*/
+
+/* * MAXNEWS - News history retention * * Total number of game turns
+     worth of news and events that are saved and * available for
+     players to review. This affects memory usage and provides * a
+     reasonable history window for players to track important
+     events. * * Value: 12 turns (news retention period) * Usage: News
+     system storage limits and historical event tracking * Notes:
+     Balance between useful history and memory consumption *
+     Modernization: Consider configurable retention based on server
+     capacity */
+#define MAXNEWS 12	/* total number of turns worth of news saved.	*/
+
+/* ==========================================================
+ * LEADERSHIP AND EXPERIENCE MECHANICS
+ * ==========================================================
+
+ * Purpose: Control character development and leadership advancement
+ * Usage: Affects long-term character progression and strategic
+ * planning
+ * Notes: These values influence the pace of character
+ * development */
+
+/* * PLEADER_EXP - Leader experience gain probability * * Percentage
+     chance for a leader to gain 1 experience point per year. * This
+     controls the rate of character development and long-term
+     strategic * planning around leader advancement and
+     capabilities. * * Value: 100% (guaranteed experience gain per
+     year) * Usage: Annual leader development and experience point
+     calculations * Notes: Affects long-term strategic planning and
+     character progression * Modernization: Consider more varied
+     experience gain mechanisms */
+#define PLEADER_EXP 100	/* % chance for leader to gain 1 exp pt / year	*/
+
+/* ============================================================================
+ * * MOVEMENT AND ATTRITION MECHANICS *
+ * ============================================================================
+ * * Purpose: Control unit movement costs and attrition rates * Usage:
+ * Affects strategic mobility and resource management * Notes: These
+ * values significantly impact tactical and strategic gameplay */
+
+/* * LONGTRIP - Naval civilian attrition threshold * * Navy trip
+     length at which 100% attrition of civilians occurs. Longer *
+     naval journeys become increasingly dangerous for civilian
+     passengers, * encouraging strategic planning of naval operations
+     and supply lines. * * Value: 100 (trip length for maximum
+     civilian attrition) * Usage: Naval attrition calculations and
+     civilian transport mechanics * Notes: Encourages strategic naval
+     base placement and route planning * Modernization: Consider more
+     sophisticated attrition models */
+
+#define LONGTRIP 100	/* navy trip lth for 100% attrition of civs	*/
+
+/* * SPEEDUP_COST - Movement speed increase cost * * Movement point
+     decrease applied just before increasing unit speed. * This
+     creates a cost for achieving higher movement rates and balances *
+     the advantage of increased mobility against resource
+     expenditure. * * Value: 1 (movement point cost for speed
+     increase) * Usage: Movement speed calculations and mobility cost
+     balancing * Notes: Affects tactical movement decisions and
+     resource allocation * Modernization: Consider variable costs
+     based on unit type and terrain */
+
+#define SPEEDUP_COST 1	/* move decrease just before increasing speed	*/
+
+ /* ============================================================================
+  * * POPULATION AND RESOURCE MANAGEMENT *
+  * ============================================================================
+  * * Purpose: Control population dynamics and resource consumption *
+  * Usage: Affects economic planning and resource allocation
+  * strategies * Notes: These percentages significantly impact
+  * economic game balance */
+
+/* * PSTARVE - Starvation mortality rate * * Percentage of population
+     that dies when not adequately fed. This creates * pressure for
+     food production and distribution, making agriculture and * trade
+     essential for maintaining large populations. * * Value: 25%
+     (population loss rate during starvation) * Usage: Population
+     management and food requirement calculations * Notes: Critical
+     for economic balance and food production incentives *
+     Modernization: Consider graduated starvation effects */
+#define PSTARVE	25	/* % of population that starves if not fed	*/
+
+/* * PCOLLAPSE - Infrastructure deterioration rate * * Percentage
+     chance of unsupplied sector infrastructure deteriorating per
+     turn. * This creates ongoing maintenance requirements and
+     prevents players from * ignoring infrastructure after initial
+     construction. * * Value: 10% (deterioration chance for unsupplied
+     infrastructure) * Usage: Infrastructure maintenance calculations
+     and decay mechanics * Notes: Encourages ongoing resource
+     allocation to infrastructure * Modernization: Consider variable
+     decay rates based on infrastructure type */
+#define PCOLLAPSE 10	/* % change of unsupplied sector deterioration	*/
+
+/* * PDISBAND - Unit desertion rate * * Percentage of a military unit
+     that disbands when lacking adequate supplies. * This creates
+     logistical pressure and prevents indefinite maintenance of *
+     large armies without proper supply lines. * * Value: 10% (unit
+     strength loss rate without supplies) * Usage: Military supply
+     calculations and unit maintenance mechanics * Notes: Critical for
+     military logistics and strategic planning * Modernization:
+     Consider morale-based desertion mechanics */
+#define PDISBAND 10	/* % of a unit that disbands w/out supplies.	*/
+
+/* * PVOLUNTEERS - Military recruitment rate * * Percentage of a
+     sector's population available for military duty. This * controls
+     the rate at which civilian populations can be converted to *
+     military forces, affecting military buildup capabilities. * *
+     Value: 20% (population available for military recruitment) *
+     Usage: Military recruitment calculations and population
+     mobilization * Notes: Affects military buildup speed and
+     population economics * Modernization: Consider variable rates
+     based on government type and crisis */
+#define PVOLUNTEERS 20 /* % of a sector population available for duty	*/
+
+/* * PBARNICLES - Naval maintenance failure rate * * Percentage chance
+     for ship damage when naval units lack adequate supplies. * This
+     represents hull fouling, equipment failure, and other maintenance
+     * issues that affect naval readiness and operational
+     capability. * * Value: 2% (chance of ship damage without proper
+     maintenance) * Usage: Naval maintenance calculations and fleet
+     readiness mechanics * Notes: Encourages regular naval supply and
+     maintenance operations * Modernization: Consider cumulative
+     damage over time */
+#define PBARNICLES 2	/* % chance for ship damage w/out supplies	*/
+
+/* ============================================================================
+ * * NEW PLAYER MECHANICS *
+ * ============================================================================
+ * * Purpose: Control late-joining player compensation and balance *
+ * Usage: Affects game balance when new players join ongoing games *
+ * Notes: Helps maintain competitive balance for late-starting
+ * nations */
+
+/* * LATESTART - Late starter compensation rate * * Compensation rate
+     for new nations that start after the game has begun. * New
+     nations receive 1 point per LATESTART turns to help them catch up
+     * to established nations and remain competitive in ongoing
+     games. * * Value: 2 (1 point per 2 turns of late start
+     compensation) * Usage: New player compensation calculations and
+     game balance mechanics * Notes: Helps maintain competitive
+     gameplay for late-joining players * Modernization: Consider more
+     sophisticated catch-up mechanics */
+#define	LATESTART 2	/* 1 pt / LATESTART turns after beginning for
+			   new nations when they start late in the
+			   game */
+
+ /* ============================================================================
+  * * COMBAT STRENGTH AND BONUS MECHANICS *
+  * ============================================================================
+  * * Purpose: Control combat effectiveness and strength-based bonuses
+  * * Usage: Affects combat calculations and unit effectiveness
+  * scaling * Notes: These values significantly impact combat balance
+  * and unit utility */
+
+/* * MIN_GAIN_STR - Minimum strength for attack bonus * * Minimum unit
+     strength required before gaining attack bonus benefits. * Units
+     below this threshold fight at base effectiveness, while stronger
+     * units receive combat bonuses that scale with their strength. *
+     * Value: 250 (minimum strength for bonus eligibility) * Usage:
+     Combat bonus calculations and unit effectiveness thresholds *
+     Notes: Creates meaningful distinction between weak and strong
+     units * Modernization: Consider more granular strength
+     thresholds */
+#define MIN_GAIN_STR 250 /* minimum strength needed to gain attack bonus */
+
+/* * PROB_GAIN_STR - Full attack bonus threshold * * Unit strength at
+     which there is 100% chance to gain attack bonus. * This creates a
+     scaling system where stronger units are increasingly * likely to
+     receive combat bonuses, up to guaranteed bonuses at this
+     threshold. * * Value: 1500 (strength for guaranteed attack bonus)
+     * Usage: Combat bonus probability calculations and unit scaling
+     mechanics * Notes: Provides linear scaling for combat
+     effectiveness with unit strength * Modernization: Consider
+     non-linear scaling or cap effects */
+#define PROB_GAIN_STR 1500 /* 100% chance to gain attack bonus for strength */
+
+/* ============================================================================
+ * * VISIBILITY AND ENGAGEMENT RANGES *
+ * ============================================================================
+ * * Purpose: Control visual range, engagement distances, and
+ * strategic awareness * Usage: Affects tactical planning,
+ * reconnaissance, and strategic positioning * Notes: Larger values
+ * increase CPU usage but provide more tactical depth */
+
+/* * LANDSEE - Land-based visibility range * * How far players can see
+     from land-based sectors they control. This affects *
+     reconnaissance capabilities, early warning systems, and strategic
+     planning * around controlled territory. * * Value: 2 sectors
+     (land-based sight range) * Usage: Map visibility calculations and
+     territorial awareness * Notes: CPU usage increases with larger
+     values; affects strategic positioning * Modernization: Consider
+     terrain-based visibility modifiers */
+
+#define LANDSEE 2	/* how far you can see from your land		*/
+
+/* * NAVYSEE - Naval unit visibility range * * How far naval units can
+     see around their current position. This affects * naval
+     reconnaissance, threat detection, and strategic naval positioning
+     * for both offensive and defensive operations. * * Value: 1
+     sector (naval unit sight range) * Usage: Naval reconnaissance and
+     threat detection calculations * Notes: Limited range encourages
+     close-range naval tactics * Modernization: Consider ship type and
+     weather effects on visibility */
+
+#define NAVYSEE 1	/* how far navies can see around them		*/
+
+/* * ARMYSEE - Army unit visibility range * * How far army units can
+     see around their current position. This affects * military
+     reconnaissance, tactical awareness, and early warning
+     capabilities * for land-based military operations. * * Value: 2
+     sectors (army unit sight range) * Usage: Military reconnaissance
+     and tactical awareness calculations * Notes: Larger range than
+     naval units reflects land-based advantage * Modernization:
+     Consider unit type and terrain effects on visibility */
+
+#define ARMYSEE 2	/* how far armies can see around them		*/
+
+/* * CVNSEE - Caravan visibility range * * How far caravan units can
+     see around their current position. Limited * visibility reflects
+     the civilian nature of caravans and their focus * on trade rather
+     than reconnaissance activities. * * Value: 1 sector (caravan
+     sight range) * Usage: Trade route reconnaissance and threat
+     awareness * Notes: Limited range reflects civilian/commercial
+     nature * Modernization: Consider escort effects on caravan
+     visibility */
+
+#define CVNSEE 1	/* how far caravans can see around them		*/
+
+/* * PRTZONE - Pirate operational range * * Maximum distance pirates
+     will roam from their base camp when conducting * raids and
+     attacks. This controls pirate behavior and creates predictable *
+     safe zones at sufficient distance from pirate bases. * * Value: 3
+     sectors (pirate operational radius) * Usage: Pirate AI behavior
+     and threat zone calculations * Notes: Creates tactical
+     considerations for trade route planning * Modernization: Consider
+     dynamic ranges based on pirate strength */
+
+#define PRTZONE	3	/* how far pirates roam from their basecamp	*/
+
+/* * MEETNTN - Diplomatic contact range * * Maximum distance between
+     nations required for diplomatic status adjustments. * Nations
+     must be within this range to establish or modify diplomatic *
+     relationships, encouraging geographic proximity for diplomacy. *
+     * Value: 2 sectors (diplomatic contact range) * Usage: Diplomatic
+     system calculations and relationship management * Notes:
+     Encourages geographic considerations in diplomacy *
+     Modernization: Consider communication technology effects on
+     range */
+#define MEETNTN	2	/* how close nations must be to adjust status	*/
+
+/* * NAVYRANGE - Naval engagement range * * Maximum distance at which
+     naval fleets can engage each other in combat. * This controls
+     naval tactical positioning and determines when naval * battles
+     can be initiated between opposing fleets. * * Value: 3 sectors
+     (naval engagement range) * Usage: Naval combat initiation and
+     tactical positioning calculations * Notes: Longer range than
+     visibility allows for strategic positioning * Modernization:
+     Consider ship type and weapon technology effects */
+#define NAVYRANGE 3	/* how close fleets need to be to engage	*/
+
+/* * VISRANGE - Sector identification range * * Range within which
+     sector numbers are automatically known to players. * This
+     provides basic geographic awareness of nearby areas without *
+     requiring detailed reconnaissance or exploration. * * Value: 4
+     sectors (automatic sector identification range) * Usage: Map
+     display and geographic awareness calculations * Notes: Provides
+     basic navigation information for strategic planning *
+     Modernization: Consider map-making technology and exploration
+     bonuses */
+#define VISRANGE 4	/* sector number known if within this range	*/
+
+/* ============================================================================
+ * * PAGER INTERFACE CONFIGURATION *
+ * ============================================================================
+ * * Purpose: Control the built-in text pager system for viewing large
+ * files * Usage: Affects user interface behavior when displaying
+ * large text content * Notes: These settings balance usability with
+ * memory consumption */
+
+ /* * MAX_FILE_LINES - Maximum pager file size * * Maximum number of
+      lines that the internal pager system will read and * display
+      from a single file. This prevents excessive memory usage when *
+      viewing very large files while providing reasonable file viewing
+      capabilities. * * Value: 5000 lines (maximum file size for
+      pager) * Usage: File size validation before loading into pager
+      system * Notes: Balance between functionality and memory
+      consumption * Modernization: Consider dynamic sizing based on
+      available memory */
+#define MAX_FILE_LINES 5000	/* max file size for pager to read in	*/
+
+/* * D_PAGEOFF - Default pager offset * * Default offset of the
+     current line from the top of the display in the * pager
+     interface. This controls the initial positioning when opening *
+     files in the pager system. * * Value: 0 (start at top of file) *
+     Usage: Initial pager display positioning and default view
+     settings * Notes: Starting at top provides predictable user
+     experience * Modernization: Consider user-configurable default
+     positioning */
+#define D_PAGEOFF 0	/* offset of current line from the top in pager	*/
+
+/* * D_PAGETAB - Tab spacing in pager * * Number of spaces used for
+     tab character expansion in the pager display. * This controls
+     text formatting and alignment when viewing files that * contain
+     tab characters. * * Value: 8 spaces (standard tab width) * Usage:
+     Tab expansion and text formatting in pager display * Notes:
+     Standard 8-space tabs provide consistent formatting *
+     Modernization: Consider configurable tab stops for user
+     preference */
+#define D_PAGETAB 8	/* spacing for tabs in the pager		*/
+
+/* ============================================================================
+ * * SECTOR MANAGEMENT AND POPULATION LIMITS *
+ * ============================================================================
+ * * Purpose: Control sector development, population dynamics, and
+ * resource management * Usage: Affects economic planning, population
+ * growth, and resource extraction * Notes: These limits significantly
+ * impact economic game balance and strategy */
+
+/* * DESFOOD - Minimum food for sector redesignation * * Minimum food
+     production value required before a sector can be redesignated *
+     to a different type. This prevents wasteful redesignation of
+     productive * agricultural sectors and encourages thoughtful
+     economic planning. * * Value: 4 (minimum food production for
+     redesignation) * Usage: Sector redesignation validation and
+     economic planning * Notes: Protects food production from
+     accidental or wasteful changes * Modernization: Consider variable
+     requirements based on sector type */
+#define DESFOOD	4		/* min food val to redesignate sector	*/
+
+/* * TOOMANYPEOPLE - Population efficiency threshold * * Population
+     level at which a sector becomes overcrowded, resulting in *
+     reduced reproduction rates and production efficiency. This
+     encourages * population distribution and city development for
+     large populations. * * Value: 5000 people (overcrowding threshold
+     for non-city sectors) * Usage: Population efficiency calculations
+     and reproduction rate adjustments * Notes: Does not apply to
+     cities, which can handle larger populations efficiently *
+     Modernization: Consider sector type and infrastructure effects on
+     capacity */
+#define TOOMANYPEOPLE 5000L	/* too many people in sector - 1/2 repro
+				   and 1/2 production; not in cities.	*/
+
+/* * ABSMAXPEOPLE - Absolute population limit * * Hard limit on the
+     maximum number of people that can exist in any single * sector,
+     including cities. This prevents infinite population growth and *
+     maintains game balance by forcing territorial expansion. * *
+     Value: 50000 people (absolute maximum population per sector) *
+     Usage: Population growth limits and sector capacity enforcement *
+     Notes: Applies to all sector types including cities *
+     Modernization: Consider dynamic limits based on infrastructure
+     development */
+#define ABSMAXPEOPLE 50000L	/* absolute max people in any sector	*/
+
+/* * MILLSIZE - Minimum workforce for mill operation * * Minimum
+     number of people required to operate a mill effectively. This *
+     creates workforce requirements for industrial development and
+     encourages * population growth in industrial sectors. * * Value:
+     500 people (minimum mill workforce) * Usage: Industrial
+     development calculations and workforce requirements * Notes:
+     Affects industrial development strategy and population allocation
+     * Modernization: Consider technology effects on workforce
+     requirements */
+#define	MILLSIZE 500L		/* min number of people to work a mill	*/
+
+/* * TOOMUCHMINED - Metal depletion threshold * * Number of metal
+     units that must be mined for a 100% chance of metal * depletion
+     in a sector. The actual depletion chance is prorated based * on
+     the amount mined relative to this threshold. * * Value: 50000
+     units (threshold for guaranteed metal depletion) * Usage:
+     Resource depletion calculations and mining sustainability *
+     Notes: Encourages sustainable mining practices and resource
+     management * Modernization: Consider regeneration mechanics for
+     depleted resources */
+#define TOOMUCHMINED 50000L	/* units mined for 100% chance of metal
 				   depletion actual chance is prorated	*/
 
-/* ============================================================================ * ECONOMIC COSTS AND RESOURCE REQUIREMENTS * ============================================================================ * Purpose: Control economic costs for various game actions and constructions * Usage: Affects economic planning, resource allocation, and strategic decisions * Notes: These costs significantly impact economic balance and player strategies */ /* * MOVECOST - Command execution cost * * Cost in talons (game currency) for each command entered by a player. * This creates a basic resource cost for game actions and prevents * excessive micromanagement by making every action have an economic impact. * * Value: 20 talons (cost per command) * Usage: Economic calculations for player actions and command processing * Notes: Creates economic pressure and prevents excessive micromanagement * Modernization: Consider variable costs based on command complexity */ #define MOVECOST 20L		/* talons cost for each command entered	*/ /* * PEOPLE_MCOST - Civilian movement cost * * Cost for moving one civilian using the move_people command. This creates * economic costs for population redistribution and encourages careful * planning of population movements. * * Value: 50 talons (cost per civilian moved) * Usage: Population movement calculations and demographic planning * Notes: Makes population redistribution a significant economic decision * Modernization: Consider distance-based costs and transportation efficiency */ #define PEOPLE_MCOST 50L	/* cost for one civilian in move_people	*/ /* * NAVYMAINT - Naval maintenance cost * * Maintenance cost per naval hold capacity unit. This creates ongoing * economic pressure for maintaining naval forces and encourages efficient * fleet composition and strategic naval planning. * * Value: 4000 talons (maintenance cost per naval hold unit) * Usage: Naval economics and fleet maintenance calculations * Notes: High cost encourages strategic naval force management * Modernization: Consider ship type and age effects on maintenance costs */ #define NAVYMAINT 4000L		/* navy maintainance cost / hold	*/ /* * CVNMAINT - Caravan maintenance cost * * Maintenance cost for caravan units. This creates ongoing economic * costs for maintaining trade networks and encourages efficient * caravan management and route planning. * * Value: 1000 talons (caravan maintenance cost) * Usage: Trade economics and caravan fleet management * Notes: Lower than naval costs, reflecting civilian nature of caravans * Modernization: Consider route efficiency and cargo effects on costs */ #define CVNMAINT 1000L		/* caravan maintainance cost		*/ /* * FORTCOST - Fortification construction cost * * Cost to build one point of fortification in a sector. This affects * defensive strategy economics and creates trade-offs between offensive * and defensive investments. * * Value: 1000 talons (cost per fortification point) * Usage: Military engineering costs and defensive investment calculations * Notes: Affects military strategy and resource allocation decisions * Modernization: Consider terrain and technology effects on construction costs */ #define FORTCOST 1000L		/* cost to build a fort point		*/ /* * CARAVANCOST - Caravan construction cost * * Cost to construct caravan units, specified per 10 wagons. This affects * trade network development costs and economic expansion strategies. * * Value: 5000 talons (cost per 10-wagon caravan unit) * Usage: Trade network development and economic expansion planning * Notes: Significant investment required for trade network expansion * Modernization: Consider technology and infrastructure effects on construction costs */ #define CARAVANCOST 5000L	/* cost for caravans (per 10 wagons)	*/ /* * CARAVANWOOD - Caravan wood requirement * * Amount of wood required to construct caravan units, specified per * 10 wagons. This creates resource requirements for trade network * development beyond just monetary costs. * * Value: 400 wood units (per 10-wagon caravan unit) * Usage: Resource planning for caravan construction and trade expansion * Notes: Creates resource-based constraints on trade network development * Modernization: Consider alternative materials and construction technologies */ #define CARAVANWOOD 400L	/* how much wood per 10 wagons		*/
+/* ============================================================================
+ * * ECONOMIC COSTS AND RESOURCE REQUIREMENTS *
+ * ============================================================================
+ * * Purpose: Control economic costs for various game actions and
+ * constructions * Usage: Affects economic planning, resource
+ * allocation, and strategic decisions * Notes: These costs
+ * significantly impact economic balance and player strategies */
 
-/* ============================================================================ * COMBAT AND TACTICAL MECHANICS * ============================================================================ * Purpose: Control combat effectiveness, siege mechanics, and tactical operations * Usage: Affects military strategy, siege warfare, and tactical decision-making * Notes: These values significantly impact combat balance and military tactics */ /* * TAKESECTOR - Base capture requirement * * Base number of soldiers required to capture a sector from enemy control. * This establishes minimum force requirements for territorial conquest * and affects strategic planning for military operations. * * Value: 75 soldiers (base capture requirement) * Usage: Siege calculations and territorial conquest mechanics * Notes: Modified by fortification levels and defender strength * Modernization: Consider terrain and fortification effects on requirements */ #define TAKESECTOR 75		/* base number of soldiers for capture  */ /* * TAKE_RATIO - Capture force ratio * * Ratio of attacking to defending forces required to successfully capture * a sector. This creates strategic depth in siege warfare and encourages * concentration of forces for successful attacks. * * Value: 7:1 (attacker to defender ratio for capture) * Usage: Siege combat calculations and force requirement determination * Notes: Creates significant advantage for defenders in siege situations * Modernization: Consider variable ratios based on fortification and terrain */ #define TAKE_RATIO 7		/* Ratio N:1 needed to take a sector	*/ /* * BASE_TAKEPCT - Capture force percentage * * Percentage of civilian population that attacking troops must represent * to successfully capture a sector. This scales capture requirements * with population size and prevents easy conquest of populated areas. * * Value: 10% (troop percentage of civilian population for capture) * Usage: Population-based capture calculations and urban warfare mechanics * Notes: Makes heavily populated areas harder to conquer * Modernization: Consider government type and civilian resistance effects */ #define BASE_TAKEPCT 10		/* Troop size, % of civs, for capturing */ /* * MAXLOSS - Maximum battle casualties * * Maximum percentage of military units that can be lost in a single * 1:1 battle engagement. This prevents total unit annihilation and * maintains some military capacity even after devastating defeats. * * Value: 60% (maximum casualty rate in balanced combat) * Usage: Combat resolution and casualty calculations * Notes: Ensures some military survivors even in decisive defeats * Modernization: Consider morale and experience effects on casualty rates */ #define MAXLOSS	 60		/* maximum % of men lost in 1:1 battle	*/ /* * FINDPERCENT - Resource discovery chance * * Percentage chance to discover gold or metal deposits when prospecting * in a sector. This controls the rate of resource discovery and affects * economic expansion and exploration strategies. * * Value: 1% (chance to find precious resources per prospecting attempt) * Usage: Resource discovery mechanics and exploration economics * Notes: Low percentage makes resource discovery a long-term investment * Modernization: Consider terrain type and technology effects on discovery rates */ #define	FINDPERCENT 1		/* percent to find gold/metal in sector	*/ /* ============================================================================ * LOGISTICS AND MOVEMENT COSTS * ============================================================================ * Purpose: Control movement penalties for loading/unloading operations * Usage: Affects tactical planning and logistical considerations * Notes: Different costs for cities versus other locations reflect infrastructure */ /* * LOAD_CITYCOST - Urban loading cost * * Movement points lost when loading or unloading cargo in cities. * Lower cost reflects better infrastructure and handling facilities * available in urban areas. * * Value: 4 movement points (urban loading/unloading penalty) * Usage: Logistical planning and urban tactical considerations * Notes: Infrastructure advantage makes cities valuable for logistics * Modernization: Consider city size and infrastructure development effects */ #define LOAD_CITYCOST 4		/* move lost in (un)loading in cities	*/ /* * LOAD_LANDCOST - Rural loading cost * * Movement points lost when loading or unloading cargo in non-urban * areas. Higher cost reflects lack of infrastructure and handling * equipment in rural or undeveloped areas. * * Value: 12 movement points (rural loading/unloading penalty) * Usage: Logistical planning and rural tactical considerations * Notes: Penalty encourages development of urban logistics centers * Modernization: Consider road networks and infrastructure development effects */ #define LOAD_LANDCOST 12	/* move lost in (un)loading elsewhere	*/
+/* * MOVECOST - Command execution cost * * Cost in talons (game
+     currency) for each command entered by a player. * This creates a
+     basic resource cost for game actions and prevents * excessive
+     micromanagement by making every action have an economic impact. *
+     * Value: 20 talons (cost per command) * Usage: Economic
+     calculations for player actions and command processing * Notes:
+     Creates economic pressure and prevents excessive micromanagement
+     * Modernization: Consider variable costs based on command
+     complexity */
+#define MOVECOST 20L		/* talons cost for each command entered	*/
 
-/* ============================================================================ * UNIT SPECIFICATIONS AND CAPABILITIES * ============================================================================ * Purpose: Define unit characteristics, capacities, and organizational costs * Usage: Affects military organization, logistics, and economic planning * Notes: These values determine fundamental unit capabilities and limitations */ /* * MAXNAVYCREW - Maximum naval crew strength * * Full strength crew complement for a naval fleet unit. This represents * the optimal manning level for maximum combat effectiveness and * operational capability of naval forces. * * Value: 100 crew members (full strength naval unit) * Usage: Naval combat calculations and crew management mechanics * Notes: Affects naval combat effectiveness and operational readiness * Modernization: Consider ship type variations and technology effects */ #define MAXNAVYCREW 100		/* full strength crew on a naval fleet	*/ /* * MAXCVNCREW - Maximum caravan crew strength * * Full strength crew complement for a single caravan unit. This represents * the optimal manning level for maximum efficiency and security of * trade operations. * * Value: 30 crew members (full strength caravan unit) * Usage: Caravan operations and trade efficiency calculations * Notes: Affects trade security and operational effectiveness * Modernization: Consider caravan size and route danger effects */ #define MAXCVNCREW 30		/* full strength crew on a 1 "caravan"	*/ /* * NAVY_HOLD - Naval cargo capacity * * Storage space available in a single naval unit for transporting * cargo, supplies, and passengers. This affects naval logistics * and strategic mobility capabilities. * * Value: 100000 units (naval cargo capacity) * Usage: Naval logistics calculations and cargo transport planning * Notes: Large capacity reflects naval vessels' strategic transport role * Modernization: Consider ship type variations and cargo handling technology */ #define NAVY_HOLD 100000L	/* storage space of a ship unit		*/ /* * CVN_HOLD - Caravan cargo capacity * * Storage space available in a single caravan wagon for transporting * trade goods and supplies. This affects trade economics and * commercial transport planning. * * Value: 50000 units (caravan wagon capacity) * Usage: Trade calculations and commercial transport planning * Notes: Half naval capacity reflects smaller, land-based transport * Modernization: Consider wagon technology and road infrastructure effects */ #define CVN_HOLD 50000L		/* storage space of a caravan wagon	*/ /* ============================================================================ * UNIT ORGANIZATION COSTS * ============================================================================ * Purpose: Control costs for maintaining separate military and commercial units * Usage: Affects organizational strategy and force structure decisions * Notes: These costs encourage consolidation while allowing tactical flexibility */ /* * ARMYUNITCOST - Army unit organization cost * * Additional cost per separate army unit beyond basic maintenance. * This represents command overhead, logistics complexity, and * organizational costs of maintaining multiple army formations. * * Value: 500 talons (additional cost per separate army unit) * Usage: Military organization economics and force structure planning * Notes: Encourages consolidation while allowing tactical flexibility * Modernization: Consider command efficiency and communication technology effects */ #define ARMYUNITCOST 500L	/* added cost per separate army unit	*/ /* * NAVYUNITCOST - Naval unit organization cost * * Additional cost per separate naval unit beyond basic maintenance. * Higher cost than army units reflects greater complexity and * resource requirements of naval operations and maintenance. * * Value: 1000 talons (additional cost per separate naval unit) * Usage: Naval organization economics and fleet structure planning * Notes: Higher cost reflects naval operational complexity * Modernization: Consider port infrastructure and naval technology effects */ #define NAVYUNITCOST 1000L	/* added cost per separate navy unit	*/ /* * CVNUNITCOST - Caravan unit organization cost * * Additional cost per separate caravan unit beyond basic maintenance. * Same as army units, reflecting similar organizational complexity * for land-based commercial operations. * * Value: 500 talons (additional cost per separate caravan unit) * Usage: Trade organization economics and commercial fleet planning * Notes: Equal to army costs, reflecting similar organizational complexity * Modernization: Consider trade route efficiency and commercial technology effects */ #define CVNUNITCOST 500L	/* added cost per separate caravan unit	*/ /* * WAGONS_IN_CVN - Caravan unit composition * * Number of individual wagons that make up a single caravan size unit. * This affects unit scaling, capacity calculations, and organizational * structure of commercial transport operations. * * Value: 10 wagons (per caravan size unit) * Usage: Caravan capacity calculations and unit scaling mechanics * Notes: Provides granular control over trade capacity and organization * Modernization: Consider wagon technology and transport efficiency improvements */ #define WAGONS_IN_CVN 10	/* number of wagons per cvn size unit	*/
+/* * PEOPLE_MCOST - Civilian movement cost * * Cost for moving one
+     civilian using the move_people command. This creates * economic
+     costs for population redistribution and encourages careful *
+     planning of population movements. * * Value: 50 talons (cost per
+     civilian moved) * Usage: Population movement calculations and
+     demographic planning * Notes: Makes population redistribution a
+     significant economic decision * Modernization: Consider
+     distance-based costs and transportation efficiency */
+#define PEOPLE_MCOST 50L	/* cost for one civilian in move_people	*/
 
-/* ============================================================================ * NPC ARTIFICIAL INTELLIGENCE BEHAVIOR PARAMETERS * ============================================================================ * Purpose: Control NPC nation behavior, development patterns, and military organization * Usage: Affects NPC competitiveness, territorial behavior, and strategic planning * Notes: These settings significantly impact game balance and NPC challenge level */ /* * CITYLIMIT - NPC urbanization threshold * * Percentage of NPC population in a sector required before the sector * is developed into a city. This controls NPC urbanization patterns * and city development strategies. * * Value: 5% (population threshold for NPC city development) * Usage: NPC city development decisions and urbanization calculations * Notes: Affects NPC economic development and population distribution * Modernization: Consider economic factors and strategic location effects */ #define CITYLIMIT 5L		/* % of npc pop in sctr before => city	*/ /* * CITYPERCENT - NPC urban population limit * * Maximum percentage of total NPC population that can live in cities. * This controls NPC urban development and ensures balanced population * distribution between urban and rural areas. * * Value: 20% (maximum urban population percentage for NPCs) * Usage: NPC population distribution and urban development planning * Notes: Prevents excessive urbanization and maintains rural population base * Modernization: Consider economic development effects on urbanization rates */ #define CITYPERCENT 20L		/* % of npc pop able to be in cities	*/ /* * MILRATIO - NPC civilian to military ratio * * Ratio of civilian to military population maintained by NPC nations. * This controls NPC military buildup and ensures sustainable population * distribution between civilian and military sectors. * * Value: 8:1 (civilian to military ratio for NPCs) * Usage: NPC military planning and population allocation decisions * Notes: Militia are not considered military for this calculation * Modernization: Consider threat level and strategic situation effects */ #define MILRATIO 8L		/* ratio civ:mil for NPCs		*/ /* * MILINCAP - NPC capital military concentration * * Ratio of military forces in the capital to total military forces * for NPC nations. This controls defensive concentration and strategic * reserve allocation in NPC military planning. * * Value: 8:1 (capital military to total military ratio for NPCs) * Usage: NPC military deployment and capital defense planning * Notes: Ensures significant defensive reserves in NPC capitals * Modernization: Consider strategic situation and threat assessment effects */ #define MILINCAP 8L		/* ratio (mil in cap):mil for NPCs	*/ /* * MILINCITY - Urban militia organization * * Population to militia ratio in NPC cities and capitals. This determines * local defense capabilities and urban security forces maintained * by NPC nations in their urban centers. * * Value: 10:1 (population to militia ratio in NPC urban areas) * Usage: NPC urban defense calculations and local security planning * Notes: Provides basic urban defense without excessive militarization * Modernization: Consider city size and strategic importance effects */ #define	MILINCITY 10L		/* militia=people/MILINCITY in city/cap */ /* * NPCTOOFAR - NPC territorial range limit * * Maximum distance from their capital that NPCs will normally operate * or expand. This controls NPC territorial behavior and prevents * excessive expansion that would dilute their defensive capabilities. * * Value: 15 sectors (maximum NPC operational range from capital) * Usage: NPC expansion decisions and territorial management * Notes: Encourages concentrated development around NPC capitals * Modernization: Consider transportation technology and communication effects */ #define NPCTOOFAR 15		/* npcs stay within this distance of cap*/ /* * METALORE - Weapon improvement resource requirement * * Amount of metal per soldier required to achieve a 1% improvement * in weapons technology. This controls NPC military technology * advancement and resource allocation for military improvements. * * Value: 7 metal units per soldier (for 1% weapon improvement) * Usage: NPC military technology development and resource planning * Notes: Creates resource cost for military technology advancement * Modernization: Consider research technology and industrial capacity effects */ #define METALORE 7L		/* metal/soldier needed for +1% weapons	*/ /* ============================================================================ * CAMPAIGN CONFIGURATION REFERENCE * ============================================================================ * Purpose: Reference to additional campaign-specific settings * Usage: Points developers to location of campaign balance parameters * Notes: Separates general system settings from specific campaign balance */ /* * Campaign Settings Reference * * For campaign-specific balance parameters, economic settings, and * scenario configurations, see the buildA.h header file. This separation * allows system-wide settings to remain stable while enabling * campaign-specific customization. * * Location: buildA.h * Purpose: Campaign-specific balance and scenario configuration * Usage: Modify campaign balance without affecting core system parameters */ /* To change the default campaign settings, see buildA.h */
+/* * NAVYMAINT - Naval maintenance cost * * Maintenance cost per naval
+     hold capacity unit. This creates ongoing * economic pressure for
+     maintaining naval forces and encourages efficient * fleet
+     composition and strategic naval planning. * * Value: 4000 talons
+     (maintenance cost per naval hold unit) * Usage: Naval economics
+     and fleet maintenance calculations * Notes: High cost encourages
+     strategic naval force management * Modernization: Consider ship
+     type and age effects on maintenance costs */
+#define NAVYMAINT 4000L		/* navy maintainance cost / hold	*/
+
+/* * CVNMAINT - Caravan maintenance cost * * Maintenance cost for
+     caravan units. This creates ongoing economic * costs for
+     maintaining trade networks and encourages efficient * caravan
+     management and route planning. * * Value: 1000 talons (caravan
+     maintenance cost) * Usage: Trade economics and caravan fleet
+     management * Notes: Lower than naval costs, reflecting civilian
+     nature of caravans * Modernization: Consider route efficiency and
+     cargo effects on costs */
+#define CVNMAINT 1000L		/* caravan maintainance cost		*/
+
+/* * FORTCOST - Fortification construction cost * * Cost to build one
+     point of fortification in a sector. This affects * defensive
+     strategy economics and creates trade-offs between offensive * and
+     defensive investments. * * Value: 1000 talons (cost per
+     fortification point) * Usage: Military engineering costs and
+     defensive investment calculations * Notes: Affects military
+     strategy and resource allocation decisions * Modernization:
+     Consider terrain and technology effects on construction costs */
+#define FORTCOST 1000L		/* cost to build a fort point		*/
+
+/* * CARAVANCOST - Caravan construction cost * * Cost to construct
+     caravan units, specified per 10 wagons. This affects * trade
+     network development costs and economic expansion strategies. * *
+     Value: 5000 talons (cost per 10-wagon caravan unit) * Usage:
+     Trade network development and economic expansion planning *
+     Notes: Significant investment required for trade network
+     expansion * Modernization: Consider technology and infrastructure
+     effects on construction costs */
+#define CARAVANCOST 5000L	/* cost for caravans (per 10 wagons)	*/
+
+/* * CARAVANWOOD - Caravan wood requirement * * Amount of wood
+     required to construct caravan units, specified per * 10
+     wagons. This creates resource requirements for trade network *
+     development beyond just monetary costs. * * Value: 400 wood units
+     (per 10-wagon caravan unit) * Usage: Resource planning for
+     caravan construction and trade expansion * Notes: Creates
+     resource-based constraints on trade network development *
+     Modernization: Consider alternative materials and construction
+     technologies */
+#define CARAVANWOOD 400L	/* how much wood per 10 wagons		*/
+
+/* ============================================================================
+ * * COMBAT AND TACTICAL MECHANICS *
+ * ============================================================================
+ * * Purpose: Control combat effectiveness, siege mechanics, and
+ * tactical operations * Usage: Affects military strategy, siege
+ * warfare, and tactical decision-making * Notes: These values
+ * significantly impact combat balance and military tactics */
+
+/* * TAKESECTOR - Base capture requirement * * Base number of soldiers
+     required to capture a sector from enemy control. * This
+     establishes minimum force requirements for territorial conquest *
+     and affects strategic planning for military operations. * *
+     Value: 75 soldiers (base capture requirement) * Usage: Siege
+     calculations and territorial conquest mechanics * Notes: Modified
+     by fortification levels and defender strength * Modernization:
+     Consider terrain and fortification effects on requirements */
+#define TAKESECTOR 75		/* base number of soldiers for capture  */
+
+/* * TAKE_RATIO - Capture force ratio * * Ratio of attacking to
+     defending forces required to successfully capture * a
+     sector. This creates strategic depth in siege warfare and
+     encourages * concentration of forces for successful attacks. * *
+     Value: 7:1 (attacker to defender ratio for capture) * Usage:
+     Siege combat calculations and force requirement determination *
+     Notes: Creates significant advantage for defenders in siege
+     situations * Modernization: Consider variable ratios based on
+     fortification and terrain */
+#define TAKE_RATIO 7		/* Ratio N:1 needed to take a sector	*/
+
+/* * BASE_TAKEPCT - Capture force percentage * * Percentage of
+     civilian population that attacking troops must represent * to
+     successfully capture a sector. This scales capture requirements *
+     with population size and prevents easy conquest of populated
+     areas. * * Value: 10% (troop percentage of civilian population
+     for capture) * Usage: Population-based capture calculations and
+     urban warfare mechanics * Notes: Makes heavily populated areas
+     harder to conquer * Modernization: Consider government type and
+     civilian resistance effects */
+#define BASE_TAKEPCT 10		/* Troop size, % of civs, for capturing */
+
+/* * MAXLOSS - Maximum battle casualties * * Maximum percentage of
+     military units that can be lost in a single * 1:1 battle
+     engagement. This prevents total unit annihilation and * maintains
+     some military capacity even after devastating defeats. * * Value:
+     60% (maximum casualty rate in balanced combat) * Usage: Combat
+     resolution and casualty calculations * Notes: Ensures some
+     military survivors even in decisive defeats * Modernization:
+     Consider morale and experience effects on casualty rates */
+#define MAXLOSS	 60		/* maximum % of men lost in 1:1 battle	*/
+
+/* * FINDPERCENT - Resource discovery chance * * Percentage chance to
+     discover gold or metal deposits when prospecting * in a
+     sector. This controls the rate of resource discovery and affects
+     * economic expansion and exploration strategies. * * Value: 1%
+     (chance to find precious resources per prospecting attempt) *
+     Usage: Resource discovery mechanics and exploration economics *
+     Notes: Low percentage makes resource discovery a long-term
+     investment * Modernization: Consider terrain type and technology
+     effects on discovery rates */
+#define	FINDPERCENT 1		/* percent to find gold/metal in sector	*/
+
+/* ============================================================================
+ * * LOGISTICS AND MOVEMENT COSTS *
+ * ============================================================================
+ * * Purpose: Control movement penalties for loading/unloading
+ * operations * Usage: Affects tactical planning and logistical
+ * considerations * Notes: Different costs for cities versus other
+ * locations reflect infrastructure */
+
+/* * LOAD_CITYCOST - Urban loading cost * * Movement points lost when
+     loading or unloading cargo in cities. * Lower cost reflects
+     better infrastructure and handling facilities * available in
+     urban areas. * * Value: 4 movement points (urban
+     loading/unloading penalty) * Usage: Logistical planning and urban
+     tactical considerations * Notes: Infrastructure advantage makes
+     cities valuable for logistics * Modernization: Consider city size
+     and infrastructure development effects */
+#define LOAD_CITYCOST 4		/* move lost in (un)loading in cities	*/
+
+/* * LOAD_LANDCOST - Rural loading cost * * Movement points lost when
+     loading or unloading cargo in non-urban * areas. Higher cost
+     reflects lack of infrastructure and handling * equipment in rural
+     or undeveloped areas. * * Value: 12 movement points (rural
+     loading/unloading penalty) * Usage: Logistical planning and rural
+     tactical considerations * Notes: Penalty encourages development
+     of urban logistics centers * Modernization: Consider road
+     networks and infrastructure development effects */
+#define LOAD_LANDCOST 12	/* move lost in (un)loading elsewhere	*/
+
+
+/* ============================================================================
+ * * UNIT SPECIFICATIONS AND CAPABILITIES *
+ * ============================================================================
+ * * Purpose: Define unit characteristics, capacities, and
+ * organizational costs * Usage: Affects military organization,
+ * logistics, and economic planning * Notes: These values determine
+ * fundamental unit capabilities and limitations */
+
+/* * MAXNAVYCREW - Maximum naval crew strength * * Full strength crew
+     complement for a naval fleet unit. This represents * the optimal
+     manning level for maximum combat effectiveness and * operational
+     capability of naval forces. * * Value: 100 crew members (full
+     strength naval unit) * Usage: Naval combat calculations and crew
+     management mechanics * Notes: Affects naval combat effectiveness
+     and operational readiness * Modernization: Consider ship type
+     variations and technology effects */
+#define MAXNAVYCREW 100		/* full strength crew on a naval fleet	*/
+
+/* * MAXCVNCREW - Maximum caravan crew strength * * Full strength crew
+     complement for a single caravan unit. This represents * the
+     optimal manning level for maximum efficiency and security of *
+     trade operations. * * Value: 30 crew members (full strength
+     caravan unit) * Usage: Caravan operations and trade efficiency
+     calculations * Notes: Affects trade security and operational
+     effectiveness * Modernization: Consider caravan size and route
+     danger effects */
+#define MAXCVNCREW 30		/* full strength crew on a 1 "caravan"	*/
+
+/* * NAVY_HOLD - Naval cargo capacity * * Storage space available in a
+     single naval unit for transporting * cargo, supplies, and
+     passengers. This affects naval logistics * and strategic mobility
+     capabilities. * * Value: 100000 units (naval cargo capacity) *
+     Usage: Naval logistics calculations and cargo transport planning
+     * Notes: Large capacity reflects naval vessels' strategic
+     transport role * Modernization: Consider ship type variations and
+     cargo handling technology */
+#define NAVY_HOLD 100000L	/* storage space of a ship unit		*/
+
+/* * CVN_HOLD - Caravan cargo capacity * * Storage space available in
+     a single caravan wagon for transporting * trade goods and
+     supplies. This affects trade economics and * commercial transport
+     planning. * * Value: 50000 units (caravan wagon capacity) *
+     Usage: Trade calculations and commercial transport planning *
+     Notes: Half naval capacity reflects smaller, land-based transport
+     * Modernization: Consider wagon technology and road
+     infrastructure effects */
+#define CVN_HOLD 50000L		/* storage space of a caravan wagon	*/
+
+/* ============================================================================
+ * * UNIT ORGANIZATION COSTS *
+ * ============================================================================
+ * * Purpose: Control costs for maintaining separate military and
+ * commercial units * Usage: Affects organizational strategy and force
+ * structure decisions * Notes: These costs encourage consolidation
+ * while allowing tactical flexibility */
+
+/* * ARMYUNITCOST - Army unit organization cost * * Additional cost
+     per separate army unit beyond basic maintenance. * This
+     represents command overhead, logistics complexity, and *
+     organizational costs of maintaining multiple army formations. * *
+     Value: 500 talons (additional cost per separate army unit) *
+     Usage: Military organization economics and force structure
+     planning * Notes: Encourages consolidation while allowing
+     tactical flexibility * Modernization: Consider command efficiency
+     and communication technology effects */
+#define ARMYUNITCOST 500L	/* added cost per separate army unit	*/
+
+/* * NAVYUNITCOST - Naval unit organization cost * * Additional cost
+     per separate naval unit beyond basic maintenance. * Higher cost
+     than army units reflects greater complexity and * resource
+     requirements of naval operations and maintenance. * * Value: 1000
+     talons (additional cost per separate naval unit) * Usage: Naval
+     organization economics and fleet structure planning * Notes:
+     Higher cost reflects naval operational complexity *
+     Modernization: Consider port infrastructure and naval technology
+     effects */
+#define NAVYUNITCOST 1000L	/* added cost per separate navy unit	*/
+
+/* * CVNUNITCOST - Caravan unit organization cost * * Additional cost
+     per separate caravan unit beyond basic maintenance. * Same as
+     army units, reflecting similar organizational complexity * for
+     land-based commercial operations. * * Value: 500 talons
+     (additional cost per separate caravan unit) * Usage: Trade
+     organization economics and commercial fleet planning * Notes:
+     Equal to army costs, reflecting similar organizational complexity
+     * Modernization: Consider trade route efficiency and commercial
+     technology effects */
+
+#define CVNUNITCOST 500L	/* added cost per separate caravan unit	*/
+
+/* * WAGONS_IN_CVN - Caravan unit composition * * Number of individual
+     wagons that make up a single caravan size unit. * This affects
+     unit scaling, capacity calculations, and organizational *
+     structure of commercial transport operations. * * Value: 10
+     wagons (per caravan size unit) * Usage: Caravan capacity
+     calculations and unit scaling mechanics * Notes: Provides
+     granular control over trade capacity and organization *
+     Modernization: Consider wagon technology and transport efficiency
+     improvements */
+#define WAGONS_IN_CVN 10	/* number of wagons per cvn size unit	*/
+
+/* ============================================================================
+ * * NPC ARTIFICIAL INTELLIGENCE BEHAVIOR PARAMETERS *
+ * ============================================================================
+ * Purpose: Control NPC nation behavior, development patterns, and
+ * military organization
+ *
+ * Usage: Affects NPC competitiveness,territorial behavior, and
+ * strategic planning
+ *
+ * Notes: These settings significantly impact game balance and NPC
+ * challenge level
+ */
+
+/* * CITYLIMIT - NPC urbanization threshold
+
+ * Percentage of NPC population in a sector required before the sector
+   is developed into a city. This controls NPC urbanization patterns
+   and city development strategies.
+
+  * * Value: 5% (population threshold for
+     NPC city development) * Usage: NPC city development decisions and
+     urbanization calculations * Notes: Affects NPC economic
+     development and population distribution * Modernization: Consider
+     economic factors and strategic location effects */
+#define CITYLIMIT 5L		/* % of npc pop in sctr before => city
+				 * */
+/* * CITYPERCENT - NPC urban population limit * * Maximum percentage
+     of total NPC population that can live in cities. * This controls
+     NPC urban development and ensures balanced population *
+     distribution between urban and rural areas. * * Value: 20%
+     (maximum urban population percentage for NPCs) * Usage: NPC
+     population distribution and urban development planning * Notes:
+     Prevents excessive urbanization and maintains rural population
+     base * Modernization: Consider economic development effects on
+     urbanization rates */
+#define CITYPERCENT 20L		/* % of npc pop able to be in cities
+				 * */
+
+/* * MILRATIO - NPC civilian to military ratio * * Ratio of civilian
+     to military population maintained by NPC nations. * This controls
+     NPC military buildup and ensures sustainable population *
+     distribution between civilian and military sectors. * * Value:
+     8:1 (civilian to military ratio for NPCs) * Usage: NPC military
+     planning and population allocation decisions * Notes: Militia are
+     not considered military for this calculation * Modernization:
+     Consider threat level and strategic situation effects */
+#define MILRATIO 8L /* ratio civ:mil for NPCs		*/
+
+/* * MILINCAP - NPC capital military concentration * * Ratio of
+     military forces in the capital to total military forces * for NPC
+     nations. This controls defensive concentration and strategic *
+     reserve allocation in NPC military planning. * * Value: 8:1
+     (capital military to total military ratio for NPCs) * Usage: NPC
+     military deployment and capital defense planning * Notes: Ensures
+     significant defensive reserves in NPC capitals * Modernization:
+     Consider strategic situation and threat assessment effects */
+#define MILINCAP 8L		/* ratio (mil in cap):mil for NPCs	*/
+
+/* * MILINCITY - Urban militia organization * * Population to militia
+     ratio in NPC cities and capitals. This determines * local defense
+     capabilities and urban security forces maintained * by NPC
+     nations in their urban centers. * * Value: 10:1 (population to
+     militia ratio in NPC urban areas) * Usage: NPC urban defense
+     calculations and local security planning * Notes: Provides basic
+     urban defense without excessive militarization * Modernization:
+     Consider city size and strategic importance effects */
+#define	MILINCITY 10L		/* militia=people/MILINCITY in city/cap */
+
+/* * NPCTOOFAR - NPC territorial range limit * * Maximum distance from
+     their capital that NPCs will normally operate * or expand. This
+     controls NPC territorial behavior and prevents * excessive
+     expansion that would dilute their defensive capabilities. * *
+     Value: 15 sectors (maximum NPC operational range from capital) *
+     Usage: NPC expansion decisions and territorial management *
+     Notes: Encourages concentrated development around NPC capitals *
+     Modernization: Consider transportation technology and
+     communication effects */
+
+#define NPCTOOFAR 15		/* npcs stay within this distance of cap*/
+
+/* * METALORE - Weapon improvement resource requirement * * Amount of
+     metal per soldier required to achieve a 1% improvement * in
+     weapons technology. This controls NPC military technology *
+     advancement and resource allocation for military improvements. *
+     * Value: 7 metal units per soldier (for 1% weapon improvement) *
+     Usage: NPC military technology development and resource planning
+     * Notes: Creates resource cost for military technology
+     advancement * Modernization: Consider research technology and
+     industrial capacity effects */
+#define METALORE 7L		/* metal/soldier needed for +1% weapons	*/
+
+/* ============================================================================
+ * * CAMPAIGN CONFIGURATION REFERENCE *
+ * ============================================================================
+ * * Purpose: Reference to additional campaign-specific settings *
+ * Usage: Points developers to location of campaign balance parameters
+ * * Notes: Separates general system settings from specific campaign
+ * balance */
+
+/* * Campaign Settings Reference * * For campaign-specific balance
+     parameters, economic settings, and * scenario configurations, see
+     the buildA.h header file. This separation * allows system-wide
+     settings to remain stable while enabling * campaign-specific
+     customization. * * Location: buildA.h * Purpose:
+     Campaign-specific balance and scenario configuration * Usage:
+     Modify campaign balance without affecting core system
+     parameters */
+
+/* To change the default campaign settings, see buildA.h */
 
 /* ============================================================================
  * SYSTEM INTEGRATION ANALYSIS
  * ============================================================================
- * 
+ *
  * This header file serves as the central configuration hub for the entire
  * Conquer game system. Every source file in the project includes this header,
  * making it the foundation for system-wide behavior and compatibility.
