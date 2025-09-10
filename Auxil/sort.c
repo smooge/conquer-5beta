@@ -149,8 +149,8 @@ main(argc, argv)
 {
   /* declare temporary variables and functions */
   int i, j, num_args = 0, l, innum = 0,outnum = 0;
-  int get_line();
-  void place(), send_out();
+  int get_line(char data[]);
+  void place(char data[]), send_out(void);
 
   /* input string */
   char data[MAX_STR];
