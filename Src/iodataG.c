@@ -21,6 +21,8 @@
 #define PRINT_CODES
 #include "cityX.h"
 #include "worldX.h"
+#include <time.h>
+#include <unistd.h>
 
 /*
  * close_ntn - Finalize and close nation session data
@@ -890,9 +892,12 @@ max_descript PARM_0(void)
   return(sysconf(_SC_OPEN_MAX));
 #undef _SC_OPEN_MAX
 #else /* HPUX */
-#ifdef GETDTABLESIZE
-  return(getdtablesize());
-#else /* GETDTABLESIZE */
+/* Use POSIX-compliant sysconf for maximum file descriptors */
+  long max_fd = sysconf(_SC_OPEN_MAX);
+  if (max_fd != -1) {
+    return((int)max_fd);
+  }
+  /* Fallback to legacy implementations if sysconf fails */
 #ifdef SYSV4
   struct rlimit rl;
   getrlimit(RLIMIT_NOFILE, &rl);
@@ -901,7 +906,6 @@ max_descript PARM_0(void)
   /* give back a fair estimate */
   return(24);
 #endif /* SYSV4 */
-#endif /* GETDTABLESIZE */
 #endif /* HPUX */
 #endif /* VAXC */
 }
