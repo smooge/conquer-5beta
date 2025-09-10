@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include "psmap.h"
 
 char buffer[BUFSIZ];
@@ -183,7 +184,7 @@ psstring(fh, str)
   char *str;
 {
   fprintf(fh, "(");
-  while (*str != NULL) {
+  while (*str != '\0') {
     switch (*str) {
     case ('('):
       fprintf(fh, "\\(");

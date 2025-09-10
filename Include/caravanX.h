@@ -399,7 +399,7 @@
 #define EX_CVNEND	EX_CVNOLOC
 
 /* ============================================================================
- * CARAVAN STATE CHANGE LOGGING MACROS (VADJ*/VMTRLS/VCREATE/VDESTROY)
+ * CARAVAN STATE CHANGE LOGGING MACROS (VADJ/VMTRLS/VCREATE/VDESTROY)
  * ============================================================================
  * Purpose: Detailed logging of caravan modifications for replay and debugging
  * Usage: Conditional compilation for development and debugging builds

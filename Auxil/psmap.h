@@ -18,6 +18,16 @@
 #define DEFAULTPAGE 2
 #endif
 
+/* Default to A4 if no page size specified */
+#ifndef DEFAULTPAGE
+#define DEFAULTPAGE 1
+#endif
+
+/* Default PostScript file location */
+#ifndef PSFILE
+#define PSFILE "map.ps"
+#endif
+
 /* Printer dependant entries */
 #define PAGEWIDTH_A4       540
 #define PAGEHEIGHT_A4      820

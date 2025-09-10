@@ -1,4 +1,16 @@
 
+#define USE_CODES
+#define PRINT_CODES
+#include "dataG.h"
+#include "armyX.h"
+#include "cityX.h"
+#include "navyX.h"
+#include "desigX.h"
+#include "mtrlsX.h"
+#include "worldX.h"
+#include "elevegX.h"
+#include "statusX.h"
+#include "caravanX.h"
 #include <curses.h>
 
 /*
@@ -82,11 +94,11 @@ loadstat(status)
 	int status;
 {
 	switch(status) {
-	case TRADED:
-	case GENERAL:
-	case MILITIA:
-	case GARRISON:
-	case ONBOARD:
+	case ST_TRADED:
+	case ST_ATTACK:  /* was GENERAL */
+	case ST_DEFEND:  /* was MILITIA */
+	case ST_GARRISON:
+	case ST_ONBOARD:
 		return(FALSE);
 		break;
 	default:
@@ -215,7 +227,7 @@ loadfleet()
 				errormsg("Only marines may disembark in someone else's land");
 				return;
 			}
-			P_ASTAT=DEFEND;
+			P_ASTAT=ST_DEFEND;
 			P_NARMY=MAXARM;
 			if (!((sct[XREAL][YREAL].designation==DCITY
 			|| sct[XREAL][YREAL].designation==DCAPITOL)
@@ -241,7 +253,7 @@ loadfleet()
 			}
 			mvaddstr(LINES-2,0,"Unload how many people?");
 			refresh();
-			amount=get_number();
+			amount=get_number(0);
 			if(amount > mhold*P_NPEOP) {
 				errormsg("There are not that many on board");
 			} else if (amount > 0) {
@@ -277,7 +289,7 @@ loadfleet()
 		if(doarmy==TRUE) {
 			mvaddstr(LINES-2,0,"Load what army?");
 			refresh();
-			armynum = get_number();
+			armynum = get_number(0);
 			if(armynum<0) {
 				;
 			} else if((armynum>=MAXARM)||(P_ASOLD<=0)
@@ -289,7 +301,7 @@ loadfleet()
 			(P_ATYPE<MINLEADER || P_ATYPE>=MINMONSTER)) {
 				errormsg("Army too large for fleet");
 			} else {
-				P_ASTAT=ONBOARD;
+				P_ASTAT=ST_ONBOARD;
 				P_AMOVE=0;
 				P_NARMY=armynum;
 				if (!((sct[XREAL][YREAL].designation==DCITY
@@ -310,7 +322,7 @@ loadfleet()
 		} else if(doarmy==FALSE && mcargo!=0){
 			mvaddstr(LINES-2,0,"Load how many people?");
 			refresh();
-			amount=get_number();
+			amount=get_number(0);
 			if(sct[XREAL][YREAL].owner!=country) {
 				errormsg("The people refuse to board");
 			} else if(amount > mcargo) {

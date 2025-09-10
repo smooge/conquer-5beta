@@ -432,8 +432,8 @@ void
 place(data)
   char data[];
 {
-  L_PTR temp, build_node();
-  int comp_line();
+  L_PTR temp, build_node(char data[], L_PTR next);
+  int comp_line(char line1[], char line2[]);
 
   /* find location for placing input */
   if (head == (L_PTR)NULL) {
@@ -551,7 +551,6 @@ build_node(data, nptr)
   L_PTR nptr;
 {
   L_PTR temp;
-  char *strcpy();
   
   /* build the memory space */
   if ((temp = (L_PTR)malloc(sizeof(L_DATA))) == (L_PTR)NULL) {
