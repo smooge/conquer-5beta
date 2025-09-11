@@ -418,6 +418,7 @@ men_to_capture PARM_3(int, xloc, int, yloc, ntntype, by)
   case MAJ_CANAL:
     /* doubled value since the canal crews are mostly govt. employees */
     pval *= 2;
+    /* fallthrough */
   default:
     /* check for slight increase from fortifications */
     if (minor_desg(sct_ptr->designation, MIN_FORTIFIED)) {
@@ -567,6 +568,7 @@ capture_land PARM_3(ntntype, whom, int, xloc, int, yloc)
 	case MAJ_FRUITFUL:
 	  /* knocks out the farm sector and causes devastation */
 	  set_majordesg(sct_ptr->designation, MAJ_NONE);
+	  /* fallthrough */
 	default:
 	  /* devastation */
 	  set_minordesg(sct_ptr->designation, MIN_DEVASTATED);
