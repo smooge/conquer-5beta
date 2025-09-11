@@ -1012,7 +1012,7 @@ map_highlight PARM_4(int, x, int, y, int, style, int, opval)
 	    (country == sown) ||
 	    WIZ_MAGIC(MW_SEEALL)) ) {
       if ((opval == TG_NONE) ||
-	  (opval == tg_info[sct_ptr->tradegood].class)) {
+	  (opval == (int)tg_info[sct_ptr->tradegood].class)) {
 	hold = TRUE;
       }
     }
@@ -1137,6 +1137,7 @@ map_highlight PARM_4(int, x, int, y, int, style, int, opval)
   case HI_REGION:
     /* check if they do not belong */
     if (sown != sct[XREAL][YREAL].owner) break;
+    /* fall through - continue to range check */
   case HI_RANGE:
     /* more checking */
     if (country == UNOWNED) {
@@ -2226,6 +2227,7 @@ void
 print_map PARM_1(int, widemap)
 {
   /*ARGSUSED*/
+  (void)widemap; /* suppress unused parameter warning */
 #ifdef UNIMPLEMENTED
   char tempstr[20];
   register int x, y;

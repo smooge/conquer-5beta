@@ -1510,7 +1510,7 @@ makeworld PARM_1 (int, rflag)
     fprintf(fnews, "1\tGLOBAL HEADLINE NEWS -- The Epoch\n");
     fprintf(fnews, "5\tPERSONAL LISTINGS -- The Epoch\n");
   } else {
-    sprintf(string, "error opening news file <%s>\n", string);
+    sprintf(string, "error opening news file <%s>\n", tnews_fname);
     errormsg(string);
     return;
   }
@@ -1762,6 +1762,7 @@ bld_config PARM_1(int, buildit)
 	}
 	break;
       }
+      /* fall through - reset not available in this mode */
     default:
       /* let 'em hear it */
       beep();

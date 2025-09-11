@@ -1504,6 +1504,7 @@ enlist PARM_0(void)
 	  enlist_navy();
 	  break;
 	}
+	/* fall through - navy not available, show error */
       default:
 	/* that ain't right */
 	errormsg("That was not among your choices");
