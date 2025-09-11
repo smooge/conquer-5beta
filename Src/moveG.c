@@ -1371,6 +1371,7 @@ move_relocate PARM_2( int, type, int, verbal )
       break;
     }
 
+    /* fallthrough */
   case MOVE_ARMY:
   case MOVE_PATROL:
     /* reduce the movement by one */
@@ -1467,6 +1468,7 @@ move_relocate PARM_2( int, type, int, verbal )
       break;
     }
 
+    /* fallthrough */
   case MOVE_CVN:
     /* adjust the movement value */
     if ((is_god == FALSE) &&
