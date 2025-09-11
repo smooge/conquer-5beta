@@ -2870,7 +2870,7 @@ may_upgrade PARM_4(NTN_PTR, n1_ptr, CITY_PTR, c1_ptr, int, utype, int, men)
   for (i = utype + 1; i < num_armytypes; i++) {
 
     /* it is a better unit of the same class? */
-    if (ainfo_list[i].class == cls) {
+    if ((int)ainfo_list[i].class == cls) {
 
       /* is it ok? */
       if (utype_ok(n1_ptr, c1_ptr, i, men, FALSE)) {
@@ -3610,7 +3610,7 @@ unit_basenum PARM_1(int, utype)
 	break;
       case 1:
 	/* matches proper unit class */
-	if (ainfo_list[utype].class == unum_ptr->ident) {
+	if ((int)ainfo_list[utype].class == unum_ptr->ident) {
 	  curlevel = unum_ptr->type;
 	  hold = unum_ptr->number;
 	}

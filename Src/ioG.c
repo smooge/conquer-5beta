@@ -436,7 +436,7 @@ enter_unittype PARM_3(int, style, char *, prompt, char *, emsg)
       if (!a_ismerc(count)) continue;
       break;
     case 2:
-      if (ainfo_list[count].class != upg_class) continue;
+      if ((int)ainfo_list[count].class != upg_class) continue;
       break;
     case 3:
       if (!a_enlistaway(count)) continue;
@@ -464,7 +464,7 @@ enter_unittype PARM_3(int, style, char *, prompt, char *, emsg)
       }
 
       /* show as a choice */
-      if (xloc + strlen(ainfo_list[count].select) > COLS - 3) {
+      if (xloc + (int)strlen(ainfo_list[count].select) > COLS - 3) {
 	xloc = 1;
 	yloc++;
 	move(yloc, xloc);
@@ -521,7 +521,7 @@ enter_unittype PARM_3(int, style, char *, prompt, char *, emsg)
       if (!a_ismerc(count)) continue;
       break;
     case 2:
-      if (ainfo_list[count].class != upg_class) continue;
+      if ((int)ainfo_list[count].class != upg_class) continue;
       break;
     case 3:
       if (!a_enlistaway(count)) continue;
@@ -598,7 +598,7 @@ get_dmode PARM_1(char *, prompt)
     }
 
     /* now check it */
-    if (xloc + strlen(dmode_tptr->d.name) > COLS - 2) {
+    if (xloc + (int)strlen(dmode_tptr->d.name) > COLS - 2) {
       if (yloc == LINES - 3) {
 	mvaddstr(yloc, xloc, "...");
 	break;
@@ -892,7 +892,7 @@ get_diplomacy PARM_2(int, oldstatus, int, othstatus)
     } else {
       strcpy(buffer, dipname[i]);
     }
-    if (xloc + strlen(buffer) > COLS - 5) {
+    if (xloc + (int)strlen(buffer) > COLS - 5) {
       yloc++;
       xloc = 2;
     }

@@ -285,7 +285,7 @@ remote_enlist PARM_0(void)
 
     /* query them */
     if (conq_expert == FALSE) {
-      sprintf(bufstr, "Cost (%ld %s):", 1, ainfo_list[choice].name);
+      sprintf(bufstr, "Cost (%d %s):", 1, ainfo_list[choice].name);
       for (count = 0; count < MTRLS_NUMBER; count++) {
 	if (cost_mtrls[count] > 0) {
 	  sprintf(string, " %.0f %s",
@@ -450,9 +450,9 @@ enlist_army PARM_0(void)
 	     ainfo_list[choice].name);
     if (is_god == FALSE) {
       if (a_ismerc(choice)) {
-	printw("[10 - %d] ", max_numunit(ntn_ptr, city_ptr, choice, 0));
+	printw("[10 - %ld] ", max_numunit(ntn_ptr, city_ptr, choice, 0));
       } else {
-	printw("[max %d] ", max_numunit(ntn_ptr, city_ptr, choice, 0));
+	printw("[max %ld] ", max_numunit(ntn_ptr, city_ptr, choice, 0));
       }
     }
     clrtoeol();
