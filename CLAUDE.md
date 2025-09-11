@@ -23,10 +23,10 @@ This is a C modernization project focused on upgrading legacy pre-ANSI C codebas
 
 ```bash
 # Build with C2023 standard (POSIX-compliant)
-gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 *.c -o program
+gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
 
 # Build with additional safety flags
-gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -fsanitize=address -fsanitize=undefined *.c -o program
+gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -fsanitize=address -fsanitize=undefined -I Include Src/*.c -o program
 
 # Cross-platform build test (test on all target platforms)
 # Debian/Ubuntu: gcc -std=c2x -D_POSIX_C_SOURCE=200809L *.c
@@ -714,7 +714,7 @@ PHASE{N}_{TYPE}_{COMPONENT}_{YYYYMMDD}_{HHMMSS}.md
 - **PHASE{N}**: Current phase number (PHASE4, PHASE5, etc.)
 - **TYPE**: Type of memory file
   - `SESSION` - Individual session completion
-  - `MILESTONE` - Major milestone achievement  
+  - `MILESTONE` - Major milestone achievement
   - `STATUS` - Current progress status
   - `STRATEGY` - Planning and strategy documents
   - `CHECKPOINT` - Mid-session progress saves

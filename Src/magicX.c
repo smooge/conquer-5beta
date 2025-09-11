@@ -792,6 +792,7 @@ mgk_sctval PARM_3(NTN_PTR, n1_ptr, int, x, int, y)
     if (MAGIC(n1_ptr->powers[MAG_WIZARDRY], MW_WATER)) {
       hold += 5;
     }
+    /* fallthrough */
   case VEG_JUNGLE:
     /* advantage in such sectors */
     if (MAGIC(n1_ptr->powers[MAG_CIVILIAN], MC_AMPHIBIAN)) {

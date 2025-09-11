@@ -14,9 +14,7 @@
  * the process.
  *                           Ed Barlow, Adam Bryant
  */
-#define _DEFAULT_SOURCE
 #include "dataX.h"
-#include <unistd.h>
 #ifdef SYS_SIGNAL
 #include <sys/signal.h>
 #else
@@ -370,7 +368,7 @@ fork_edit_on_file PARM_2(char *, fname, char *, pstr)
   }
 #else
   errormsg("This function is unavailable within this version of conquer");
-#endif /* ALLOW_EDIT_FORK */  
+#endif /* ALLOW_EDIT_FORK */
 }
 
 /*

@@ -647,12 +647,13 @@ createworld PARM_0(void)
   /* calculate all 50% areas */
   for (i = 0; i < MAPX; i++)
   for (j = 0; j < MAPY; j++) {
-    if (type[i][j] == WORLD_HALF)
+    if (type[i][j] == WORLD_HALF) {
       if (rand_val(2)) {
 	type[i][j] = WORLD_LAND;
       } else {
 	type[i][j] = WORLD_WATER;
       }
+    }
   }
 
   /* count the water */
@@ -1016,7 +1017,7 @@ createworld PARM_0(void)
     /* Now insert the equator */
     for (j = (MAPY / 2) - 8; j <= (MAPY / 2) + 8; j++) {
 
-      if (type[i][j] == WORLD_LAND)
+      if (type[i][j] == WORLD_LAND) {
 	if (rand_val(10) == 0 && sct[i][j].altitude != ELE_PEAK) {
 	  sct[i][j].vegetation = VEG_DESERT;
 	} else {
@@ -1027,6 +1028,7 @@ createworld PARM_0(void)
 	    sct[i][j].vegetation++;
 	  }
 	}
+      }
 
     }
 

@@ -2714,11 +2714,20 @@ xfer_show PARM_0(void)
     apt = (width - strlen(astr) + 1) / 2;
     if (apt < 0) apt = 0;
     if (i == xfer_selection) {
-      sprintf(bstr, "%c%*s%-*s%c",
-	      xfer_indicator[xfer_direction],
-	      apt, "",
-	      width - apt, astr,
-	      xfer_indicator[xfer_direction]);
+      /* Ensure safe formatting with comprehensive bounds checking */
+      int max_width = 40; /* Conservative limit for display width */
+      int safe_apt = (apt > max_width) ? max_width : apt;
+      int safe_width_minus_apt = (width - apt > max_width) ? max_width : (width - apt);
+      /* Truncate astr if too long */
+      char safe_astr[50];
+      strncpy(safe_astr, astr, sizeof(safe_astr) - 1);
+      safe_astr[sizeof(safe_astr) - 1] = '\0';
+      
+      snprintf(bstr, sizeof(bstr), "%c%*s%-*s%c",
+	       xfer_indicator[xfer_direction],
+	       safe_apt, "",
+	       safe_width_minus_apt, safe_astr,
+	       xfer_indicator[xfer_direction]);
       standout();
       mvaddstr(yloc, xloc, bstr);
       standend();
