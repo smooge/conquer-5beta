@@ -620,7 +620,7 @@ god_navyedit PARM_2(int, line, int, navynum)
     clear_bottom(0);
     line = LINES - 4;
     mvprintw(line, 0, "Set what efficiency percentage? [%d%%] ",
-	     NAVY_EFF);
+	     NAVY_EFF[0]);
     value = get_number(FALSE);
     if (no_input == TRUE) break;
 
@@ -999,7 +999,7 @@ god_armyedit PARM_3 (int, line, int, choice, int, armynum)
     /* adjust the men in the unit */
     clear_bottom(0);
     line = LINES - 4;
-    mvprintw(line, 0, "What is the new unit strength? [default=%d] ",
+    mvprintw(line, 0, "What is the new unit strength? [default=%ld] ",
 	     ARMY_SIZE);
     refresh();
     value = get_number(FALSE);
@@ -1261,7 +1261,7 @@ edit_info PARM_2 (int, line, int, choice)
 	    } else {
 	      value = TAKESECTOR;
 	    }
-	    mvprintw(line, 0, "How strong is the unit? [default=%d] ", value);
+	    mvprintw(line, 0, "How strong is the unit? [default=%ld] ", value);
 	    number = get_number(FALSE);
 
 	    /* check input */

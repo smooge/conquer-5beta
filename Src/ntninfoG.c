@@ -452,7 +452,7 @@ ni_instr PARM_0(void)
   if (string[0] == '\0') return;
 
   /* check the string lower */
-  if (strlen(string) < current->item->minval) {
+  if (strlen(string) < (size_t)current->item->minval) {
     errormsg("That string was too short to be used there");
     return;
   }
@@ -1017,7 +1017,7 @@ ni_special PARM_0(void)
 static NI_ITEM items[NIT_NUMBER] = {
   /* the initial empty entry */
   { "= Identifiers =", NIT_BLANK, "", "", "", NI_EMPTY | NI_BOLD,
-      19, 0, 0, ni_ignore, ni_title },
+      19, 0, 0, ni_ignore, ni_title, {0} },
 
   /* the nation information */
   { "Nation", NIT_NATION,
@@ -1025,12 +1025,12 @@ static NI_ITEM items[NIT_NUMBER] = {
       "Please enter a new name for your nation",
       "That name is already in use by another nation",
       NI_PLAYER | NI_GOD | NI_NOSPACE,
-      1, NAMELTH, 0, ni_instr, ni_outstr },
+      1, NAMELTH, 0, ni_instr, ni_outstr, {0} },
   { "Nation Mark", NIT_MARK,
       "This character symbol is used to mark land owned by your nation",
       "Please enter a new character to be used as your nation mark", "",
       NI_PLAYER | NI_GOD,
-      1, 1, 0, ni_inchar, ni_outchar },
+      1, 1, 0, ni_inchar, ni_outchar, {0} },
   { "Leader", NIT_LEADER,
       "This is the name of the noble ruler of your nation",
       "Please enter a new name for your noble leader",

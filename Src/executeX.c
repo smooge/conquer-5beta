@@ -1085,7 +1085,7 @@ exec_item PARM_0(void)
   case EX_ITEMMEN:
     /* number of men needed */
     if (lval1 < 0) {
-      sprintf(string, "Error(%s): I_MEN(%d), Negative value %d",
+      sprintf(string, "Error(%s): I_MEN(%d), Negative value %ld",
 	      exe_ntnname, idnum, lval1);
       errormsg(string);
     } else {
@@ -1487,7 +1487,7 @@ exec_misc PARM_0(void)
 	      exe_ntnname, str1);
       errormsg(string);
     } else if ((str1[0] == '\0') || (strlen(str1) > NAMELTH)) {
-      sprintf(string, "Error(%s): X_NAME, invalid namelength of %d",
+      sprintf(string, "Error(%s): X_NAME, invalid namelength of %zu",
 	      exe_ntnname, strlen(str1));
       errormsg(string);
     } else {
@@ -1526,7 +1526,7 @@ exec_misc PARM_0(void)
   case EX_NTNPASSWD:
     /* set the password */
     if ((str1[0] == '\0') || (strlen(str1) > PASSLTH)) {
-      sprintf(string, "Error(%s): X_PASSWD, invalid password length of %d",
+      sprintf(string, "Error(%s): X_PASSWD, invalid password length of %zu",
 	      exe_ntnname, strlen(str1));
       errormsg(string);
     } else {
@@ -1536,7 +1536,7 @@ exec_misc PARM_0(void)
   case EX_NTNLEADER:
     /* change the leader name */
     if ((str1[0] == '\0') || (strlen(str1) > LEADERLTH)) {
-      sprintf(string, "Error(%s): X_LEADER, invalid leader length of %d",
+      sprintf(string, "Error(%s): X_LEADER, invalid leader length of %zu",
 	      exe_ntnname, strlen(str1));
       errormsg(string);
     } else {
