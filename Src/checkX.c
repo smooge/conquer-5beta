@@ -775,7 +775,7 @@ store_user PARM_1(int, fdval)
       strcpy(hname, "[unknown]");
     }
 #endif /* UNAME */
-    sprintf(infostr, "%s@%s", loginname, hname);
+    snprintf(infostr, sizeof(infostr), "%.10s@%.488s", loginname, hname);
     strcpy(hname, infostr);
 
     /* build up the terminal information */
@@ -789,7 +789,7 @@ store_user PARM_1(int, fdval)
     strcpy(dstr, mach_time());
 
     /* finally, compse the whole thing */
-    sprintf(infostr, "%-18.18s %-12.12s %s", hname, termname, dstr);
+    snprintf(infostr, sizeof(infostr), "%-18.18s %-12.12s %.467s", hname, termname, dstr);
 
     /* now output it */
     numchars = (strlen(infostr) + 1) * sizeof(char);
