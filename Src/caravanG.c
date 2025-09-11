@@ -1641,7 +1641,7 @@ ext_cvncmd PARM_1 (int, cvan)
 	vunit_stat(i)) {
 
       /* check for overruns */
-      if (x + strlen(stat_info[i].input) > COLS - 8) {
+      if (x + (int)strlen(stat_info[i].input) > COLS - 8) {
 	addstr(",");
 	x = 1;
 	move(y++, x);

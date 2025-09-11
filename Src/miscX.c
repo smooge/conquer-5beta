@@ -21,7 +21,7 @@
  * Nation mark validation ensures unique character assignments across all
  * game display elements. Tradegood selection implements weighted probability
  * distributions for realistic economic simulation.
- */ 
+ */
 /* conquer : Copyright (c) 1992 by Ed Barlow and Adam Bryant
  *
  * A good deal of time and effort has gone into the writing of this
@@ -45,6 +45,7 @@
 #include "nclassX.h"
 #include "tgoodsX.h"
 #include "displayX.h"
+#include <time.h>
 
 /*
  * str_test - Case-insensitive string comparison function
@@ -438,7 +439,7 @@ rand_tgood PARM_2(int, tg_class, int, minval)
     /* count 'em up and lay 'em down */
     for (count = 0; count < tgoods_number; count++) {
       /* check it */
-      if ((tg_info[count].class == tg_class) &&
+      if (((int)tg_info[count].class == tg_class) &&
 	  (tg_info[count].value >= minval)) {
 	/* grab it */
 	tg_list[num_elems++] = count;
@@ -520,7 +521,7 @@ num_bits_on PARM_1(long, lng_list)
  *
  * Notes:
  *   - HI_MINDESG: Requires specific minor designation type
- *   - HI_MAJDESG: Requires specific major designation type  
+ *   - HI_MAJDESG: Requires specific major designation type
  *   - HI_OWN: Requires specific nation ownership
  *   - HI_TGOODS: Requires specific tradegood type
  *   - Used by display system to determine parameter requirements

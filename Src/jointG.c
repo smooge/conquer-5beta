@@ -762,6 +762,7 @@ bind_func PARM_1(int, which)
 void
 hangup PARM_1(int, sig)
 {
+  (void)sig; /* Signal number not used in current implementation */
   /* finish up the nation */
   if (movemode != MOVE_NOMOVE) {
     move_relocate(movemode, FALSE);

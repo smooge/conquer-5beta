@@ -277,7 +277,7 @@ adjust_region PARM_2(int, x, int, y)
 	break;
       }
       if (rnum > CITY_PEOPLE) {
-	mvprintw(LINES - 1, 0, "There are only %ld people in the sector",
+	mvprintw(LINES - 1, 0, "There are only %d people in the sector",
 		 CITY_PEOPLE);
 	break;
       }

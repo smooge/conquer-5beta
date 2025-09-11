@@ -93,6 +93,7 @@ sort_news PARM_1(int, newsturn)
 void
 random_name PARM_2( char *, str, int, race )
 {
+  (void)race; /* Race parameter not used in current implementation */
   /*ARGSUSED*/
   register int i;
   int length = rand_val(NAMELTH - 5) + 3;
