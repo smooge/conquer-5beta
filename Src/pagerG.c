@@ -1121,6 +1121,7 @@ page_file PARM_2(char *, fname, int, news)
 	}
 	strcpy(search_str, string);
       }
+      /* fallthrough */
     case 'N':
       /* repeat search backward */
       if (strlen(search_str) == 0) {
@@ -1169,6 +1170,7 @@ page_file PARM_2(char *, fname, int, news)
 	}
 	strcpy(search_str, string);
       }
+      /* fallthrough */
     case 'n':
       /* repeat search forward */
       if (strlen(search_str) == 0) {
