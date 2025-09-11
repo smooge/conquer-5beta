@@ -550,12 +550,9 @@ convert PARM_0(void)
   long x;
 
   /* set the names and password */
-  strncpy(ntn_ptr->leader, AU_lname, LEADERLTH);
-  ntn_ptr->leader[LEADERLTH] = '\0';
-  strncpy(ntn_ptr->name, AU_name, NAMELTH);
-  ntn_ptr->name[NAMELTH] = '\0';
-  strncpy(ntn_ptr->passwd, AU_passwd, PASSLTH);
-  ntn_ptr->passwd[PASSLTH] = '\0';
+  snprintf(ntn_ptr->leader, sizeof(ntn_ptr->leader), "%s", AU_lname);
+  snprintf(ntn_ptr->name, sizeof(ntn_ptr->name), "%s", AU_name);
+  snprintf(ntn_ptr->passwd, sizeof(ntn_ptr->passwd), "%s", AU_passwd);
   ntn_ptr->mark = AU_mark;
 
   /* now set the nation statistics */
@@ -1056,8 +1053,7 @@ place PARM_2(int, xloc, int, yloc)
   }
 
   /* check the location */
-  if ((ntn_ptr->location < 0) ||
-      (ntn_ptr->location >AU_EXCELLENT)) {
+  if ((int)ntn_ptr->location > AU_EXCELLENT) {
     errormsg("Invalid location setting... set to OOPS");
     ntn_ptr->location = AU_OOPS;
   }
@@ -1585,7 +1581,7 @@ newlogin PARM_1(int, makenpcs)
     clrtoeol();
     standout();
     mvprintw(0, COLS / 2 - 12 - strlen(AU_name) / 2,
-	     "< Building Country %s >", AU_name, country);
+	     "< Building Country %s >", AU_name);
     standend();
     clrtoeol();
 
