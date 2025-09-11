@@ -1287,6 +1287,7 @@ edit_info PARM_2 (int, line, int, choice)
 	}
 	break;
       }
+      break;
     default:
       /* invalid command */
       errormsg("That is not one of the available options!");
@@ -1410,6 +1411,7 @@ edit_info PARM_2 (int, line, int, choice)
 	}
 	break;
       }
+      break;
     default:
       /* I don't know nothing! */
       errormsg("That isn't any of the options I told you about!");
@@ -1533,6 +1535,7 @@ edit_info PARM_2 (int, line, int, choice)
 	}
 	break;
       }
+      break;
     default:
       /* unknown command */
       errormsg("That is not among the options I gave you!");
