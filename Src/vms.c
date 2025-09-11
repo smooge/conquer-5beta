@@ -12,8 +12,9 @@
 #include "paramX.h"
 #define PASSLTH 8
 #ifdef VAXC
-#include stdio
-#include varargs
+#include <stdio.h>
+#include <string.h>
+#include <varargs.h>
 #include <curses.h>
 
 /*
@@ -90,14 +91,15 @@ void
 getlogon PARM_1 (int, user)
 {
   char temp[13];
-  char *temp2;
+  /* Note: This function appears incomplete - temp2 destination unclear */
+  /* Commenting out unsafe strncpy to unallocated pointer */
   int i;
 
   cuserid(temp);
   for(i=0;i<13;i++){
     if(temp[i]=='\0') break;
   }
-  strncpy(temp2, temp, i+1);
+  /* TODO: strncpy(temp2, temp, i+1); - temp2 not allocated */
 }
 
 /*
@@ -134,17 +136,23 @@ getpass PARM_1(char *, prompt)
   static unsigned char buffer[PASSLTH + 1];
 
   system("set term/noecho");
-  printf(prompt);
-  gets(buffer);
+  printf("%s", prompt);
+  if (fgets(buffer, PASSLTH, stdin) != NULL) {
+    /* Remove trailing newline if present */
+    size_t len = strlen(buffer);
+    if (len > 0 && buffer[len-1] == '\n') {
+      buffer[len-1] = '\0';
+    }
+  }
   system("set term/echo");
   return(buffer);
 }
 #endif /*VAXC*/
 
 #ifdef VMS
-#include descrip
-#include iodef
-#include tt2def
+#include <descrip.h>
+#include <iodef.h>
+#include <tt2def.h>
 
 static $DESCRIPTOR (term_name, "SYS$INPUT:");
 struct char_buffer_type { unsigned short int dummy;
@@ -228,3 +236,8 @@ resetterm()
   sys$dassgn(term_chan);
 }
 #endif /* VMS */
+
+/* Prevent empty translation unit warning on non-VMS systems */
+#if !defined(VAXC) && !defined(VMS)
+typedef int vms_dummy_type;
+#endif
