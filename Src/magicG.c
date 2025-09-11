@@ -655,7 +655,7 @@ go_spell PARM_2(Spelltype, spl_number, int, maxpts)
 
   /* first check the spell */
   if ((spl_number < 0) ||
-      (spl_number >= spell_number)) {
+      ((int)spl_number >= spell_number)) {
     errormsg("Major Internal Error: Unknown spell type!");
     return(-1);
   }
@@ -791,7 +791,7 @@ go_spell PARM_2(Spelltype, spl_number, int, maxpts)
     }
 
     /* now find out desired amount */
-    mvprintw(LINES - 3, 0, "Transmute how much %s? [%d] ",
+    mvprintw(LINES - 3, 0, "Transmute how much %s? [%ld] ",
 	     mtrls_info[i].lname, maxamt);
     amount = get_number(FALSE);
     if (no_input == TRUE) {
@@ -971,7 +971,7 @@ cast_spells PARM_0(void)
 
   /* now go through the list of possible spells */
   for (spell_num = 0;
-       spell_num < spell_number;
+       (int)spell_num < spell_number;
        spell_num++) {
 
     /* is the spell possible? */
@@ -1016,12 +1016,12 @@ cast_spells PARM_0(void)
     xspot = toupper(xspot);
   }
   for (spell_num = 0;
-       spell_num < spell_number;
+       (int)spell_num < spell_number;
        spell_num++) {
     if (xspot ==
 	spell_list[spell_num].prompt[spell_list[spell_num].keypos - 1]) break;
   }
-  if (spell_num == spell_number) {
+  if ((int)spell_num == spell_number) {
     /* nope, not right on that one */
     errormsg("That is not any spell that I have heard of");
     if ((is_god == TRUE) &&
@@ -1946,7 +1946,7 @@ mg_info PARM_0(void)
 
 	/* check the limit */
 	strcpy(string, tmp_mg2ptr[i].name);
-	if (strlen(string) + xloc > COLS - 20) {
+	if ((int)strlen(string) + xloc > COLS - 20) {
 	  xloc = 5;
 	  yloc++;
 	}
@@ -1987,7 +1987,7 @@ mg_info PARM_0(void)
       } else {
 	yep = FALSE;
       }
-      if (strlen(ainfo_list[i].name) + xloc > COLS - 15) {
+      if ((int)strlen(ainfo_list[i].name) + xloc > COLS - 15) {
 	xloc = 5;
 	yloc++;
       }
@@ -2037,7 +2037,7 @@ mg_info PARM_0(void)
       } else {
 	yep = FALSE;
       }
-      if (strlen(spell_list[i].name) + xloc > COLS - 15) {
+      if ((int)strlen(spell_list[i].name) + xloc > COLS - 15) {
 	xloc = 5;
 	yloc++;
       }
