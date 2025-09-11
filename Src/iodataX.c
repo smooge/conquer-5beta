@@ -222,7 +222,7 @@ wr_unumlist PARM_3(FILE *, out_stream, UNUM_PTR, unum_list, int, num_unum)
     /* write it out */
     if ((bytes = fwrite(unum_list, sizeof(UNITNUM), 1, out_stream)) != 1) {
       fprintf(fupdate, "\nERROR: unum data not written\n");
-      fprintf(fupdate, "Wrong data size (%ld vs. 1)\n", bytes);
+      fprintf(fupdate, "Wrong data size (%d vs. 1)\n", bytes);
       abrt();
     }
   }
@@ -270,7 +270,7 @@ wr_maplist PARM_3(FILE *, out_stream, MAP_PTR, map_list, int, num_maps)
     /* write it out */
     if ((bytes = fwrite(map_list, sizeof(MAP_STRUCT), 1, out_stream)) != 1) {
       fprintf(fupdate, "\nERROR: map data not written\n");
-      fprintf(fupdate, "Wrong data size (%ld vs. 1)\n", bytes);
+      fprintf(fupdate, "Wrong data size (%d vs. 1)\n", bytes);
       abrt();
     }
   }
@@ -2139,7 +2139,7 @@ read_data PARM_0(void)
       item_tptr = new_item();
       if ((bytes = fread(item_tptr, sizeof(ITEM_STRUCT), 1, fdata)) != 1) {
 	fprintf(fupdate, "ERROR: commodity data not read\n");
-	fprintf(fupdate, "Wrong data size (%ld vs. %d)\n", bytes, 1);
+	fprintf(fupdate, "Wrong data size (%zu vs. %d)\n", bytes, 1);
 	return(FALSE);
       }
 #ifdef DEBUG
