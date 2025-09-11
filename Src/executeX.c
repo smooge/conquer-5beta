@@ -1497,7 +1497,7 @@ exec_misc PARM_0(void)
 	fprintf(fupdate, "==> Renaming Nation %s to %s\n",
 		ntn_ptr->name, str1);
 	sprintf(string, "%s.%s", ntn_ptr->name, msgtag);
-	sprintf(buf, "%s.%s", str1, msgtag);
+	snprintf(buf, sizeof(buf), "%.10s.%.10s", str1, msgtag);
 	if (move_file(string, buf) != 0) {
 	  fprintf(fupdate, "   (could not find a mail file to move)\n");
 	}
