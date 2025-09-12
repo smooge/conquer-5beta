@@ -116,6 +116,7 @@ ITEM_PTR
 majdesg_costs PARM_4(int, which, int, x, int, y, int, verbal)
 {
   /*ARGSUSED*/
+  (void)verbal;  /* Suppress unused parameter warning */
   ITEM_PTR cost_ptr = NULL;
   SCT_PTR sptr;
   int olddesg, mult, i, j;
@@ -431,6 +432,7 @@ desg_ok PARM_4(int, x, int, y, int, dtype, int, verbal)
 	if (verbal) errormsg("The elevation prevents canal construction");
 	return(FALSE);
       }
+      /* fallthrough */
     default:
       if ((olddesg == MAJ_CITY) &&
 	  !minor_desg(sptr->designation, MIN_DEVASTATED)) {
@@ -716,7 +718,7 @@ mindesg_ok PARM_4(int, x, int, y, int, mdtype, int, verbal)
 {
   CITY_PTR c1_ptr;
   SCT_PTR sptr;
-  int i, closed_harbor = FALSE, majdesg, value, is_sieged = FALSE;
+  int i, majdesg, value, is_sieged = FALSE;
 
   /* check the input */
   if (!XY_ONMAP(x, y)) {
@@ -767,7 +769,7 @@ mindesg_ok PARM_4(int, x, int, y, int, mdtype, int, verbal)
       global_int = FALSE;
       map_loop(x, y, 1, water_nearby);
       if (global_int == FALSE) {
-	closed_harbor = TRUE;
+	/* closed_harbor = TRUE; */  /* Removed unused variable */
 	map_loop(x, y, 1, canal_nearby);
 	if (global_int == FALSE) {
 	  if (verbal) errormsg("A harbor needs access to water");
