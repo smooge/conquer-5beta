@@ -533,7 +533,7 @@ option_cmd PARM_2(KEYSYS_STRUCT, key_info, KLIST_PTR *, list_of_keys)
       addstr(", ");
       x += 2;
     }
-    if (x + strlen(string) > COLS - 1) {
+    if (x + (int)strlen(string) > COLS - 1) {
       x = 1;
       y++;
     }
@@ -2150,7 +2150,7 @@ do_help PARM_0(void)
 	xspot += 2;
       }
       strcpy(string, tgclass_info[i].name);
-      if (xspot + strlen(string) > COLS - 5) {
+      if (xspot + (int)strlen(string) > COLS - 5) {
 	xspot = 2;
 	yline++;
       }
@@ -2194,7 +2194,7 @@ do_help PARM_0(void)
     /* find the total rate of all of the items in the class */
     val = 0;
     for (j = 0; j < tgoods_number; j++) {
-      if (tg_info[j].class == global_int) {
+      if ((int)tg_info[j].class == global_int) {
 	val += tg_info[j].rate;
       }
     }
@@ -2205,7 +2205,7 @@ do_help PARM_0(void)
     mvprintw(i++, (COLS - 56) / 2, " %-20s   %5s %7s %10s  %7s",
 	     "--------------", "-----", "-------", "---------", "-------" );
     for (j = 0; j < tgoods_number; j++) {
-      if (tg_info[j].class == global_int) {
+      if ((int)tg_info[j].class == global_int) {
 	mvprintw(i++, (COLS - 56) / 2,
 		 "%-20s    %4d  %3d.%1d%%  %-10.10s    %4d",
 		 tg_info[j].name, tg_info[j].value,
