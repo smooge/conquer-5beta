@@ -1328,11 +1328,11 @@ show_scores PARM_0(void)
       } else {
 
 	/* show the scores */
-	printf("%5d ", ntn_ptr->score);
+	printf("%5ld ", ntn_ptr->score);
 	printf("%8.0f ", (double) ntn_ptr->mtrls[MTRLS_TALONS]);
 	printf("%5ld ", ntn_ptr->tmil);
 	printf("%6ld ", ntn_ptr->tciv);
-	printf("%3ld", ntn_ptr->tsctrs);
+	printf("%3d", ntn_ptr->tsctrs);
 
       }
 
@@ -1568,7 +1568,7 @@ dump_ntn_info PARM_0(void)
     printf("Army_type[%d]: %s (%d)\n", ARMY_ID, ainfo_list[ARMY_TYPE].name,
 	   ARMY_TYPE);
     printf("Army_efficiency[%d]: %d\n", ARMY_ID, ARMY_EFF);
-    printf("Army_strength[%d]: %d\n", ARMY_ID, ARMY_SIZE);
+    printf("Army_strength[%d]: %ld\n", ARMY_ID, ARMY_SIZE);
     printf("Army_umove[%d]: %d\n", ARMY_ID, ARMY_MOVE);
     printf("Army_spellpts[%d]: %d\n", ARMY_ID, ARMY_SPTS);
     printf("Army_supply[%d]: %d\n", ARMY_ID, ARMY_SPLY);
@@ -1610,7 +1610,7 @@ dump_ntn_info PARM_0(void)
     }
     printf("City_i_people[%s]: %d\n", CITY_NAME, CITY_PEOPLE);
     printf("City_weight[%s]: %d\n", CITY_NAME, CITY_WEIGHT);
-    printf("City_s_talons[%s]: %d\n", CITY_NAME, CITY_STALONS);
+    printf("City_s_talons[%s]: %ld\n", CITY_NAME, CITY_STALONS);
     printf("City_fortress[%s]: %d\n", CITY_NAME, CITY_FORT);
     
     for (i = 0; i < MTRLS_NUMBER; i++) {
