@@ -115,6 +115,7 @@ send_dummy_char()
 void
 win_size_change PARM_1(int, sig)
 {
+  (void)sig;  /* Suppress unused parameter warning */
 #ifdef WINCH_HANDLER
   struct winsize w;
   int set_size = FALSE;
@@ -1483,7 +1484,7 @@ extend_str PARM_2 (char *, str, int, stype)
   if (matches > 1) {
 
     /* end at last full completion if the list is too long */
-    if (strlen(bufstr) > COLS - 35) {
+    if ((int)strlen(bufstr) > COLS - 35) {
       for (count = COLS - 35; count > 0;
 	   count--) {
 	if (bufstr[count] != ' ') break;
