@@ -1453,16 +1453,19 @@ upd_nations PARM_1(int, which)
 	  case MAJ_CAPITAL:
 	    /* count the capital as 3 cities */
 	    ncities += 2;
+	    /* fallthrough */
 	  case MAJ_CITY:
 	    /* add 'em up */
 	    cityfolk += sct_ptr->people;
 	    ncities++;
+	    /* fallthrough */
 	  case MAJ_TOWN:
 	    /* townies... */
 	    if (d == MAJ_TOWN) {
 	      townfolk += sct_ptr->people;
 	      ntowns++;
 	    }
+	    /* fallthrough */
 	  case MAJ_STOCKADE:
 	    /* adjust for certain minor designations */
 	    if (minor_desg(sct_ptr->designation, MIN_BLACKSMITH)) {
