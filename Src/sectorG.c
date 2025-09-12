@@ -205,6 +205,7 @@ change_desg PARM_0(void)
 
       /* a vegetation value must be entered */
       if (sct_ptr->vegetation == VEG_NONE) mustset = TRUE;
+      /* FALLTHROUGH */
     case 'V':
     case 'v':
       /* check for water */
@@ -409,6 +410,7 @@ change_desg PARM_0(void)
       if (tg_ismetal(value) ||
 	  tg_isspell(value) ||
 	  tg_isjewel(value)) mustset = TRUE;
+      /* FALLTHROUGH */
     case 'M':
     case 'm':
       /* check for emptry tradegoods */
@@ -511,7 +513,7 @@ change_desg PARM_0(void)
     }
 
     /* check spacing */
-    if (xloc + strlen(desg_selects[count]) > COLS - 8) {
+    if (xloc + (int)strlen(desg_selects[count]) > COLS - 8) {
       yloc++;
       xloc = 2;
       move(yloc, xloc);
@@ -885,7 +887,7 @@ construct PARM_0(void)
     }
 
     /* check positioning */
-    if (xloc + strlen(string) > COLS - 8) {
+    if (xloc + (int)strlen(string) > COLS - 8) {
       yloc++;
       xloc = 5;
       move(yloc, xloc);
@@ -1228,10 +1230,10 @@ sect_info PARM_0(void)
 
     /* show supply center specifics */
     if (c1_ptr->i_people >= 0) {
-      mvprintw(line++, col_val, "Recruits: %ld",
+      mvprintw(line++, col_val, "Recruits: %d",
 	       c1_ptr->i_people);
     } else {
-      mvprintw(line++, col_val, "Build: %ld mths", - c1_ptr->i_people);
+      mvprintw(line++, col_val, "Build: %d mths", - c1_ptr->i_people);
     }
     count = r10_region(n1_ptr, c1_ptr, s1_ptr);
     mvprintw(line++, col_val, "Range: %d.%d",
