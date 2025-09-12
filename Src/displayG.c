@@ -1037,7 +1037,7 @@ get_hd_info PARM_1(int, hilitep)
       addstr(", ");
       xloc += 2;
     }
-    if (xloc + strlen( hd_list[temp] ) > COLS - 7) {
+    if (xloc + (int)strlen( hd_list[temp] ) > COLS - 7) {
       xloc = 2;
       yloc++;
       move( yloc, xloc );
@@ -1628,19 +1628,19 @@ s_sideshow PARM_1(int, move_ind)
       }
     }
     if (conq_infomode) {
-      mvprintw(LINES - 7, 0, "food: %d",
+      mvprintw(LINES - 7, 0, "food: %ld",
 	       distort_vision(XREAL, YREAL,
 			      tofood(sct_ptr, country),
 			      sct_ptr->people));
-      mvprintw(LINES - 7, 10 + (COLS - 80) / 3, "wood: %d",
+      mvprintw(LINES - 7, 10 + (COLS - 80) / 3, "wood: %ld",
 	       distort_vision(XREAL, YREAL, towood(sct_ptr, country),
 			      sct_ptr->people));
     } else {
-      mvprintw(LINES - 8, COLS - SCREEN_RIGHT, "food:%5d",
+      mvprintw(LINES - 8, COLS - SCREEN_RIGHT, "food:%5ld",
 	       distort_vision(XREAL, YREAL,
 			      tofood(sct_ptr, country),
 			      sct_ptr->people));
-      mvprintw(LINES - 8, COLS - 9, "wood:%3d",
+      mvprintw(LINES - 8, COLS - 9, "wood:%3ld",
 	       distort_vision(XREAL, YREAL, towood(sct_ptr, country),
 			      sct_ptr->people));
     }
@@ -1657,7 +1657,7 @@ s_sideshow PARM_1(int, move_ind)
 	  mvprintw(LINES - 6,
 		   (conq_infomode ? (19 + (2 * (COLS - 80)) / 3) :
 		    (COLS - SCREEN_RIGHT)),
-		   "jewel: %*d", (conq_infomode ? 0 : 3),
+		   "jewel: %*ld", (conq_infomode ? 0 : 3),
 		   distort_vision(XREAL, YREAL,
 				  jewel_value(sct_ptr),
 				  sct_ptr->people));
@@ -1665,7 +1665,7 @@ s_sideshow PARM_1(int, move_ind)
 	  mvprintw(LINES - 6,
 		   (conq_infomode ? (19 + (2 * (COLS - 80)) / 3) :
 		    (COLS - SCREEN_RIGHT)),
-		   "metal: %*d", (conq_infomode ? 0 : 3),
+		   "metal: %*ld", (conq_infomode ? 0 : 3),
 		   distort_vision(XREAL, YREAL,
 				  metal_value(sct_ptr),
 				  sct_ptr->people));
@@ -1673,7 +1673,7 @@ s_sideshow PARM_1(int, move_ind)
 	  mvprintw(LINES - 6,
 		   (conq_infomode ? (19 + (2 * (COLS - 80)) / 3) :
 		    (COLS - SCREEN_RIGHT)),
-		   "magic: %*d", (conq_infomode ? 0 : 3),
+		   "magic: %*ld", (conq_infomode ? 0 : 3),
 		   distort_vision(XREAL, YREAL,
 				  magic_value(sct_ptr),
 				  sct_ptr->people));
@@ -1983,7 +1983,7 @@ change_view PARM_0(void)
       addstr(", ");
       x += 2;
     }
-    if (x + strlen( cv_name[i] ) > COLS - 10) {
+    if (x + (int)strlen( cv_name[i] ) > COLS - 10) {
       x = 5;
       y++;
       move(y, x);
@@ -2047,7 +2047,7 @@ change_view PARM_0(void)
       x++;
     }
     sprintf( string, " %s [%c]", tmpstr, in_ch );
-    if (x + strlen(string) > COLS - 5) {
+    if (x + (int)strlen(string) > COLS - 5) {
       x = 2;
       y++;
     }
@@ -2221,7 +2221,7 @@ side_troops PARM_3(int, start_pos, int, max_pos, int, show_all)
 	  found2++;
 	show_monster_troop:
 	  if (found2 - 1 < max_pos) {
-	    sprintf(string, "%d %s",
+	    sprintf(string, "%ld %s",
 		    ARMYT_SIZE, ainfo_list[ARMYT_TYPE].name);
 	    if (ARMYT_SIZE > 1) strcat(string, "s");
 	    sprintf(sidestr, "%.*s", SCREEN_RIGHT, string);
@@ -2283,7 +2283,7 @@ side_troops PARM_3(int, start_pos, int, max_pos, int, show_all)
 	  sprintf(string, "%s: ?? men", ntn_tptr->name);
 	} else {
 	  /* provide the estimate */
-	  sprintf(string, "%s: %d men", ntn_tptr->name,
+	  sprintf(string, "%s: %ld men", ntn_tptr->name,
 		  distort_vision(XREAL, YREAL, enemy, enemy * 3));
 	}
 	sprintf(sidestr, "%.*s", SCREEN_RIGHT, string);
@@ -2334,13 +2334,13 @@ side_troops PARM_3(int, start_pos, int, max_pos, int, show_all)
 
 	/* can they see clearly? */
 	if (country == UNOWNED || WIZ_MAGIC(MW_SEEALL)) {
-	  sprintf(string, "%s: %d ships", ntn_tptr->name,
+	  sprintf(string, "%s: %ld ships", ntn_tptr->name,
 		  distort_vision(XREAL, YREAL, enemy, enemy * 3));
 	} else if (MAGIC(ntn_tptr->powers[MAG_WIZARDRY], MW_HIDDEN)) {
 	  sprintf(string, "%s: ?? ships", ntn_tptr->name);
 	} else {
 	  /* estimate */
-	  sprintf(string, "%s: %d ships", ntn_tptr->name,
+	  sprintf(string, "%s: %ld ships", ntn_tptr->name,
 		  distort_vision(XREAL, YREAL, enemy, enemy * 3));
 	}
 	sprintf(sidestr, "%.*s", SCREEN_RIGHT, string);
@@ -2388,13 +2388,13 @@ side_troops PARM_3(int, start_pos, int, max_pos, int, show_all)
 
 	/* can they see clearly? */
 	if (country == UNOWNED || WIZ_MAGIC(MW_SEEALL)) {
-	  sprintf(string, "%s: %d wagons", ntn_tptr->name,
+	  sprintf(string, "%s: %ld wagons", ntn_tptr->name,
 		  distort_vision(XREAL, YREAL, enemy, enemy * 3));
 	} else if (MAGIC(ntn_tptr->powers[MAG_WIZARDRY], MW_HIDDEN)) {
 	  sprintf(string, "%s: ?? wagons", ntn_tptr->name);
 	} else {
 	  /* estimate */
-	  sprintf(string, "%s: %d wagons", ntn_tptr->name,
+	  sprintf(string, "%s: %ld wagons", ntn_tptr->name,
 		  distort_vision(XREAL, YREAL, enemy, enemy * 3));
 	}
 	sprintf(sidestr, "%.*s", SCREEN_RIGHT, string);
