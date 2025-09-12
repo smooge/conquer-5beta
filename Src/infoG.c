@@ -170,7 +170,7 @@ disp_city_info PARM_2 (int, xpos, int, line)
     for (i = 0; i < MTRLS_NUMBER; i++) {
       mvprintw(line + i, xpos + CINFO_WIDTH2, "%s:%*.0lf",
 	       mtrls_info[i].name,
-	       18 - strlen(mtrls_info[i].name),
+	       (int)(18 - strlen(mtrls_info[i].name)),
 	       (double) ntn_ptr->mtrls[i]);
     }
 
@@ -211,7 +211,7 @@ disp_city_info PARM_2 (int, xpos, int, line)
     for (i = 0; i < MTRLS_NUMBER; i++) {
       mvprintw(line + i, xpos + CINFO_WIDTH2, "%s:%*.0lf",
 	       mtrls_info[i].name,
-	       18 - strlen(mtrls_info[i].name),
+	       (int)(18 - strlen(mtrls_info[i].name)),
 	       (double) city_Iptr->c_mtrls[i]);
     }
 
@@ -970,7 +970,7 @@ disp_info PARM_3 (int, x, int, y, Infotype, choice)
       mvaddstr( y++, x, ". . .");
       mvaddstr( y++, x, ". . .");
     } else {
-      mvprintw( y++, x, "%d", ntn_Iptr->score );
+      mvprintw( y++, x, "%ld", ntn_Iptr->score );
       mvprintw( y++, x, "%.0f", (double) ntn_Iptr->mtrls[MTRLS_TALONS] );
       mvprintw( y++, x, "%.0f", (double) ntn_Iptr->tmil );
       mvprintw( y++, x, "%.0f", (double) ntn_Iptr->tciv );
