@@ -73,6 +73,9 @@ int shrine_helped = 0;
 void
 dflt_disp_setup PARM_3(char *, str, char *, fstr, int, lnum)
 {
+  (void)str;
+  (void)fstr;
+  (void)lnum;
   /*ARGSUSED*/
 }
 
@@ -110,6 +113,9 @@ dflt_disp_setup PARM_3(char *, str, char *, fstr, int, lnum)
 void
 display_setup PARM_3(char *, str, char *, fstr, int, lnum)
 {
+  (void)str;
+  (void)fstr;
+  (void)lnum;
   /*ARGSUSED*/
 }
 
@@ -149,6 +155,10 @@ display_setup PARM_3(char *, str, char *, fstr, int, lnum)
 void
 keysys_setup PARM_4(int, type, char *, str, char *, fstr, int, lnum)
 {
+  (void)type;
+  (void)str;
+  (void)fstr;
+  (void)lnum;
   /*ARGSUSED*/
 }
 
@@ -251,6 +261,7 @@ check_spells PARM_3(int, spellnum, int, xloc, int, yloc)
 char *
 bind_func PARM_1(int, which)
 {
+  (void)which;
   /*ARGSUSED*/
   return((char *) NULL);
 }
@@ -292,6 +303,7 @@ bind_func PARM_1(int, which)
 void
 hangup PARM_1(int, sig)
 {
+  (void)sig;
   extern int addlocknum, uplocknum;
   extern char lock_string[FILELTH];
 
