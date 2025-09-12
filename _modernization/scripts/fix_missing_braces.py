@@ -75,6 +75,35 @@ def fix_display_struct_braces(content):
     return content
 
 
+def fix_ainfo_struct_braces(content):
+    """Fix AINFO_STRUCT initializations with missing braces around pow_need array."""
+    
+    # Pattern to match AINFO_STRUCT entries that end with 3 values (pow_need[MAG_NUMBER])
+    # The last three values can be identifiers (MM_*, MW_*) or hex values (0x0L)
+    # Also handles bitwise operations like MW_VAMPIRE | MW_THEVOID
+    # Examples: 
+    #   1, 1, 0x0L, 0x0L, 0x0L }
+    #   250, 50, MM_NINJA, 0x0L, 0x0L }
+    #   250, 100, 0x0L, 0x0L, MW_VAMPIRE | MW_THEVOID }
+    ainfo_pattern = r'(\s+)(\d+, \d+,)(\s*)([^,]+,\s*[^,]+,\s*[^}]+)(\s*\})'
+    
+    def fix_ainfo_entry(match):
+        indent = match.group(1)
+        prefix = match.group(2)
+        spacing = match.group(3)
+        pow_need_values = match.group(4)
+        suffix = match.group(5)
+        
+        # Add braces around the pow_need array values
+        braced_values = "{" + pow_need_values.strip() + "}"
+        
+        return indent + prefix + spacing + braced_values + suffix
+    
+    content = re.sub(ainfo_pattern, fix_ainfo_entry, content)
+    
+    return content
+
+
 def fix_multidimensional_arrays(content):
     """Fix multi-dimensional array initializations."""
     
@@ -120,6 +149,7 @@ def process_file(file_path, dry_run=False):
         
         # Apply fixes
         content = fix_display_struct_braces(content)
+        content = fix_ainfo_struct_braces(content)
         content = fix_multidimensional_arrays(content)
         
         if content != original_content:
