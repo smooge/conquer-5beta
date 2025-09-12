@@ -596,7 +596,7 @@ em_delchar PARM_1(int, which)
     break;
   case EM_S_SUBJECT:
     /* delete within the subject line */
-    if (which < strlen(cur_message->subj)) {
+    if (which < (int)strlen(cur_message->subj)) {
 
       /* traverse and shift copy */
       ch_ptr = &(cur_message->subj[which]);
@@ -614,7 +614,7 @@ em_delchar PARM_1(int, which)
   case EM_S_BODY:
     /* delete within the body */
     if ((cur_line != NULL) &&
-	(which < strlen(cur_line->line_data))) {
+	(which < (int)strlen(cur_line->line_data))) {
 
       /* traverse and shift copy */
       ch_ptr = &(cur_line->line_data[which]);
@@ -705,11 +705,11 @@ em_delleft PARM_0(void)
 
     /* check for being beyond end */
     if (email_status % 4 == EM_S_BODY) {
-      if (char_position > strlen(cur_line->line_data)) {
+      if (char_position > (int)strlen(cur_line->line_data)) {
 	char_position = strlen(cur_line->line_data);
       }
     } else if ((email_status % 4 == EM_S_SUBJECT) &&
-	       char_position > strlen(cur_message->subj)) {
+	       char_position > (int)strlen(cur_message->subj)) {
       char_position = strlen(cur_message->subj);
     }
     return(em_delchar(--char_position));
@@ -1031,7 +1031,7 @@ em_forward PARM_0(void)
     break;
   case EM_S_SUBJECT:
     /* traverse or go to the first body line */
-    if (char_position < strlen(cur_message->subj)) {
+    if (char_position < (int)strlen(cur_message->subj)) {
       char_position++;
     } else {
       em_down();
@@ -1040,7 +1040,7 @@ em_forward PARM_0(void)
     break;
   case EM_S_BODY:
     /* traverse or go the next following line */
-    if (char_position < strlen(cur_line->line_data)) {
+    if (char_position < (int)strlen(cur_line->line_data)) {
       char_position++;
     } else if (cur_line->next != NULL) {
       em_down();
@@ -1120,7 +1120,7 @@ em_backward PARM_0(void)
   case EM_S_SUBJECT:
     /* go back along the subject */
     if (char_position > 0) {
-      if (char_position > strlen(cur_message->subj)) {
+      if (char_position > (int)strlen(cur_message->subj)) {
 	char_position = strlen(cur_message->subj);
       }
       char_position--;
@@ -1133,7 +1133,7 @@ em_backward PARM_0(void)
   case EM_S_BODY:
     /* simply travel backwards */
     if (char_position > 0) {
-      if (char_position > strlen(cur_line->line_data)) {
+      if (char_position > (int)strlen(cur_line->line_data)) {
 	char_position = strlen(cur_line->line_data);
       }
       char_position--;
@@ -1209,7 +1209,7 @@ em_newline PARM_0(void)
     break;
   case EM_S_BODY:
     /* check for past end of line */
-    if (char_position > strlen(cur_line->line_data)) {
+    if (char_position > (int)strlen(cur_line->line_data)) {
       char_position = strlen(cur_line->line_data);
     }
 
@@ -1360,7 +1360,7 @@ email_addchar PARM_1(int, inp_ch)
     }
     break;
   case EM_S_SUBJECT:
-    if (char_position > strlen(cur_message->subj)) {
+    if (char_position > (int)strlen(cur_message->subj)) {
       char_position = strlen(cur_message->subj);
     }
     /* check the limit */
@@ -1409,7 +1409,7 @@ email_addchar PARM_1(int, inp_ch)
     }
     break;
   case EM_S_BODY:
-    if (char_position > strlen(cur_line->line_data)) {
+    if (char_position > (int)strlen(cur_line->line_data)) {
       char_position = strlen(cur_line->line_data);
     }
     /* check the limit */
@@ -1647,7 +1647,7 @@ email_show PARM_0(void)
       count1 += 2;
     }
     (void) ntn_realname(&(nstr[0]), cur_message->to_whom[count2]);
-    if (count1 + strlen(nstr) + 2 > COLS - 8) {
+    if ((int)(count1 + strlen(nstr) + 2) > COLS - 8) {
       mvaddstr(tolines - 1, 0, tostr);
       strcpy(tostr, "    ");
       count1 = 4;
@@ -1720,7 +1720,7 @@ email_show PARM_0(void)
   for (; travel_line != NULL; travel_line = travel_line->next) {
     if ((base == EM_S_BODY) &&
 	(travel_line == cur_line)) {
-      xpos = min(char_position, strlen(travel_line->line_data));
+      xpos = min((size_t)char_position, strlen(travel_line->line_data));
       ypos = count2;
     }
     mvaddstr(count2++, 0, travel_line->line_data);
@@ -1845,8 +1845,10 @@ email_prep PARM_0(void)
       switch (rand_val(3)) {
       case 0:
 	strcpy(cur_message->nickname, "The All Knowing");
+	/* FALLTHROUGH */
       case 1:
 	strcpy(cur_message->nickname, "The All Mighty");
+	/* FALLTHROUGH */
       case 2:
 	strcpy(cur_message->nickname, "The All Powerful");
 	break;
