@@ -55,6 +55,11 @@ Before changing a single line of code, establishing a modern, strict, and contro
    - Use `pwd` command to get the current working directory
    - Document the full path in this CLAUDE.md file for future session reference
    - **Project Working Directory**: `/home/ssmoogen/conquer-project/conquer`
+   - **CRITICAL PATH ACCURACY**: Always use the exact path `/home/ssmoogen/conquer-project/conquer`
+     - **NEVER** change `ssmoogen` to `ssmoogan` (common typo that causes file not found errors)
+     - **ALWAYS** double-check file paths before using Read, Write, Edit, or MultiEdit tools
+     - When in doubt, use relative paths like `Src/filename.c` instead of absolute paths
+     - If a file operation fails with "File does not exist", check for path typos first
 2. **Version Control**: Place the entire codebase under Git version control
 3. **Git Ignore Configuration**: Check if `.gitignore` exists; if not, create one to prevent build artifacts from being committed
    - Include common C build artifacts: `*.o`, compiled executables, temporary files
