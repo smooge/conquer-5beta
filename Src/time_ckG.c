@@ -95,7 +95,7 @@ daynum PARM_1(char *, day)
       return(jtable[i].daynum);
     } 
   }
-  return((daynum_t)TIME_CLOSED);
+  return(TIME_CLOSED);
 }
 
 static alert_t alertn = CHECK;
@@ -513,6 +513,7 @@ doexit PARM_0(void)
 static void
 alrm_handler PARM_1(int, sig)
 {
+  (void)sig;  /* Suppress unused parameter warning */
   /* reset the alarm, can't worry about failure here */
   signal(SIGALRM, alrm_handler);
   switch(alertn) {
@@ -560,7 +561,7 @@ init_time_check PARM_0(void)
 {
 #ifdef DO_TIME_CHECK
   if (exists(TIME_HOURS_FILE) == 0) {
-    if ((int) signal(SIGALRM, alrm_handler) == -1) {
+    if (signal(SIGALRM, alrm_handler) == SIG_ERR) {
       bottommsg("Signal failed");
       tc_quit();
     }
