@@ -1525,7 +1525,7 @@ ext_armycmd PARM_1 (int, armie)
 	aunit_stat(i)) {
 
       /* check for overruns */
-      if (x + strlen(stat_info[i].input) > COLS - 8) {
+      if (x + (int)strlen(stat_info[i].input) > COLS - 8) {
 	addstr(",");
 	x = 1;
 	move(y++, x);
@@ -2063,7 +2063,7 @@ aunit_numbering PARM_0(void)
       /* check the range */
       if ((x <= 0) ||
 	  (x > MAX_IDTYPE)) {
-	sprintf(string, "A unit number must be between 1 and %d",
+	sprintf(string, "A unit number must be between 1 and %ld",
 		MAX_IDTYPE);
 	errormsg(string);
       } else {
@@ -2094,7 +2094,7 @@ aunit_numbering PARM_0(void)
 	/* check the range */
 	if ((x <= 0) ||
 	    (x > MAX_IDTYPE)) {
-	  sprintf(string, "A unit number must be between 1 and %d",
+	  sprintf(string, "A unit number must be between 1 and %ld",
 		  MAX_IDTYPE);
 	  errormsg(string);
 	} else {
@@ -2126,7 +2126,7 @@ aunit_numbering PARM_0(void)
 	/* check the range */
 	if ((x <= 0) ||
 	    (x > MAX_IDTYPE)) {
-	  sprintf(string, "A unit number must be between 1 and %d",
+	  sprintf(string, "A unit number must be between 1 and %ld",
 		  MAX_IDTYPE);
 	  errormsg(string);
 	} else {
