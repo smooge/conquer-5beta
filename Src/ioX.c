@@ -1497,7 +1497,7 @@ extend_str PARM_2 (char *, str, int, stype)
     getyx(stdscr, yspot, xspot);
 
     /* display list of completions */
-    sprintf(cmpstr, "Matches: %s", bufstr);
+    snprintf(cmpstr, sizeof(cmpstr), "Matches: %s", bufstr);
     if (!isspace(count = errormsg(cmpstr))) {
       push_char(count);
     }

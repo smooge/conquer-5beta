@@ -133,9 +133,9 @@ char *highl_list[] = {
 DISPLAY_STRUCT display_mode = {
   /* Resembles the Standard Setting Below */
   "Standard", HXPOS_LOWLEFT,
-  DI_DESG, DI_BLANK, DI_BLANK, DI_CONT,
-  HI_OWN, HI_OWN, HI_OWN, HI_OWN,
-  UNOWNED, UNOWNED, UNOWNED, UNOWNED
+  {DI_DESG, DI_BLANK, DI_BLANK, DI_CONT},
+  {HI_OWN, HI_OWN, HI_OWN, HI_OWN},
+  {UNOWNED, UNOWNED, UNOWNED, UNOWNED}
 };
 
 /*
@@ -175,14 +175,14 @@ DISPLAY_STRUCT display_mode = {
 DISPLAY_STRUCT base_modes[DMODE_NUMBER] = {
   { "Standard",
       HXPOS_LOWLEFT,
-      DI_DESG, DI_BLANK, DI_BLANK, DI_CONT,
-      HI_KEEP, HI_KEEP, HI_KEEP, HI_KEEP,
-      0, 0, 0, 0 },
+      {DI_DESG, DI_BLANK, DI_BLANK, DI_CONT},
+      {HI_KEEP, HI_KEEP, HI_KEEP, HI_KEEP},
+      {0, 0, 0, 0} },
   { "Designation",
       HXPOS_LOWLEFT,
-      DI_DESG, DI_KEEP, DI_KEEP, DI_KEEP,
-      HI_KEEP, HI_KEEP, HI_KEEP, HI_KEEP,
-      0, 0, 0, 0 },
+      {DI_DESG, DI_KEEP, DI_KEEP, DI_KEEP},
+      {HI_KEEP, HI_KEEP, HI_KEEP, HI_KEEP},
+      {0, 0, 0, 0} },
   { "Own Designation",
       HXPOS_LOWLEFT,
       DI_YDESG, DI_KEEP, DI_KEEP, DI_KEEP,
