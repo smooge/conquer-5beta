@@ -33,24 +33,25 @@ include_directories(${PROJECT_BINARY_DIR})  # For generated config.h
 
 # Source file groups (from Makefile analysis)
 set(GFILS
-    Src/mainG.c Src/armyG.c Src/caravanG.c Src/customG.c Src/dataG.c 
-    Src/displayG.c Src/emailG.c Src/enlistG.c Src/hexmapG.c Src/ieditG.c 
-    Src/infoG.c Src/ioG.c Src/iodataG.c Src/keybindG.c Src/magicG.c 
-    Src/mailG.c Src/miscG.c Src/moveG.c Src/navyG.c Src/ntninfoG.c 
-    Src/pagerG.c Src/regionG.c Src/sectorG.c Src/selectG.c Src/xferG.c 
-    Src/time_ckG.c
+    Src/mainG.c Src/armyG.c Src/caravanG.c Src/customG.c Src/dataG.c
+    Src/displayG.c Src/emailG.c Src/enlistG.c Src/hexmapG.c Src/ieditG.c
+    Src/infoG.c Src/ioG.c Src/iodataG.c Src/keybindG.c Src/magicG.c
+    Src/mailG.c Src/miscG.c Src/moveG.c Src/navyG.c Src/ntninfoG.c
+    Src/pagerG.c Src/regionG.c Src/sectorG.c Src/selectG.c Src/xferG.c
+    Src/time_ckG.c Src/jointG.c
 )
 
 set(AFILS
-    Src/mainA.c Src/adduserA.c Src/combatA.c Src/configA.c Src/createA.c 
-    Src/dataA.c Src/economyA.c Src/magicA.c Src/mailA.c Src/miscA.c 
+    Src/mainA.c Src/adduserA.c Src/combatA.c Src/configA.c Src/createA.c
+    Src/dataA.c Src/economyA.c Src/magicA.c Src/mailA.c Src/miscA.c
     Src/monsterA.c Src/moveA.c Src/npcA.c Src/sectorA.c Src/updateA.c
+    Src/jointA.c
 )
 
 set(XFILS
-    Src/dataX.c Src/datamagX.c Src/datamilX.c Src/checkX.c Src/computeX.c 
-    Src/convertX.c Src/customX.c Src/executeX.c Src/hexmapX.c Src/ioX.c 
-    Src/iodataX.c Src/magicX.c Src/mailX.c Src/memoryX.c Src/miscX.c 
+    Src/dataX.c Src/datamagX.c Src/datamilX.c Src/checkX.c Src/computeX.c
+    Src/convertX.c Src/customX.c Src/executeX.c Src/hexmapX.c Src/ioX.c
+    Src/iodataX.c Src/magicX.c Src/mailX.c Src/memoryX.c Src/miscX.c
     Src/moveX.c Src/sectorX.c Src/selectX.c Src/unitsX.c
 )
 
@@ -194,33 +195,46 @@ configure_file(
 add_executable(cmake_test cmake_test.c)
 target_link_libraries(cmake_test ${REQUIRED_LIBS})
 
-# Main executables (commented out until code modernization strategy is implemented)
-# add_executable(conquer ${GFILS} ${XFILS})
-# add_executable(conqrun ${AFILS} ${XFILS})
+# Main executables (enabled - Phase 3 implementation)
+add_executable(conquer ${GFILS} ${XFILS})
+add_executable(conqrun ${AFILS} ${XFILS})
 
-# Link libraries to executables (commented out until code modernization)
-# target_link_libraries(conquer ${REQUIRED_LIBS})
-# target_link_libraries(conqrun ${REQUIRED_LIBS})
+# Special compilation flags for specific files (following legacy Makefile)
+set_source_files_properties(Src/checkX.c PROPERTIES
+    COMPILE_FLAGS "-g -DDEBUG"
+)
 
-# Set target properties (commented out until code modernization)
-# set_target_properties(conquer PROPERTIES
-#     OUTPUT_NAME conquer
-#     COMPILE_DEFINITIONS "CONQUER_GAME_INTERFACE"
-# )
+set_source_files_properties(Src/miscA.c PROPERTIES
+    COMPILE_DEFINITIONS "CONQ_SORT=\"conqsort\""
+)
 
-# set_target_properties(conqrun PROPERTIES
-#     OUTPUT_NAME conqrun
-#     COMPILE_DEFINITIONS "CONQUER_ADMIN_INTERFACE"
-# )
+set_source_files_properties(Src/customX.c PROPERTIES
+    COMPILE_DEFINITIONS "DEFAULTDIR=\"${CONQUER_DATA_DIR}\";EXEDIR=\"${CONQUER_BIN_DIR}\""
+)
+
+# Link libraries to executables
+target_link_libraries(conquer ${REQUIRED_LIBS})
+target_link_libraries(conqrun ${REQUIRED_LIBS})
+
+# Set target properties
+set_target_properties(conquer PROPERTIES
+    OUTPUT_NAME conquer
+    COMPILE_DEFINITIONS "CONQUER_GAME_INTERFACE"
+)
+
+set_target_properties(conqrun PROPERTIES
+    OUTPUT_NAME conqrun
+    COMPILE_DEFINITIONS "CONQUER_ADMIN_INTERFACE"
+)
 
 # Testing infrastructure - Phase 7A.2 Unity framework
 enable_testing()
 add_subdirectory(tests)
 
-# Installation targets (commented out until code modernization)
-# install(TARGETS conquer conqrun
-#     RUNTIME DESTINATION bin
-# )
+# Installation targets
+install(TARGETS conquer conqrun
+    RUNTIME DESTINATION bin
+)
 
 install(DIRECTORY Auxil/
     DESTINATION share/conquer/auxil
