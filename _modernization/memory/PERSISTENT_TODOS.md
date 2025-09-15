@@ -1,7 +1,7 @@
 # Persistent Todo List - Conquer Modernization
 
 **Last Updated**: 2025-09-15
-**Current Phase**: Phase 7 - Analyze and Decouple Configuration
+**Current Phase**: Phase 6A - Function Testability Analysis (Option A Complete)
 
 ## High Priority Todos
 
@@ -25,7 +25,20 @@
 - [x] **Identify Dependencies**: Document all external libraries the project depends on
 - [x] **Extract Environmental Logic**: Remove all environmental and user-choice logic from source code and Makefiles
 
-### Phase 7B Next Priority (READY)
+### Phase 6A Function Analysis (COMPLETED ✅)
+- [x] **Analyze economyA.c**: Economic system functions (3 functions - upd_sectors, upd_produce, upd_consume)
+- [x] **Analyze moveA.c**: Movement system functions (1 function - npc_movearmy)
+- [x] **Analyze dataA.c**: Core data definitions (3 components - name generation, global state)
+- [x] **Create Priority Matrix**: Comprehensive Phase 6B testing strategy with critical function identification
+
+### Phase 6B Testing Implementation (READY)
+- [ ] **Critical Function Testing**: upd_consume() - 790+ line economic function with security implications
+- [ ] **Core Production Testing**: upd_produce() - Resource production system with overflow protection
+- [ ] **Security Function Testing**: checkX.c functions (canseelogin, user_exists, fork_edit_on_file)
+- [ ] **Economic Integration Testing**: End-to-end resource flow validation
+- [ ] **Baseline Performance**: Economic processing benchmarks before modernization
+
+### Phase 7B Next Priority (DEFERRED)
 - [ ] **Create config.h.in Template**: Replace `#ifdef` trees with CMake feature detection
 - [ ] **Implement Security Fixes**: Remove hardcoded credentials and external command execution
 - [ ] **Modernize Platform Detection**: Replace legacy platform flags with POSIX standards
