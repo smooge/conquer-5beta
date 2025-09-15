@@ -52,17 +52,17 @@ python script.py   # May fail - don't use
 Based on lessons learned during actual implementation, the phase ordering has been revised from the original plan. See `_modernization/claude/reports/PHASE_ORDERING_LESSONS_LEARNED.md` for detailed analysis.
 
 **Corrected Phase Sequence:**
-1. **Phase 1**: Triage and Environment Setup  
+1. **Phase 1**: Triage and Environment Setup
 2. **Phase 2**: Initial Assessment and Planning
-3. **Phase 2B**: Warning Elimination and Compilation Health *(CRITICAL - Added)*
-4. **Phase 3**: Modern Build System (CMake) *(Moved up)*
-5. **Phase 4**: Testing Infrastructure Setup *(Moved up)*  
-6. **Phase 5**: Comprehensive Function Documentation *(Moved down)*
-7. **Phase 6**: Analyze and Decouple Configuration *(As planned)*
-8. **Phase 7**: Replace `#ifdef` Trees with Feature Detection *(As planned)*
-9. **Phase 8**: Syntactic and Mechanical Modernization *(As planned)*
-10. **Phase 9**: Deep Refactoring and Integer Portability *(As planned)*
-11. **Phase 10**: Advanced Analysis and Maintenance *(As planned)*
+3. **Phase 3**: Comprehensive Function Documentation
+4. **Phase 4**: Warning Elimination and Compilation Health
+5. **Phase 5**: Modern Build System (CMake)
+6. **Phase 6**: Testing Infrastructure Setup
+7. **Phase 7**: Analyze and Decouple Configuration
+8. **Phase 7b**: Replace `#ifdef` Trees with Feature Detection
+9. **Phase 8**: Syntactic and Mechanical Modernization
+10. **Phase 9**: Deep Refactoring and Integer Portability
+11. **Phase 10**: Advanced Analysis and Maintenance
 
 ### Phase 1: Triage and Environment Setup 🛡️
 
@@ -136,176 +136,18 @@ Before changing a single line of code, establishing a modern, strict, and contro
    - Prioritize tasks based on risk and complexity
    - Save plan to `_modernization/claude/reports/MODERNIZATION_PLAN.md`
 
-### Phase 2B: Warning Elimination and Compilation Health 🚨
-
-**CRITICAL: This phase is required before any testing or build system work can proceed.**
-
-**Why This Phase Is Essential:**
-- Legacy codebases often have 100+ warnings that mask real bugs
-- Modern testing frameworks require clean compilation
-- Build system modernization depends on reliable compilation
-- Warnings often indicate data corruption or memory safety issues
-
-**2B.1 Compilation Baseline**:
-- Test compile all source files with strict C2023 flags
-- Document all warnings by category and severity
-- Identify critical errors that prevent compilation
-
-**2B.2 Warning Elimination Priority**:
-1. **Compilation Errors**: Fix anything that prevents building
-2. **Missing Braces**: Fix data structure initialization warnings (often real bugs)
-3. **Missing Field Initializers**: Fix union and struct initialization
-4. **Format Warnings**: Fix sprintf/printf format mismatches
-5. **Implicit Declarations**: Add missing function prototypes
-6. **Multiple Definitions**: Fix header file variable definition conflicts
-
-**2B.3 Basic Safety Improvements**:
-- Replace sprintf with snprintf for buffer safety
-- Add missing includes for standard library functions
-- Fix obvious memory safety issues found during warning fixes
-
-**Completion Criteria**: All source files compile with zero warnings using:
-```bash
-gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic
-```
-
-#### Documentation Assessment Report Template
-
-The `DOCUMENTATION_ASSESSMENT.md` report should include comprehensive analysis of current documentation state and provide actionable improvement strategy. Required sections:
-
-**1. Executive Summary**
-- Overall documentation coverage percentage
-- Quality assessment (Poor/Fair/Good/Excellent)
-- Critical gaps requiring immediate attention
-- Estimated effort to bring to modernization standards
-
-**2. Current Documentation Analysis**
-- **File-by-File Analysis**: Function count, current documentation state, quality rating
-- **Documentation Coverage**: Functions documented vs undocumented per file
-- **Quality Assessment**: Rating documentation completeness, clarity, and usefulness
-- **Standards Compliance**: Adherence to modern C documentation conventions
-- **Common Issues**: Recurring documentation problems across files
-
-**3. Documentation Standards Assessment**
-- **Missing Elements**: Function purpose, parameters, return values, side effects
-- **Legacy Issues**: Outdated comments, unclear descriptions, missing context
-- **Consistency Problems**: Inconsistent formatting, style variations
-- **Technical Debt**: Comments that don't match implementation
-
-**4. File Prioritization Strategy**
-- **Priority Classifications**: Critical, High, Medium, Low based on:
-  - System importance (core engine vs utilities)
-  - Function complexity and count
-  - Current documentation state
-  - Dependencies and call frequency
-- **Session Planning**: Recommended order and checkpoint strategy
-- **Large File Handling**: Files requiring 15-function checkpoint approach
-
-**5. Implementation Strategy**
-- **Documentation Workflow**: Step-by-step process for each file
-- **Quality Standards**: Target documentation format and requirements
-- **Checkpoint Strategy**: When and how to implement 15-function breaks
-- **Progress Tracking**: Metrics and milestones for tracking improvement
-- **Resource Estimation**: Time and effort required per priority group
-
-**6. Risk Assessment**
-- **Knowledge Loss Risk**: Functions with unclear or missing logic documentation
-- **Maintenance Risk**: Poorly documented complex algorithms
-- **Integration Risk**: Undocumented interfaces and dependencies
-
-This assessment becomes the foundation for Phase 4 documentation work and ensures systematic improvement of code documentation quality.
-
-### Phase 3: Modern Build System (CMake) 🛠️
-
-**CRITICAL: Establish modern build system before testing infrastructure**
-
-Replace legacy Makefiles with CMake to enable proper testing integration, cross-platform compatibility, and modern development workflows.
-
-**Why CMake First:**
-- Testing frameworks integrate best with modern build systems
-- Feature detection replaces hardcoded `#ifdef` trees
-- Cross-platform library detection (ncurses, crypt, etc.)
-- Enables automated testing and CI/CD integration
-
-**3.1 Makefile Analysis**:
-- Document current build structure (dual executables: conquer/conqrun)
-- Identify library dependencies and platform-specific code
-- Extract compiler flags and feature requirements
-
-**3.2 CMake Implementation**:
-- Create root `CMakeLists.txt` with proper C2023 standards
-- Implement library detection (FindPkgConfig for ncurses, crypt)
-- Configure feature detection to replace `#ifdef` trees
-- Set up separate targets for user interface and admin programs
-
-**3.3 Cross-Platform Configuration**:
-- Support target platforms: Debian, Fedora, macOS, FreeBSD
-- Implement POSIX-compliant feature detection
-- Replace hardcoded system flags with CMake tests
-
-**3.4 Testing Integration Preparation**:
-- Configure CTest integration for future testing framework
-- Set up test directory structure within CMake
-- Prepare for Unity testing framework integration
-
-### Phase 4: Testing Infrastructure Setup 🧪
-
-**CRITICAL: Establish comprehensive testing framework after build system modernization**
-
-With CMake in place, establish robust testing infrastructure to ensure that remaining modernization preserves all original functionality.
-
-**4.1 Testing Framework Selection and Setup**:
-- **Unity C Testing Framework**: Lightweight, C89 compatible, perfect for legacy code
-- **Test Directory Structure**: Separate tests from source code
-  ```
-  tests/
-  ├── framework/          # Unity testing framework
-  ├── unit/              # Unit tests for individual functions
-  ├── integration/       # Integration tests for modules
-  ├── regression/        # Regression tests for modernization
-  ├── security/          # Security-focused tests
-  ├── performance/       # Performance benchmarks
-  ├── fixtures/          # Test data and mock files
-  └── scripts/           # Test automation scripts
-  ```
-
-**3.2 Baseline Testing Creation**:
-- **Behavioral Baseline Tests**: Document current behavior before changes
-- **Critical Function Tests**: Test core game systems (combat, economics, movement)
-- **Multi-User Integration Tests**: Test file locking and concurrent access
-- **Performance Benchmarks**: Establish performance baselines
-
-**3.3 Automated Test Infrastructure**:
-- **Test Runner Scripts**: Automated execution of all test categories
-- **Security Analysis Scripts**: Automated vulnerability scanning
-- **Coverage Reporting**: Code coverage analysis for modernization validation
-- **CI/CD Integration**: Continuous testing during modernization
-
-**3.4 Modern Build System Implementation**:
-- **CMake Integration**: Modern build system with testing support
-- **Compiler Safety Flags**: Enable all warnings and sanitizers
-- **Cross-Platform Support**: Ensure compatibility across target platforms
-- **Feature Detection**: Replace manual configuration with automated detection
-
-**Why Testing Infrastructure First:**
-- **Safe Modernization**: Catch regressions immediately during code changes
-- **Confidence**: Ensure no functionality is lost during modernization
-- **Automated Validation**: Reduce manual testing overhead
-- **Documentation Validation**: Verify documented behavior matches implementation
-- **Security Verification**: Confirm security fixes don't break functionality
-
-### Phase 5: Comprehensive Function Documentation 📝
+### Phase 3: Comprehensive Function Documentation 📝
 
 **CRITICAL: Document Functions Before Modernization**
 
 **REVISED STRATEGY: One File Per Session Approach**
 
-Due to the extensive nature of documenting 50+ source files, Phase 4 is now organized as a series of focused sessions, with each session documenting one complete file and committing immediately to preserve context.
+Due to the extensive nature of documenting 50+ source files, Phase 3 is now organized as a series of focused sessions, with each session documenting one complete file and committing immediately to preserve context.
 
 **Documentation Session Workflow:**
 
 1. **Session Preparation**:
-   - Load `_modernization/memory/PHASE_4_DOCUMENTATION_STRATEGY.md` to check progress
+   - Load `_modernization/memory/PHASE_3_DOCUMENTATION_STRATEGY.md` to check progress
    - Identify next priority file to document
    - Read target file to understand its function structure
 
@@ -327,7 +169,7 @@ Due to the extensive nature of documenting 50+ source files, Phase 4 is now orga
 - **Priority 4**: Game Content (magicA.c, monsterA.c, npcA.c, etc.)
 - **Priority 5**: Remaining Interface and Utilities
 
-**Progress Tracking**: See `_modernization/memory/PHASE_4_DOCUMENTATION_STRATEGY.md` for detailed file prioritization and current progress.
+**Progress Tracking**: See `_modernization/memory/PHASE_3_DOCUMENTATION_STRATEGY.md` for detailed file prioritization and current progress.
 
 **Function Documentation Requirements:**
 
@@ -396,50 +238,173 @@ Due to the extensive nature of documenting 50+ source files, Phase 4 is now orga
 - **Reduce Risk**: Clear specifications prevent modernization errors
 - **Future Maintenance**: Well-documented code is easier to maintain
 
+#### Documentation Assessment Report Template
 
-### Phase 6: Analyze and Decouple Configuration 🧐
+The `DOCUMENTATION_ASSESSMENT.md` report should include comprehensive analysis of current documentation state and provide actionable improvement strategy. Required sections:
+
+**1. Executive Summary**
+- Overall documentation coverage percentage
+- Quality assessment (Poor/Fair/Good/Excellent)
+- Critical gaps requiring immediate attention
+- Estimated effort to bring to modernization standards
+
+**2. Current Documentation Analysis**
+- **File-by-File Analysis**: Function count, current documentation state, quality rating
+- **Documentation Coverage**: Functions documented vs undocumented per file
+- **Quality Assessment**: Rating documentation completeness, clarity, and usefulness
+- **Standards Compliance**: Adherence to modern C documentation conventions
+- **Common Issues**: Recurring documentation problems across files
+
+**3. Documentation Standards Assessment**
+- **Missing Elements**: Function purpose, parameters, return values, side effects
+- **Legacy Issues**: Outdated comments, unclear descriptions, missing context
+- **Consistency Problems**: Inconsistent formatting, style variations
+- **Technical Debt**: Comments that don't match implementation
+
+**4. File Prioritization Strategy**
+- **Priority Classifications**: Critical, High, Medium, Low based on:
+  - System importance (core engine vs utilities)
+  - Function complexity and count
+  - Current documentation state
+  - Dependencies and call frequency
+- **Session Planning**: Recommended order and checkpoint strategy
+- **Large File Handling**: Files requiring 15-function checkpoint approach
+
+**5. Implementation Strategy**
+- **Documentation Workflow**: Step-by-step process for each file
+- **Quality Standards**: Target documentation format and requirements
+- **Checkpoint Strategy**: When and how to implement 15-function breaks
+- **Progress Tracking**: Metrics and milestones for tracking improvement
+- **Resource Estimation**: Time and effort required per priority group
+
+**6. Risk Assessment**
+- **Knowledge Loss Risk**: Functions with unclear or missing logic documentation
+- **Maintenance Risk**: Poorly documented complex algorithms
+- **Integration Risk**: Undocumented interfaces and dependencies
+
+This assessment becomes the foundation for Phase 3 documentation work and ensures systematic improvement of code documentation quality.
+
+### Phase 4: Warning Elimination and Compilation Health 🚨
+
+**CRITICAL: This phase is required before any testing or build system work can proceed.**
+
+**Why This Phase Is Essential:**
+- Legacy codebases often have 100+ warnings that mask real bugs
+- Modern testing frameworks require clean compilation
+- Build system modernization depends on reliable compilation
+- Warnings often indicate data corruption or memory safety issues
+
+**4 Compilation Baseline**:
+- Test compile all source files with strict C2023 flags
+- Document all warnings by category and severity
+- Identify critical errors that prevent compilation
+
+**4 Warning Elimination Priority**:
+1. **Compilation Errors**: Fix anything that prevents building
+2. **Missing Braces**: Fix data structure initialization warnings (often real bugs)
+3. **Missing Field Initializers**: Fix union and struct initialization
+4. **Format Warnings**: Fix sprintf/printf format mismatches
+5. **Implicit Declarations**: Add missing function prototypes
+6. **Multiple Definitions**: Fix header file variable definition conflicts
+
+**4 Basic Safety Improvements**:
+- Replace sprintf with snprintf for buffer safety
+- Add missing includes for standard library functions
+- Fix obvious memory safety issues found during warning fixes
+
+**Completion Criteria**: All source files compile with zero warnings using:
+```bash
+gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic
+```
+
+### Phase 5: Modern Build System (CMake) 🛠️
+
+**CRITICAL: Establish modern build system before testing infrastructure**
+
+Replace legacy Makefiles with CMake to enable proper testing integration, cross-platform compatibility, and modern development workflows.
+
+**Why CMake First:**
+- Testing frameworks integrate best with modern build systems
+- Feature detection replaces hardcoded `#ifdef` trees
+- Cross-platform library detection (ncurses, crypt, etc.)
+- Enables automated testing and CI/CD integration
+
+**5.1 Makefile Analysis**:
+- Document current build structure (dual executables: conquer/conqrun)
+- Identify library dependencies and platform-specific code
+- Extract compiler flags and feature requirements
+
+**5.2 CMake Implementation**:
+- Create root `CMakeLists.txt` with proper C2023 standards
+- Implement library detection (FindPkgConfig for ncurses, crypt)
+- Configure feature detection to replace `#ifdef` trees
+- Set up separate targets for user interface and admin programs
+
+**5.3 Cross-Platform Configuration**:
+- Support target platforms: Debian, Fedora, macOS, FreeBSD
+- Implement POSIX-compliant feature detection
+- Replace hardcoded system flags with CMake tests
+
+**5.4 Testing Integration Preparation**:
+- Configure CTest integration for future testing framework
+- Set up test directory structure within CMake
+- Prepare for Unity testing framework integration
+
+### Phase 6: Testing Infrastructure Setup 🧪
+
+**CRITICAL: Establish comprehensive testing framework after build system modernization**
+
+With CMake in place, establish robust testing infrastructure to ensure that remaining modernization preserves all original functionality.
+
+**6.1 Testing Framework Selection and Setup**:
+- **Unity C Testing Framework**: Lightweight, C89 compatible, perfect for legacy code
+- **Test Directory Structure**: Separate tests from source code
+  ```
+  tests/
+  ├── framework/          # Unity testing framework
+  ├── unit/              # Unit tests for individual functions
+  ├── integration/       # Integration tests for modules
+  ├── regression/        # Regression tests for modernization
+  ├── security/          # Security-focused tests
+  ├── performance/       # Performance benchmarks
+  ├── fixtures/          # Test data and mock files
+  └── scripts/           # Test automation scripts
+  ```
+
+**6.2 Baseline Testing Creation**:
+- **Behavioral Baseline Tests**: Document current behavior before changes
+- **Critical Function Tests**: Test core game systems (combat, economics, movement)
+- **Multi-User Integration Tests**: Test file locking and concurrent access
+- **Performance Benchmarks**: Establish performance baselines
+
+**6.3 Automated Test Infrastructure**:
+- **Test Runner Scripts**: Automated execution of all test categories
+- **Security Analysis Scripts**: Automated vulnerability scanning
+- **Coverage Reporting**: Code coverage analysis for modernization validation
+- **CI/CD Integration**: Continuous testing during modernization
+
+**6.4 Modern Build System Implementation**:
+- **CMake Integration**: Modern build system with testing support
+- **Compiler Safety Flags**: Enable all warnings and sanitizers
+- **Cross-Platform Support**: Ensure compatibility across target platforms
+- **Feature Detection**: Replace manual configuration with automated detection
+
+**Why Testing Infrastructure First:**
+- **Safe Modernization**: Catch regressions immediately during code changes
+- **Confidence**: Ensure no functionality is lost during modernization
+- **Automated Validation**: Reduce manual testing overhead
+- **Documentation Validation**: Verify documented behavior matches implementation
+- **Security Verification**: Confirm security fixes don't break functionality
+
+### Phase 7: Analyze and Decouple Configuration 🧐
 
 - **Audit the Options**: Go through main configuration header (e.g., `config.h`) and Makefile
 - **Identify Dependencies**: Document all external libraries the project depends on
 - Extract all environmental and user-choice logic from source code and Makefiles
 
-### Phase 6B: Legacy Build System (DEPRECATED - Use Phase 3 CMake) 🛠️
-
-**CMake** is the de facto industry standard. Create a `CMakeLists.txt` file:
-
-```cmake
-# Specify the minimum CMake version required
-cmake_minimum_required(VERSION 3.10)
-
-# Define the project name and language
-project(MyLegacyApp C)
-
-# Create the executable from source files
-add_executable(my_app
-    main.c
-    module1.c
-    utils.c
-)
-
-# Find and link libraries
-find_package(Threads REQUIRED)
-target_link_libraries(my_app
-    PRIVATE
-    Threads::Threads
-    m  # Math library
-)
-
-# Manage include directories
-target_include_directories(my_app
-    PUBLIC
-        ${PROJECT_SOURCE_DIR}/include
-)
-```
-
-### Phase 7: Replace `#ifdef` Trees with Feature Detection 🌳
+### Phase 7b: Replace `#ifdef` Trees with Feature Detection 🌳
 
 Create a template file `config.h.in` and use CMake to generate configuration:
-
 ```c
 // config.h.in
 #define BUFFER_SIZE @BUFFER_SIZE@
@@ -459,17 +424,26 @@ configure_file(
 
 ### Phase 8: Syntactic and Mechanical Modernization ⚙️
 
-**IMPORTANT: Create Automation Scripts First**
+**IMPORTANT: Create Automation Scripts**
 
-Before beginning manual modernization, Claude must create automation scripts for repetitive tasks and store them in `_modernization/scripts/`. These scripts save significant time and ensure consistency across the codebase.
+When doing a task multiple times, Clause should create
 
-**Required Automation Scripts:**
+Before beginning manual modernization, Claude should test to see if it
+can write an automotive script which will do the task that could save
+time and ensure consistency across sessions. Each script should be
+written to attempt a task and then tested across several *.c and *.h
+files as needed. If it is found to consistently work, then it should be
+used. If it does not work, then the work will need to be done manually
+with files being broken up in short sessions to keep accuracy.
+
+**Possible Example Automation Scripts:**
 
 1. **`convert_kr_functions.py`** - Convert K&R style functions to C2023 prototypes
    - Handles PARM_X macro conversions
    - Preserves comprehensive function documentation
    - Modernizes syntax while maintaining functionality
    - Example usage: `python3 _modernization/scripts/convert_kr_functions.py src/*.c`
+   - Thoroughly test per file that conversion worked.
 
 2. **`modernize_headers.py`** - Update include statements and header usage
    - Replace legacy headers with standard equivalents
@@ -516,7 +490,7 @@ Before beginning manual modernization, Claude must create automation scripts for
 
 **Implementation Priority Order:**
 1. **Create Automation Scripts**: Build reusable tools for common tasks
-2. **Function Documentation**: Complete comprehensive documentation (Phase 4)
+2. **Function Documentation**: Complete comprehensive documentation (Phase 3)
 3. **Function Prototypes**: Convert K&R style to ANSI prototypes (using convert_kr_functions.py)
 4. **Type Safety**: Add proper type declarations and const qualifiers (using script)
 5. **Standard Headers**: Replace legacy headers with standard ones (using modernize_headers.py)

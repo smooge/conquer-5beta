@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/ssmoogen/conquer-project/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
