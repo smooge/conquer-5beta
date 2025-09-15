@@ -5,11 +5,25 @@
 
 ## High Priority Todos
 
-### Phase 4 Testing (Current Phase)
-- [ ] Fix failing CTest `regression_compilation_verification`
-- [ ] Establish Unity testing framework
-- [ ] Create comprehensive test directory structure
-- [ ] Build baseline regression tests
+### Phase 4 Testing (COMPLETED ✅)
+- [x] Fix failing CTest `regression_compilation_verification`
+- [x] Establish Unity testing framework
+- [x] Create comprehensive test directory structure
+- [x] Build baseline regression tests
+
+### Phase 4B - Additional Baseline Tests (HIGH PRIORITY)
+- [ ] **Application Startup Tests**: Both executables launch without crashing, parse arguments correctly
+- [ ] **Data File Integrity Tests**: Game data files read without corruption, save/load preserves state
+- [ ] **Core Game Logic Tests**: Combat calculations, economic system, movement validation work correctly
+- [ ] **Memory Safety Baseline**: No memory leaks, buffer overflow protection, clean shutdown
+- [ ] **Multi-User Concurrent Access**: File locking prevents corruption, multiple players access safely
+- [ ] **Cross-Platform Compatibility**: Runs on target platforms (Debian, Fedora, macOS, FreeBSD)
+- [ ] **Performance Benchmarks**: Turn processing time, memory usage, file I/O performance baselines
+
+### Phase 5 Next Priority
+- [ ] Begin Phase 5 - Comprehensive Function Documentation
+- [ ] Document core engine files (Priority 1)
+- [ ] Document I/O and data management files (Priority 2)
 
 ### Future Phase Todos
 - [ ] Create automation scripts for K&R function conversion
