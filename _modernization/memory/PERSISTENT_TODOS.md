@@ -1,29 +1,29 @@
 # Persistent Todo List - Conquer Modernization
 
-**Last Updated**: 2025-09-14
-**Current Phase**: Phase 4 - Testing Infrastructure
+**Last Updated**: 2025-09-15
+**Current Phase**: Phase 7 - Analyze and Decouple Configuration
 
 ## High Priority Todos
 
-### Phase 4 Testing (COMPLETED ✅)
+### Phase 6 Testing (COMPLETED ✅)
 - [x] Fix failing CTest `regression_compilation_verification`
 - [x] Establish Unity testing framework
 - [x] Create comprehensive test directory structure
 - [x] Build baseline regression tests
 
-### Phase 4B - Additional Baseline Tests (HIGH PRIORITY)
-- [ ] **Application Startup Tests**: Both executables launch without crashing, parse arguments correctly
-- [ ] **Data File Integrity Tests**: Game data files read without corruption, save/load preserves state
-- [ ] **Core Game Logic Tests**: Combat calculations, economic system, movement validation work correctly
-- [ ] **Memory Safety Baseline**: No memory leaks, buffer overflow protection, clean shutdown
+### Phase 6B - Additional Baseline Tests (COMPLETED ✅)
+- [x] **Application Startup Tests**: Both executables launch without crashing, parse arguments correctly
+- [x] **Data File Integrity Tests**: Game data files read without corruption, save/load preserves state
+- [x] **Core Game Logic Tests**: Combat calculations, economic system, movement validation work correctly
+- [x] **Memory Safety Baseline**: No memory leaks, buffer overflow protection, clean shutdown
 - [ ] **Multi-User Concurrent Access**: File locking prevents corruption, multiple players access safely
 - [ ] **Cross-Platform Compatibility**: Runs on target platforms (Debian, Fedora, macOS, FreeBSD)
 - [ ] **Performance Benchmarks**: Turn processing time, memory usage, file I/O performance baselines
 
-### Phase 5 Next Priority
-- [ ] Begin Phase 5 - Comprehensive Function Documentation
-- [ ] Document core engine files (Priority 1)
-- [ ] Document I/O and data management files (Priority 2)
+### Phase 7 Current Priority (NEXT)
+- [ ] **Audit Configuration Options**: Go through main configuration header (config.h) and Makefile
+- [ ] **Identify Dependencies**: Document all external libraries the project depends on
+- [ ] **Extract Environmental Logic**: Remove all environmental and user-choice logic from source code and Makefiles
 
 ### Future Phase Todos
 - [ ] Create automation scripts for K&R function conversion
