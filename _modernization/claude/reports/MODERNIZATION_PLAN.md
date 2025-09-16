@@ -1,515 +1,145 @@
-# Comprehensive Modernization Plan - Conquer Game
-
-**Plan Date**: 2025-09-04 (Updated: 2025-09-10)  
-**Codebase**: Conquer 5.0 beta patch28  
-**Target**: C2023 Standard with POSIX Compliance  
-**Total Effort Estimate**: 12-16 weeks full-time equivalent (REVISED UP)  
-
-## Executive Summary
-
-This plan outlines the complete modernization strategy for bringing the Conquer game from pre-ANSI C (1992) to C2023 standards. The project involves modernizing **67 C source files** (64 in Src/ + 3 in Auxil/) and **49 header files** while preserving the sophisticated game mechanics and multi-user functionality.
-
-**CRITICAL UPDATE (2025-09-10)**: Comprehensive compilation analysis reveals that **43 of 67 source files (64.2%) fail to compile** with C2023 standards. Previous estimates were significantly underestimated due to incomplete analysis.
-
-**Current Status**:
-- ✅ **Phase 1-2**: Complete (Environment & Analysis)
-- ✅ **Phase 7A.1**: Critical header modernization (PARTIAL - only ~24% success rate)
-- ✅ **Phase 7A.2**: Unity testing infrastructure complete
-- ⏳ **Phase 7A.3**: Systematic compilation fixing (CRITICAL PRIORITY)
-
-**Critical Success Factors:**
-1. **Compilation First**: Fix 43 failing source files before any other modernization
-2. **Testing Foundation**: Unity testing infrastructure now operational
-3. **Systematic Approach**: Address errors by category (syntax, K&R conflicts, missing declarations)
-4. **Reality-Based Planning**: Use actual compilation data, not assumptions
-
-## REVISED Project Phases Overview (2025-09-10 Update)
-
-| Phase | Duration | Priority | Status | Key Deliverables |
-|-------|----------|----------|--------|------------------|
-| **Phase 1** | ✅ Complete | Critical | Done | Environment setup, analysis reports |
-| **Phase 2** | ✅ Complete | Critical | Done | System analysis, compliance assessment |
-| **Phase 7A** | 3-4 weeks | **CRITICAL** | Active | Emergency stabilization and compilation fixing |
-| **Phase 7A.1** | ✅ Complete | Critical | Done | Critical header modernization (partial success) |
-| **Phase 7A.2** | ✅ Complete | Critical | Done | Unity testing infrastructure |
-| **Phase 7A.3** | 2-3 weeks | **URGENT** | Next | Fix 43 failing source files systematically |
-| **Phase 4** | 2-3 weeks | High | Deferred | Function documentation, automation scripts |
-| **Phase 5** | 1 week | High | Deferred | Configuration modernization |
-| **Phase 6** | 1 week | High | Deferred | Modern build system completion |
-| **Phase 7B** | 1-2 weeks | Medium | Deferred | Feature detection, platform abstraction |
-| **Phase 8** | 4-5 weeks | High | Deferred | Syntactic modernization (K&R, types, headers) |
-| **Phase 9** | 2-3 weeks | Medium | Deferred | Integer portability, deep refactoring |
-| **Phase 10** | 1 week | Low | Deferred | Advanced analysis, optimization |
-
-**REVISED Total Duration**: 12-16 weeks (increased due to compilation reality check)
-
-## CRITICAL COMPILATION STATUS (2025-09-10)
-
-**Actual Compilation Results** (tested all 67 source files):
-- ✅ **Clean Compilation**: 16 files (23.9%)
-- ⚠️ **Warnings Only**: 8 files (11.9%) 
-- ❌ **Compilation Errors**: 43 files (64.2%)
-
-**Error Categories Requiring Immediate Attention**:
-1. **SYNTAX_ERRORS**: 27 files - Malformed headers/comments
-2. **INTEGER_SIGNEDNESS_WARNINGS**: 13 files - 64-bit portability
-3. **FALLTHROUGH_WARNINGS**: 11 files - Switch statement issues
-4. **MISSING_FUNCTION_DECLARATIONS**: 10 files - Need proper includes
-5. **K&R_FUNCTION_CONFLICTS**: 3 files - Legacy declaration conflicts
-6. **SIGNAL_HANDLER_SIGNATURE**: 2 files - Modern signature requirements
-
-## Detailed Phase Breakdown
-
-### **Phase 7A.3: Systematic Compilation Fixing (2-3 weeks) 🚨**
-**Status**: URGENT - Current Priority  
-**Blocking**: All other modernization work  
-
-#### **Week 1: Critical Header and Syntax Fixes**
-1. **Header File Repairs** (27 files with syntax errors)
-   - Fix malformed comments in header files (nested /* */ issues)
-   - Repair syntax errors in `spellsX.h` and other headers
-   - Validate header syntax across all include files
-   - Test compilation after each header fix
-
-2. **K&R Function Conflict Resolution** (3 files)
-   - Fix remaining K&R function declaration conflicts  
-   - Update headers to use standard library prototypes
-   - Remove manual function declarations where possible
-   - Validate against modern system headers
-
-3. **Missing Function Declarations** (10 files)
-   - Add proper system header includes (setreuid, etc.)
-   - Include POSIX-compliant headers for system functions
-   - Fix implicit function declaration warnings
-   - Ensure proper function availability across platforms
-
-#### **Week 2: Signal Handlers and Function Signatures**
-1. **Signal Handler Modernization** (2 files)
-   - Update signal handler signatures: `void handler(void)` → `void handler(int sig)`
-   - Fix signal handler registrations and calls
-   - Ensure POSIX signal compliance
-   - Test signal handling functionality
-
-2. **Function Signature Updates**
-   - Fix incompatible pointer type errors
-   - Update function parameter types for modern standards
-   - Ensure consistent function signatures across declarations/definitions
-   - Validate function call compatibility
-
-#### **Week 3: Systematic Error Resolution**
-1. **Remaining Compilation Errors** (remaining files)
-   - Process each failing file individually
-   - Address file-specific compilation issues
-   - Fix include dependencies and circular references
-   - Resolve platform-specific compilation problems
-
-2. **Compilation Validation**
-   - Run comprehensive compilation test after each fix
-   - Ensure no regressions in previously working files
-   - Validate warnings and address critical ones
-   - Achieve 100% compilation success rate
-
-#### **Success Criteria for Phase 7A.3**
-- ✅ All 67 source files compile successfully with C2023 standards
-- ✅ Zero compilation errors across entire codebase
-- ✅ Critical warnings addressed (keeping minor ones for later phases)
-- ✅ Compilation verification test passes 100%
-- ✅ No regression in files that previously compiled
-
-#### **Tools and Scripts for Phase 7A.3**
-- `analyze_compilation_failures.py` - Monitor progress and identify remaining issues
-- Manual header file analysis and repair
-- Systematic file-by-file compilation testing
-- Git commits after each category of fixes
-
-**Deliverables:**
-- 100% source file compilation success
-- Updated compilation verification tests
-- Documented fixes and patterns for future reference
-- Solid foundation for continuing modernization work
-
-### Phase 3: Testing Infrastructure Setup (1-2 weeks) 🧪
-**Status**: Ready to begin  
-**Priority**: Critical - Blocking all code changes  
-
-#### Immediate Tasks (Week 1)
-1. **Unity Framework Integration**
-   - Download Unity C testing framework
-   - Create `tests/` directory structure
-   - Set up basic test harness and runner scripts
-   - Integrate with existing Makefile
-
-2. **Critical Security Tests**
-   - Test current `gets()` function usage (4 instances)
-   - Test `scanf("%s", ...)` operations
-   - Test string operation boundaries
-   - Establish security baseline before fixes
-
-3. **Core System Baseline Tests**
-   - Memory management tests (malloc/free patterns)
-   - File I/O tests (world data persistence)
-   - Basic combat system validation
-   - Economic calculation verification
-
-#### Integration Tasks (Week 2)
-1. **Multi-User Testing**
-   - File locking mechanism tests
-   - Concurrent access validation
-   - Campaign data integrity tests
-
-2. **Game Mechanics Validation**
-   - Combat resolution accuracy
-   - Economic production/consumption
-   - Magic system functionality
-   - Movement and logistics
-
-3. **Performance Baselines**
-   - Establish current performance metrics
-   - Memory usage patterns
-   - File I/O performance characteristics
-
-**Deliverables:**
-- Complete testing framework integrated
-- 100+ baseline tests covering critical systems
-- Automated test runner scripts
-- Performance and security baselines established
-
-### Phase 4: Function Documentation & Automation (2-3 weeks) 📝
-**Priority**: High - Required for safe modernization  
-
-#### Documentation Tasks (Week 1-2)
-1. **Automated Documentation Generation**
-   - Create `document_functions.py` script
-   - Generate documentation templates for 500+ functions
-   - Analyze function signatures and parameters
-   - Flag functions requiring manual analysis
-
-2. **Critical Function Documentation**
-   - Document combat system functions (combatA.c)
-   - Document economic functions (economyA.c)
-   - Document file I/O functions (iodataX.c, ioX.c)
-   - Document memory management (memoryX.c)
-
-#### Automation Script Development (Week 2-3)
-1. **Core Modernization Scripts**
-   - `convert_kr_functions.py` - PARM_X macro conversion
-   - `modernize_headers.py` - Header include modernization
-   - `add_safety_checks.py` - Memory safety insertion
-   - `fix_integer_types.py` - 64-bit portability updates
-
-2. **Script Requirements**
-   - All scripts must be idempotent (safe to run multiple times)
-   - Include `--dry-run` and `--backup` options
-   - Comprehensive error handling and logging
-   - Detailed usage documentation
-
-**Deliverables:**
-- 500+ functions comprehensively documented
-- 6 automation scripts for modernization tasks
-- Documentation templates and standards
-- Knowledge preservation for future maintenance
-
-### Phase 5: Configuration Analysis & Decoupling (1 week) 🧐
-**Priority**: High - Foundation for modern build system  
-
-#### Configuration Audit
-1. **Header Analysis**
-   - Audit `Include/sysconf.h` manual function declarations
-   - Identify all `#ifdef` conditional compilation trees
-   - Document external library dependencies
-   - Map platform-specific code paths
-
-2. **Build System Analysis**
-   - Analyze current Makefile structure
-   - Identify hardcoded paths and assumptions
-   - Document compilation flags and dependencies
-   - Plan for CMake migration
-
-#### Dependency Documentation
-1. **External Libraries**
-   - Curses library for terminal UI
-   - Standard POSIX libraries
-   - System-specific signal handling
-   - File locking mechanisms
-
-2. **Platform Requirements**
-   - Debian/Ubuntu: GCC, make, curses-dev
-   - Fedora: GCC, make, ncurses-devel
-   - macOS: Xcode command line tools, Homebrew
-   - FreeBSD: Clang, gmake, ncurses
-
-**Deliverables:**
-- Complete configuration audit report
-- External dependency documentation
-- Platform-specific requirements matrix
-- CMake migration plan
-
-### Phase 6: Modern Build System Implementation (1 week) 🛠️
-**Priority**: High - Enables modern development workflow  
-
-#### CMake Implementation
-1. **Core CMakeLists.txt**
-   - Project definition and C standard specification
-   - Source file organization and executable creation
-   - Library discovery and linking
-   - Include directory management
-
-2. **Feature Detection**
-   - Replace manual `#ifdef` trees with CMake feature detection
-   - Automatic library and function detection
-   - Platform-specific configuration generation
-   - Cross-platform compatibility validation
-
-3. **Testing Integration**
-   - CTest integration for automated testing
-   - Test target creation and execution
-   - Coverage reporting integration
-   - Continuous integration preparation
-
-**Deliverables:**
-- Complete CMake build system
-- Automated feature detection
-- Cross-platform build validation
-- Testing integration with CTest
-
-### Phase 7: Platform Abstraction & Feature Detection (1-2 weeks) 🌳
-**Priority**: High - Eliminates platform-specific code  
-
-#### Header Modernization
-1. **Replace Manual Declarations**
-   - Remove manual function prototypes from `sysconf.h`
-   - Use standard library headers instead
-   - Update include statements across all files
-   - Validate function signatures
-
-2. **Feature Detection Implementation**
-   - Convert `#ifdef` trees to CMake-generated config
-   - Create `config.h.in` template
-   - Implement portable system call usage
-   - Test across all target platforms
-
-#### Platform Testing
-1. **Cross-Platform Validation**
-   - Debian/Ubuntu: GCC compilation and testing
-   - Fedora: GCC compilation and testing
-   - macOS: Clang compilation and testing
-   - FreeBSD: Clang compilation and testing
-
-**Deliverables:**
-- Eliminated manual function declarations
-- Platform-independent configuration system
-- Cross-platform build validation
-- Modern header structure
-
-### Phase 8: Syntactic & Mechanical Modernization (3-4 weeks) ⚙️
-**Priority**: High - Core modernization work  
-
-#### Week 1: Critical Security Fixes
-1. **Immediate Security Fixes** (Cannot be delayed)
-   - Replace all `gets()` calls with `fgets()`
-   - Fix unbounded `scanf("%s", ...)` operations
-   - Add bounds checking to string operations
-   - Validate and test all security fixes
-
-2. **String Safety Modernization**
-   - Replace `strcpy()` with `strncpy()` or `strlcpy()`
-   - Replace `strcat()` with `strncat()` or `strlcat()`
-   - Replace `sprintf()` with `snprintf()`
-   - Add null termination guarantees
-
-#### Week 2-3: Function Modernization
-1. **K&R Function Conversion** (500+ functions)
-   - Convert PARM_X macros to ANSI C prototypes
-   - Update function declarations in headers
-   - Validate function calls throughout codebase
-   - Test each module after conversion
-
-2. **Type System Improvements**
-   - Add explicit type declarations (remove implicit int)
-   - Add const qualifiers where appropriate
-   - Update parameter types for clarity
-   - Improve type safety throughout
-
-#### Week 3-4: Memory Safety & Error Handling
-1. **Memory Management**
-   - Add error checking for malloc/calloc calls
-   - Ensure proper free() for all allocations
-   - Initialize pointers to NULL
-   - Add bounds checking for array access
-
-2. **Error Handling**
-   - Add comprehensive error checking
-   - Improve error message clarity
-   - Add graceful failure handling
-   - Validate all file operations
-
-**Deliverables:**
-- All security vulnerabilities fixed and tested
-- 500+ functions converted to ANSI C prototypes
-- Comprehensive memory safety improvements
-- Enhanced error handling throughout codebase
-
-### Phase 9: Integer Portability & Deep Refactoring (2-3 weeks) 🧠
-**Priority**: Medium - 64-bit system compatibility  
-
-#### Integer Type Modernization
-1. **Type Analysis and Replacement**
-   - Convert array indices to `size_t`
-   - Use `int32_t`/`uint32_t` for exact width requirements
-   - Convert pointer storage to `uintptr_t`/`intptr_t`
-   - Update loop counters and size calculations
-
-2. **Format Specifier Updates**
-   - Update printf/scanf format strings
-   - Use `%zu` for `size_t` values
-   - Use `PRIu64` macros for 64-bit integers
-   - Test format strings on all platforms
-
-#### Deep Refactoring
-1. **Modern C Features Implementation**
-   - Add static assertions where beneficial
-   - Use modern alignment specifications
-   - Implement generic selections where appropriate
-   - Add thread-local storage if needed
-
-2. **Code Structure Improvements**
-   - Improve function organization
-   - Enhance data structure designs
-   - Optimize algorithms where beneficial
-   - Maintain backward compatibility
-
-**Deliverables:**
-- Complete 64-bit portability
-- Modern integer type usage throughout
-- Enhanced code structure and organization
-- Maintained functionality and performance
-
-### Phase 10: Advanced Analysis & Optimization (1 week) 🔬
-**Priority**: Low - Quality improvements  
-
-#### Static Analysis
-1. **Automated Analysis Tools**
-   - Clang Static Analyzer integration
-   - Cppcheck analysis and fixes
-   - Custom linting rules
-   - Code quality metrics
-
-2. **Dynamic Analysis**
-   - AddressSanitizer integration
-   - UndefinedBehaviorSanitizer validation
-   - Valgrind memory leak detection
-   - Performance profiling
-
-#### Final Validation
-1. **Comprehensive Testing**
-   - Full regression test suite execution
-   - Performance benchmark validation
-   - Security vulnerability scanning
-   - Cross-platform compatibility verification
-
-**Deliverables:**
-- Static analysis integration
-- Dynamic analysis validation
-- Performance optimization recommendations
-- Final quality assessment report
-
-## Risk Assessment & Mitigation
-
-### High-Risk Areas
-
-| Risk Factor | Impact | Probability | Mitigation Strategy |
-|-------------|--------|-------------|-------------------|
-| **Security vulnerabilities in production** | Critical | High | Immediate security fixes in Phase 3 |
-| **Regression during modernization** | High | Medium | Comprehensive testing before changes |
-| **Loss of game functionality** | High | Low | Incremental changes with validation |
-| **Platform incompatibility** | Medium | Low | Cross-platform testing throughout |
-| **Performance degradation** | Medium | Low | Performance baselines and monitoring |
-
-### Risk Mitigation Strategies
-
-1. **Comprehensive Testing**: Establish full test coverage before any changes
-2. **Incremental Approach**: Make small, validated changes rather than large rewrites
-3. **Continuous Integration**: Test on all platforms after each change
-4. **Documentation**: Preserve institutional knowledge throughout modernization
-5. **Rollback Plan**: Maintain ability to revert changes if issues arise
-
-## Resource Requirements
-
-### Development Team
-- **Primary Developer**: C modernization expertise, 8-12 weeks full-time
-- **Testing Specialist**: Testing framework setup, 2-3 weeks part-time
-- **Security Expert**: Security vulnerability assessment, 1 week consultation
-- **Platform Specialist**: Cross-platform validation, 1-2 weeks part-time
-
-### Infrastructure Requirements
-- **Development Machines**: Linux, macOS, FreeBSD for cross-platform testing
-- **Build Environment**: Modern compilers (GCC 9+, Clang 10+)
-- **Testing Tools**: Unity framework, static analyzers, dynamic analysis tools
-- **Version Control**: Git with branching strategy for safe development
-
-### External Dependencies
-- **Unity Testing Framework**: Free, open-source C testing framework
-- **CMake**: Modern build system for cross-platform development
-- **Static Analysis Tools**: Clang analyzer, cppcheck (free tools)
-- **Dynamic Analysis**: Valgrind, AddressSanitizer (included with compilers)
-
-## Success Metrics
-
-### Technical Metrics
-- **Security**: Zero critical vulnerabilities (all 4 buffer overflows fixed)
-- **Compliance**: 100% C2023 standard compliance
-- **Portability**: Successful compilation and testing on all 4 target platforms
-- **Performance**: <5% performance impact from modernization
-- **Coverage**: >90% test coverage for critical systems
-
-### Quality Metrics
-- **Documentation**: 100% of functions documented
-- **Memory Safety**: Zero memory leaks or buffer overflows
-- **Type Safety**: Complete 64-bit integer portability
-- **Maintainability**: Reduced technical debt and improved code structure
-
-### Process Metrics
-- **Automation**: 6 reusable modernization scripts created
-- **Testing**: Comprehensive automated test suite operational
-- **Build System**: Modern CMake-based build system
-- **Cross-Platform**: Validated builds on all target platforms
-
-## Timeline and Milestones
-
-### Critical Path Timeline
+# Modernization Plan - Conquer Game
+
+**Target**: C2023 with POSIX compliance
+**Effort**: 12-16 weeks
+**Files**: 67 C source files, 49 header files
+
+## Status & Critical Issues
+
+**Current Priority**: Fix 43 of 67 files that fail compilation with C2023 standards
+
+**Phase Progress**:
+- ✅ Phase 1-2: Environment & Analysis complete
+- ✅ Phase 7A.1-2: Header modernization, Unity testing
+- ⏳ **CRITICAL**: Phase 7A.3 - Fix compilation failures
+
+**Compilation Results** (67 files tested):
+- ✅ Clean: 16 files (23.9%)
+- ⚠️ Warnings: 8 files (11.9%)
+- ❌ Errors: 43 files (64.2%)
+
+**Error Categories**:
+1. Syntax errors: 27 files
+2. Integer signedness: 13 files
+3. Fallthrough warnings: 11 files
+4. Missing declarations: 10 files
+5. K&R conflicts: 3 files
+6. Signal handlers: 2 files
+
+## Security Vulnerabilities - IMMEDIATE ACTION REQUIRED
+
+### Critical (CVSS 9.8)
+**gets() Function** - Complete system compromise possible
+- Files: mainA.c:285, mainG.c:296/482, vms.c:49
+- Fix: Replace with fgets() and bounds checking
+
+### High Risk (CVSS 8.1)
+**scanf() Functions** - Buffer overflow potential
+- Files: mainA/G.c, executeX.c, unitsX.c, hexmapG.c
+- Fix: Add buffer size limits to scanf("%s") calls
+
+### String Safety Issues
+**1121 instances** of unsafe functions across 46 files:
+- strcpy(), strcat(), sprintf() without bounds checking
+- Fix: Replace with strncpy(), strncat(), snprintf()
+
+### Other Security Issues
+- **Password Security**: 2-char salt, plaintext fallback, 8-char limit
+- **File Security**: Directory traversal risk, race conditions
+- **Memory Safety**: Stack buffers without bounds checking
+
+## C2023 Compliance Issues
+
+### 1. Function Declarations (Critical)
+**Issue**: All functions use PARM_X macros for K&R/ANSI compatibility
+```c
+static int fname_char PARM_1(int, ch)  // Current
+static int fname_char(int ch)          // Target
 ```
-Week 1-2:   Phase 3 - Testing Infrastructure (CRITICAL)
-Week 3-5:   Phase 4 - Documentation & Automation
-Week 6:     Phase 5 - Configuration Analysis
-Week 7:     Phase 6 - Modern Build System
-Week 8-9:   Phase 7 - Platform Abstraction
-Week 10-13: Phase 8 - Syntactic Modernization (CORE WORK)
-Week 14-16: Phase 9 - Integer Portability
-Week 17:    Phase 10 - Final Analysis & Validation
-```
+**Required**: Convert 500+ functions, remove PARM_X macros, update headers
 
-### Key Milestones
-- **Week 2**: Testing infrastructure operational, security baseline established
-- **Week 4**: All functions documented, automation scripts ready
-- **Week 7**: Modern build system operational, platform testing validated
-- **Week 10**: All security vulnerabilities fixed and tested
-- **Week 13**: Complete K&R to ANSI C conversion, memory safety implemented
-- **Week 16**: Full 64-bit portability, integer type modernization complete
-- **Week 17**: Final validation, project completion
+### 2. Platform Configuration
+**Issue**: Manual platform detection with `#ifdef` trees
+**Required**: Replace with CMake feature detection, eliminate platform-specific blocks
 
-## Conclusion
+### 3. Type System
+**Issues**: Custom types, 32-bit assumptions, mixed definitions
+**Required**: Replace with `<stdint.h>` types, use `size_t` for indices, update format specifiers
 
-This comprehensive modernization plan transforms the Conquer game from 1992 pre-ANSI C to modern C2023 standards while preserving its sophisticated game mechanics and multi-user capabilities. The phased approach ensures safety through comprehensive testing, addresses critical security vulnerabilities immediately, and systematically modernizes the codebase.
+### 4. Header Organization
+**Issues**: Circular dependencies, missing guards, platform-specific includes
+**Required**: Reorganize includes, add header guards, standardize on POSIX
 
-**Key Success Factors:**
-1. **Testing First**: Comprehensive testing infrastructure before any code changes
-2. **Security Priority**: Immediate fixes for critical buffer overflow vulnerabilities
-3. **Incremental Progress**: Small, validated changes with continuous testing
-4. **Knowledge Preservation**: Complete documentation and institutional knowledge capture
-5. **Modern Infrastructure**: CMake build system and cross-platform compatibility
+## Implementation Phases
 
-The resulting modernized codebase will be maintainable, secure, portable, and ready for future development while preserving the game's proven architecture and sophisticated mechanics.
+### Phase 7A.3: Compilation Fixing (2-3 weeks) 🚨
+**Week 1**: Fix header syntax errors (27 files), K&R conflicts (3 files), missing declarations (10 files)
+**Week 2**: Signal handler signatures (2 files), function signature updates
+**Week 3**: Remaining errors, validation
+**Target**: 100% compilation success, zero errors
 
----
-**Generated by Claude (claude-sonnet-4@20250514)**  
-**Plan Date**: 2025-09-04
+### Phase 4: Security & Function Modernization (3-4 weeks)
+**Week 1 (Critical)**: Replace gets(), fix scanf(), audit string functions
+**Week 2-3**: Convert PARM_X macros (500+ functions), type improvements
+**Week 4**: Memory safety, error handling, password security
+
+### Phase 5: Build System & Configuration (2 weeks)
+- CMake implementation with C2023 standards
+- Feature detection replacing `#ifdef` trees
+- Library detection (ncurses, crypt)
+- CTest integration
+
+### Phase 6: Testing Infrastructure (1 week)
+- Unity C testing framework (complete)
+- Baseline tests for current behavior
+- Security and regression test suites
+
+### Phase 8: Type System & Portability (2-3 weeks)
+- Convert to size_t, int32_t/uint32_t
+- Update format specifiers
+- 64-bit portability fixes
+- Modern C features
+
+### Phase 9: Analysis & Optimization (1 week)
+- Static analysis (clang-tidy, cppcheck)
+- Dynamic analysis (sanitizers, valgrind)
+- Final validation
+
+## Immediate Action Plan
+
+**Phase 1 (Critical - 24 hours)**:
+1. Replace all gets() calls with fgets()
+2. Fix scanf("%s") calls with buffer limits
+3. Audit and test all security fixes
+
+**Phase 2 (High - 1 week)**:
+1. Replace unsafe string functions
+2. Fix compilation errors systematically
+3. Improve password security
+
+**Phase 3 (Medium - 2 weeks)**:
+1. Convert PARM_X macros to ANSI prototypes
+2. Implement CMake feature detection
+3. File validation and signal handler safety
+
+## Risk Mitigation
+
+**High Risks**: Security vulnerabilities, compilation failures, legacy complexity
+**Strategy**: Security fixes first, systematic compilation fixing, comprehensive testing
+
+**Testing Foundation**: Unity framework operational, regression tests ready
+
+## Resources
+
+**Team**: Primary developer (8-12 weeks), testing specialist, security expert
+**Infrastructure**: Multi-platform development environment, modern compilers
+
+## Success Criteria
+
+1. 100% compilation success with C2023 standards
+2. All critical security vulnerabilities fixed
+3. Complete PARM_X macro conversion
+4. Modern build system operational
+5. Comprehensive test coverage
+
+**Goal**: Zero regressions during modernization, maintained functionality

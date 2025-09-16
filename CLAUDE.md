@@ -28,11 +28,8 @@ gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Includ
 # Build with additional safety flags
 gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -fsanitize=address -fsanitize=undefined -I Include Src/*.c -o program
 
-# Cross-platform build test (test on all target platforms)
-# Debian/Ubuntu: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
-# Fedora: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
-# macOS: clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
-# FreeBSD: clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
+# Cross-platform build test
+# All platforms: gcc/clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
 
 # Static analysis with clang
 clang --analyze -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -I Include Src/*.c
@@ -52,9 +49,7 @@ python script.py   # May fail - don't use
 
 **IMPORTANT: Corrected Phase Ordering**
 
-Based on lessons learned during actual implementation, the phase ordering has been revised from the original plan. See `_modernization/claude/reports/PHASE_ORDERING_LESSONS_LEARNED.md` for detailed analysis.
-
-**Corrected Phase Sequence:**
+**Phase Sequence:**
 1. **Phase 1**: Triage and Environment Setup
 2. **Phase 2**: Initial Assessment and Planning
 3. **Phase 3**: Comprehensive Function Documentation
@@ -71,30 +66,10 @@ Based on lessons learned during actual implementation, the phase ordering has be
 
 Before changing a single line of code, establishing a modern, strict, and controlled environment is critical.
 
-1. **Working Directory Documentation**: Determine and document the exact project working directory path
-   - Use `pwd` command to get the current working directory
-   - Document the full path in this CLAUDE.md file for future session reference
-   - **Project Working Directory**: `/home/ssmoogen/conquer-project/conquer`
-   - **CRITICAL PATH ACCURACY**: Always use the exact path `/home/ssmoogen/conquer-project/conquer`
-     - **NEVER** change `ssmoogen` to `ssmoogan` (common typo that causes file not found errors)
-     - **ALWAYS** double-check file paths before using Read, Write, Edit, or MultiEdit tools
-     - When in doubt, use relative paths like `Src/filename.c` instead of absolute paths
-     - If a file operation fails with "File does not exist", check for path typos first
-2. **Version Control**: Place the entire codebase under Git version control
-3. **Git Ignore Configuration**: Check if `.gitignore` exists; if not, create one to prevent build artifacts from being committed
-   - Include common C build artifacts: `*.o`, compiled executables, temporary files
-   - Include test executables: `tests/test_*` (without `.c` extension)
-   - Include platform-specific files: `.DS_Store`, `Thumbs.db`
-   - Include coverage files: `*.gcov`, `*.gcda`, `*.gcno`
-4. **Modern Compiler and Strict Warnings**: Use GCC or Clang with highest warning levels:
-   ```bash
-   gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
-   ```
-   - `-Wall`: Enables all standard, high-priority warnings
-   - `-Wextra`: Enables additional useful warnings not covered by `-Wall`
-   - `-Wpedantic`: Issues warnings required by the specified C standard
-   - `-std=c2x`: Enforces the 202x C standard
-3. **Establish a Testing Baseline**: Create basic regression tests before refactoring
+1. **Working Directory**: `/home/ssmoogen/conquer-project/conquer` (use exact path, check for typos)
+2. **Version Control**: Place codebase under Git, create `.gitignore` for build artifacts
+3. **Modern Compiler**: Use strict warnings (`-Wall -Wextra -Wpedantic`)
+4. **Testing Baseline**: Create basic regression tests before refactoring
 
 ### Phase 2: Initial Assessment and Planning (Complete Before Starting Code Changes)
 
@@ -143,27 +118,7 @@ Before changing a single line of code, establishing a modern, strict, and contro
 
 **CRITICAL: Document Functions Before Modernization**
 
-**REVISED STRATEGY: One File Per Session Approach**
-
-Due to the extensive nature of documenting 50+ source files, Phase 3 is now organized as a series of focused sessions, with each session documenting one complete file and committing immediately to preserve context.
-
-**Documentation Session Workflow:**
-
-1. **Session Preparation**:
-   - Load `_modernization/memory/PHASE_3_DOCUMENTATION_STRATEGY.md` to check progress
-   - Identify next priority file to document
-   - Read target file to understand its function structure
-
-2. **Documentation Process per File**:
-   - Read and analyze the complete file to understand its purpose and functions
-   - Manually document all functions with comprehensive analysis
-   - Focus on quality and completeness for one file at a time
-
-3. **Session Completion**:
-   - Git commit the fully documented file immediately
-   - Update progress tracking in strategy file
-   - Save session memory for next file continuation
-   - End session cleanly to preserve context
+**One File Per Session Approach** - document one complete file per session, commit immediately
 
 **File Priority Order:**
 - **Priority 1**: Core Game Engine (mainA.c, dataA.c, combatA.c, moveA.c, etc.)
@@ -174,112 +129,30 @@ Due to the extensive nature of documenting 50+ source files, Phase 3 is now orga
 
 **Progress Tracking**: See `_modernization/memory/PHASE_3_DOCUMENTATION_STRATEGY.md` for detailed file prioritization and current progress.
 
-**Function Documentation Requirements:**
+**Documentation Requirements**: Analyze each function's purpose, parameters, returns, side effects. Use standard format from [Code Quality Standards](#code-quality-standards). Document before modernization to preserve knowledge and enable safe refactoring.
 
-1. **Analyze Function Purpose**:
-   - Read and understand what each function actually does
-   - Trace data flow and side effects
-   - Identify function dependencies and call patterns
-   - Document any non-obvious behavior or edge cases
+#### Documentation Assessment Report
 
-2. **Documentation Standards**: Follow the function documentation format and legacy code guidelines detailed in the [Code Quality Standards](#code-quality-standards) section.
-
-3. **Direct Analysis Approach**:
-   - Analyze each function by reading and understanding the code directly
-   - Understand function purpose, parameters, return values, and side effects
-   - Document complex algorithms, data flow, and business logic
-   - Identify and explain magic numbers, assumptions, and edge cases
-
-**Documentation Workflow:**
-
-1. **File Analysis**: Read and understand the complete file structure and purpose
-2. **Function Analysis**: Analyze each function's implementation, algorithm, and behavior
-3. **Documentation Writing**: Create comprehensive documentation using standard format
-4. **Cross-Reference**: Verify documentation matches actual implementation
-5. **Knowledge Capture**: Document any tribal knowledge or non-obvious behavior
-6. **Version Control**: Commit documented code before any modernization
-
-**Why Document Before Modernization:**
-
-- **Preserve Knowledge**: Legacy code often lacks institutional knowledge
-- **Enable Safe Refactoring**: Understanding prevents breaking changes
-- **Improve Test Design**: Documentation guides comprehensive test creation
-- **Reduce Risk**: Clear specifications prevent modernization errors
-- **Future Maintenance**: Well-documented code is easier to maintain
-
-#### Documentation Assessment Report Template
-
-The `DOCUMENTATION_ASSESSMENT.md` report should include comprehensive analysis of current documentation state and provide actionable improvement strategy. Required sections:
-
-**1. Executive Summary**
-- Overall documentation coverage percentage
-- Quality assessment (Poor/Fair/Good/Excellent)
-- Critical gaps requiring immediate attention
-- Estimated effort to bring to modernization standards
-
-**2. Current Documentation Analysis**
-- **File-by-File Analysis**: Function count, current documentation state, quality rating
-- **Documentation Coverage**: Functions documented vs undocumented per file
-- **Quality Assessment**: Rating documentation completeness, clarity, and usefulness
-- **Standards Compliance**: Adherence to modern C documentation conventions
-- **Common Issues**: Recurring documentation problems across files
-
-**3. Documentation Standards Assessment**
-- **Missing Elements**: Function purpose, parameters, return values, side effects
-- **Legacy Issues**: Outdated comments, unclear descriptions, missing context
-- **Consistency Problems**: Inconsistent formatting, style variations
-- **Technical Debt**: Comments that don't match implementation
-
-**4. File Prioritization Strategy**
-- **Priority Classifications**: Critical, High, Medium, Low based on:
-  - System importance (core engine vs utilities)
-  - Function complexity and count
-  - Current documentation state
-  - Dependencies and call frequency
-- **Session Planning**: Recommended order and checkpoint strategy
-- **Large File Handling**: Files requiring 15-function checkpoint approach
-
-**5. Implementation Strategy**
-- **Documentation Workflow**: Step-by-step process for each file
-- **Quality Standards**: Target documentation format and requirements
-- **Checkpoint Strategy**: When and how to implement 15-function breaks
-- **Progress Tracking**: Metrics and milestones for tracking improvement
-- **Resource Estimation**: Time and effort required per priority group
-
-**6. Risk Assessment**
-- **Knowledge Loss Risk**: Functions with unclear or missing logic documentation
-- **Maintenance Risk**: Poorly documented complex algorithms
-- **Integration Risk**: Undocumented interfaces and dependencies
-
-This assessment becomes the foundation for Phase 3 documentation work and ensures systematic improvement of code documentation quality.
+Create `DOCUMENTATION_ASSESSMENT.md` with:
+- Coverage percentage and quality rating
+- File-by-file analysis with function counts
+- Priority classifications based on importance and complexity
+- Implementation workflow and progress tracking strategy
 
 ### Phase 4: Warning Elimination and Compilation Health 🚨
 
 **CRITICAL: This phase is required before any testing or build system work can proceed.**
 
-**Why This Phase Is Essential:**
-- Legacy codebases often have 100+ warnings that mask real bugs
-- Modern testing frameworks require clean compilation
-- Build system modernization depends on reliable compilation
-- Warnings often indicate data corruption or memory safety issues
+**Essential for clean compilation needed by testing frameworks.**
 
-**4 Compilation Baseline**:
-- Test compile all source files with strict C2023 flags
-- Document all warnings by category and severity
-- Identify critical errors that prevent compilation
+**Warning Elimination Priority**:
+1. Compilation errors
+2. Missing braces (data structure initialization)
+3. Format warnings (sprintf/printf mismatches)
+4. Implicit declarations
+5. Multiple definitions
 
-**4 Warning Elimination Priority**:
-1. **Compilation Errors**: Fix anything that prevents building
-2. **Missing Braces**: Fix data structure initialization warnings (often real bugs)
-3. **Missing Field Initializers**: Fix union and struct initialization
-4. **Format Warnings**: Fix sprintf/printf format mismatches
-5. **Implicit Declarations**: Add missing function prototypes
-6. **Multiple Definitions**: Fix header file variable definition conflicts
-
-**4 Basic Safety Improvements**:
-- Replace sprintf with snprintf for buffer safety
-- Add missing includes for standard library functions
-- Fix obvious memory safety issues found during warning fixes
+**Safety Improvements**: Replace sprintf with snprintf, add missing includes
 
 **Completion Criteria**: All source files compile with zero warnings using:
 ```bash
@@ -292,32 +165,14 @@ gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Includ
 
 Replace legacy Makefiles with CMake to enable proper testing integration, cross-platform compatibility, and modern development workflows.
 
-**Why CMake First:**
-- Testing frameworks integrate best with modern build systems
-- Feature detection replaces hardcoded `#ifdef` trees
-- Cross-platform library detection (ncurses, crypt, etc.)
-- Enables automated testing and CI/CD integration
+**CMake enables testing integration and cross-platform builds.**
 
-**5.1 Makefile Analysis**:
-- Document current build structure (dual executables: conquer/conqrun)
-- Identify library dependencies and platform-specific code
-- Extract compiler flags and feature requirements
-
-**5.2 CMake Implementation**:
-- Create root `CMakeLists.txt` with proper C2023 standards
-- Implement library detection (FindPkgConfig for ncurses, crypt)
+**Implementation**:
+- Analyze current Makefile structure (dual executables)
+- Create `CMakeLists.txt` with C2023 standards
+- Implement library detection (ncurses, crypt)
 - Configure feature detection to replace `#ifdef` trees
-- Set up separate targets for user interface and admin programs
-
-**5.3 Cross-Platform Configuration**:
-- Support target platforms: Debian, Fedora, macOS, FreeBSD
-- Implement POSIX-compliant feature detection
-- Replace hardcoded system flags with CMake tests
-
-**5.4 Testing Integration Preparation**:
-- Configure CTest integration for future testing framework
-- Set up test directory structure within CMake
-- Prepare for Unity testing framework integration
+- Prepare CTest integration for testing
 
 ### Phase 6: Testing Infrastructure Setup 🧪
 
@@ -325,179 +180,39 @@ Replace legacy Makefiles with CMake to enable proper testing integration, cross-
 
 With CMake in place, establish robust testing infrastructure to ensure that remaining modernization preserves all original functionality.
 
-**6.1 Testing Framework Selection and Setup**:
-- **Unity C Testing Framework**: Lightweight, C89 compatible, perfect for legacy code
-- **Test Directory Structure**: Separate tests from source code
-  ```
-  tests/
-  ├── framework/          # Unity testing framework
-  ├── unit/              # Unit tests for individual functions
-  ├── integration/       # Integration tests for modules
-  ├── regression/        # Regression tests for modernization
-  ├── security/          # Security-focused tests
-  ├── performance/       # Performance benchmarks
-  ├── fixtures/          # Test data and mock files
-  └── scripts/           # Test automation scripts
-  ```
+**Unity C Testing Framework** - lightweight, C89 compatible
 
-**6.2 Baseline Testing Creation**:
-- **Behavioral Baseline Tests**: Document current behavior before changes
-- **Critical Function Tests**: Test core game systems (combat, economics, movement)
-- **Multi-User Integration Tests**: Test file locking and concurrent access
-- **Performance Benchmarks**: Establish performance baselines
+**Test Structure**: `tests/` with subdirectories for unit, integration, regression, security, performance
 
-**6.3 Automated Test Infrastructure**:
-- **Test Runner Scripts**: Automated execution of all test categories
-- **Security Analysis Scripts**: Automated vulnerability scanning
-- **Coverage Reporting**: Code coverage analysis for modernization validation
-- **CI/CD Integration**: Continuous testing during modernization
+**Implementation**: Baseline tests for current behavior, automated test runners, coverage reporting, CMake integration
 
-**6.4 Modern Build System Implementation**:
-- **CMake Integration**: Modern build system with testing support
-- **Compiler Safety Flags**: Enable all warnings and sanitizers
-- **Cross-Platform Support**: Ensure compatibility across target platforms
-- **Feature Detection**: Replace manual configuration with automated detection
+### Phase 7: Configuration Modernization 🧐
 
-**Why Testing Infrastructure First:**
-- **Safe Modernization**: Catch regressions immediately during code changes
-- **Confidence**: Ensure no functionality is lost during modernization
-- **Automated Validation**: Reduce manual testing overhead
-- **Documentation Validation**: Verify documented behavior matches implementation
-- **Security Verification**: Confirm security fixes don't break functionality
-
-### Phase 7: Analyze and Decouple Configuration 🧐
-
-- **Audit the Options**: Go through main configuration header (e.g., `config.h`) and Makefile
-- **Identify Dependencies**: Document all external libraries the project depends on
-- Extract all environmental and user-choice logic from source code and Makefiles
-
-### Phase 7b: Replace `#ifdef` Trees with Feature Detection 🌳
-
-Create a template file `config.h.in` and use CMake to generate configuration:
-```c
-// config.h.in
-#define BUFFER_SIZE @BUFFER_SIZE@
-#cmakedefine HAVE_STRNLEN 1
-```
-
-```cmake
-include(CheckFunctionExists)
-check_function_exists(strnlen HAVE_STRNLEN)
-set(BUFFER_SIZE 2048 CACHE STRING "The default buffer size")
-
-configure_file(
-    ${PROJECT_SOURCE_DIR}/config.h.in
-    ${PROJECT_BINARY_DIR}/config.h
-)
-```
+**Audit**: Review `config.h` and Makefile options, document dependencies
+**Feature Detection**: Replace `#ifdef` trees with CMake-generated configuration
 
 ### Phase 8: Syntactic and Mechanical Modernization ⚙️
 
 **IMPORTANT: Create Automation Scripts**
 
-When doing a task multiple times, Clause should create
+Create automation scripts for repetitive tasks to save time and ensure consistency across sessions.
 
-Before beginning manual modernization, Claude should test to see if it
-can write an automotive script which will do the task that could save
-time and ensure consistency across sessions. Each script should be
-written to attempt a task and then tested across several *.c and *.h
-files as needed. If it is found to consistently work, then it should be
-used. If it does not work, then the work will need to be done manually
-with files being broken up in short sessions to keep accuracy.
+**Automation Scripts**:
+- `convert_kr_functions.py` - K&R to ANSI conversion
+- `modernize_headers.py` - Update includes
+- `add_safety_checks.py` - Memory safety
+- `fix_integer_types.py` - 64-bit portability
+- `generate_tests.py` - Test templates
 
-**Possible Example Automation Scripts:**
+**Script Guidelines**: Use uv shebang format, make idempotent, include `--dry-run` and `--backup` options, log changes
 
-1. **`convert_kr_functions.py`** - Convert K&R style functions to C2023 prototypes
-   - Handles PARM_X macro conversions
-   - Preserves comprehensive function documentation
-   - Modernizes syntax while maintaining functionality
-   - Example usage: `python3 _modernization/scripts/convert_kr_functions.py src/*.c`
-   - Thoroughly test per file that conversion worked.
-
-2. **`modernize_headers.py`** - Update include statements and header usage
-   - Replace legacy headers with standard equivalents
-   - Add missing includes for used functions
-   - Remove redundant includes
-   - Example usage: `python3 _modernization/scripts/modernize_headers.py src/`
-
-3. **`add_safety_checks.py`** - Insert memory safety and bounds checking
-   - Add NULL pointer checks
-   - Insert buffer overflow protection
-   - Add error handling for malloc/calloc
-   - Example usage: `python3 _modernization/scripts/add_safety_checks.py src/module.c`
-
-4. **`fix_integer_types.py`** - Update integer types for 64-bit portability
-   - Convert int to size_t for array indices
-   - Update printf format specifiers
-   - Handle pointer-to-integer conversions
-   - Example usage: `python3 _modernization/scripts/fix_integer_types.py src/`
-
-5. **`generate_tests.py`** - Create basic test templates
-   - Generate unit test skeletons for functions
-   - Create test harness boilerplate
-   - Set up test directory structure
-   - Example usage: `python3 _modernization/scripts/generate_tests.py src/module.c`
-
-**Script Development Guidelines:**
-
-- **All scripts must use the shebang format specified in global CLAUDE.md**:
-  ```python
-  #!/usr/bin/env -S uv run --script
-  # /// script
-  dependencies = ["regex", "pathlib", "argparse"]
-  # ///
-  ```
-- Scripts must be **idempotent** (safe to run multiple times)
-- Include **comprehensive error handling** and validation
-- Add **--dry-run** option to preview changes without modifying files
-- Include **--backup** option to create temporary .orig backups for change validation
-- Remove .orig backups after successful validation (either automatically or manually)
-- Use backups for diff comparison to verify script changes are correct
-- Log all changes made to a timestamped log file in `_modernization/claude/reports/`
-- Support **batch processing** of multiple files
-- Include **detailed usage documentation** and examples
-
-**Implementation Priority Order:**
-1. **Create Automation Scripts**: Build reusable tools for common tasks
-2. **Function Documentation**: Complete comprehensive documentation (Phase 3)
-3. **Function Prototypes**: Convert K&R style to ANSI prototypes (using convert_kr_functions.py)
-4. **Type Safety**: Add proper type declarations and const qualifiers (using script)
-5. **Standard Headers**: Replace legacy headers with standard ones (using modernize_headers.py)
-6. **Memory Safety**: Add bounds checking and proper error handling (using add_safety_checks.py)
-7. **Modern Features**: Introduce C2023 features where beneficial
-
-**Key Modernization Tasks:**
-
-#### Function Declarations
-- Convert K&R style function definitions to ANSI C prototypes
-- Add `void` to parameterless functions
-- Use proper parameter types instead of implicit int
-
-#### Type System Improvements
-- Replace implicit int declarations with explicit types
-- Add const qualifiers where appropriate
-- Use size_t for array indices and memory sizes
-- Replace char with explicit signed/unsigned char where needed
-
-#### Standard Library Updates
-- Replace deprecated functions (strcpy → strncpy/strlcpy)
-- Use safer alternatives (sprintf → snprintf)
-- Include proper headers (#include <string.h>, #include <stdlib.h>)
-- Use POSIX-compliant functions only
-- Avoid GNU extensions or BSD-specific functions
-
-#### Memory Management
-- Add proper error checking for malloc/calloc
-- Ensure all allocated memory is freed
-- Initialize pointers to NULL
-- Check for buffer overflows
-
-#### C2023 Features to Consider
-- Generic selections (_Generic)
-- Static assertions (_Static_assert)
-- Thread-local storage (_Thread_local)
-- Alignment specifiers (_Alignas, _Alignof)
-- Anonymous structs and unions
+**Modernization Tasks**:
+- Convert K&R functions to ANSI prototypes
+- Add explicit types and const qualifiers
+- Replace deprecated functions (strcpy→strncpy, sprintf→snprintf)
+- Add memory safety checks
+- Use size_t for indices, proper headers
+- Consider C2023 features (_Generic, _Static_assert)
 
 ### Phase 9: Deep Refactoring and Integer Portability 🧠
 
@@ -683,6 +398,53 @@ All functions must be documented before modernization using this standard format
 - Test POSIX compliance using portable system calls
 - **Memory safety testing**: Use AddressSanitizer, UndefinedBehaviorSanitizer, and Valgrind
 - **Code coverage analysis**: Aim for >90% coverage on critical paths
+
+### Test Execution Guidelines
+
+**CRITICAL: Always run tests from the correct build directory**
+
+**Project Working Directory**: `/home/ssmoogen/conquer-project/conquer`
+
+**Test Execution Commands:**
+```bash
+# Navigate to main project build directory (REQUIRED)
+cd /home/ssmoogen/conquer-project/conquer/build
+
+# IMPORTANT: Regenerate CMake configuration after test changes
+cmake ..                  # Regenerate after CMakeLists.txt changes
+
+# Run all tests (recommended)
+ctest
+
+# Run tests with verbose output
+ctest --output-on-failure
+
+# Build and run tests
+make && ctest
+
+# Full rebuild cycle (when adding new tests)
+cmake .. && make && ctest
+
+# Run specific test category
+ctest -R "unit_"          # Unit tests only
+ctest -R "security_"      # Security tests only
+ctest -R "regression_"    # Regression tests only
+```
+
+**Directory Structure Clarification:**
+- **Main Build Directory**: `/home/ssmoogen/conquer-project/conquer/build/` - Use this for all test execution
+- **Tests Source Directory**: `/home/ssmoogen/conquer-project/conquer/tests/` - Contains test source files
+- **Tests Build Directory**: `/home/ssmoogen/conquer-project/conquer/tests/build/` - NOT used for execution
+
+**Path Resolution:**
+- Tests running from `/build/` correctly find source files at `../Src/`
+- Tests have dynamic path detection to locate project root via CMakeLists.txt
+- All test executables should be run via `ctest` from the main build directory
+
+**Common Errors to Avoid:**
+- ❌ Running tests from `/tests/` directory (wrong paths)
+- ❌ Running individual test executables directly from `/tests/build/`
+- ✅ Always use `cd /home/ssmoogen/conquer-project/conquer/build && ctest`
 
 ### Test Build Integration
 
@@ -996,10 +758,7 @@ if (param == NULL) {
 - **Create git commits after each completed work session using the format above**
 - **Export conversation before compaction when context is below 4%**
 - Refer to analysis files for guidance throughout the project:
+  - `_modernization/claude/reports/MODERNIZATION_PLAN.md` - Complete modernization guide with security fixes, C2023 compliance, and implementation plan
   - `_modernization/claude/reports/SYSTEM_ANALYSIS.md` - Complete system architecture and functionality
-  - `_modernization/claude/reports/C2023_MODERNIZATION.md` - Detailed modernization tasks and priorities
-  - `_modernization/claude/reports/SECURITY_FIXES.md` - Critical security vulnerabilities and fixes
   - `_modernization/claude/reports/DOCUMENTATION_ASSESSMENT.md` - Current documentation state and improvement strategy
   - `_modernization/claude/reports/TESTING_INFRASTRUCTURE.md` - Comprehensive testing framework and strategy
-  - `_modernization/claude/reports/MODERNIZATION_PLAN.md` - Complete implementation plan
-  - `_modernization/claude/reports/FUTURE_DEVELOPMENT.md` - Long-term development roadmap beyond modernization
