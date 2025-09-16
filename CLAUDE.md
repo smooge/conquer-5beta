@@ -37,6 +37,9 @@ gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -
 # Static analysis with clang
 clang --analyze -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -I Include Src/*.c
 
+# Static analysis with clang-tidy (modernization and security focus)
+clang-tidy Src/filename.c -checks=clang-analyzer-security*,clang-analyzer-core* -- -I Include -std=c2x -D_POSIX_C_SOURCE=200809L
+
 # Format code (if clang-format is available)
 clang-format -i *.c *.h
 
@@ -513,7 +516,18 @@ with files being broken up in short sessions to keep accuracy.
 
 ### Phase 10: Advanced Analysis and Maintenance 🔬
 
-**Static Analysis**: Use tools like Clang Static Analyzer, cppcheck, or PVS-Studio
+**Static Analysis**: Use multiple analysis tools for comprehensive code quality assessment
+
+**clang-tidy** (Primary modernization tool):
+```bash
+# Security and core issue detection
+clang-tidy Src/filename.c -checks=clang-analyzer-security*,clang-analyzer-core* -- -I Include -std=c2x -D_POSIX_C_SOURCE=200809L
+
+# Comprehensive analysis for modernization
+clang-tidy Src/filename.c -checks=clang-analyzer-*,bugprone-*,readability-* -- -I Include -std=c2x -D_POSIX_C_SOURCE=200809L
+```
+
+**Additional Static Analysis**: Clang Static Analyzer, cppcheck, or PVS-Studio
 
 **Dynamic Analysis**: Compile with sanitizers:
 - **AddressSanitizer** (`-fsanitize=address`): Detects memory errors

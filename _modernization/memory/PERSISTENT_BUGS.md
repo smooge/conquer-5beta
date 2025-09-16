@@ -124,6 +124,34 @@ if (XREAL != c1_ptr->xloc) {
 
 **Status**: OPEN
 
+### BUG-004: Multiple Insecure fprintf() Usage (Security)
+**Priority**: HIGH
+**File**: Src/checkX.c
+**Function**: checkout()
+**Discovered**: During clang-tidy static analysis testing
+
+**Description**: Multiple calls to fprintf() without bounds checking or security validation. clang-tidy identifies these as security risks that should use safer alternatives with length arguments or boundary checks.
+
+**Reproduction Steps**:
+1. Run `clang-tidy Src/checkX.c -checks=clang-analyzer-security*`
+2. Multiple warnings about insecure fprintf() usage at lines 128, 135, 144, 150, 158
+3. Expected: Use fprintf_s() or similar bounded alternatives
+
+**Impact**: Potential buffer overflow vulnerabilities in logging and output functions. Could be exploited if format strings are controlled by user input.
+
+**Proposed Fix**: Replace fprintf() calls with safer alternatives:
+```c
+/* Before (insecure) */
+fprintf(fupdate, "%s[%d]: %s has repro > 15 of %d\n", ...);
+
+/* After (secure) */
+snprintf(buffer, sizeof(buffer), "%s[%d]: %s has repro > 15 of %d\n", ...);
+fprintf(fupdate, "%s", buffer);
+/* OR use fprintf_s if available */
+```
+
+**Status**: OPEN
+
 ---
 
 ## Fixed Bugs
@@ -134,9 +162,9 @@ if (XREAL != c1_ptr->xloc) {
 
 ## Bug Statistics
 
-**Total Active Bugs**: 3
+**Total Active Bugs**: 4
 - **CRITICAL**: 1
-- **HIGH**: 1
+- **HIGH**: 2
 - **MEDIUM**: 1
 - **LOW**: 0
 
