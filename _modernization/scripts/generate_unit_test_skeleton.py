@@ -21,55 +21,41 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+# Import the working function analysis from analyze_functions.py
+sys.path.append(str(Path(__file__).parent))
+from analyze_functions import analyze_source_file
+
 def extract_functions(source_file):
     """
-    Extract function definitions from C source file.
+    Extract function definitions from C source file using the robust analyze_functions module.
 
     Returns list of dictionaries with function information:
     [{'name': 'function_name', 'return_type': 'int', 'params': 'int x, char *y', 'line': 42}]
     """
+    # Use the robust function analysis that handles PARM_ patterns
+    analysis_result = analyze_source_file(source_file)
+
+    if 'error' in analysis_result:
+        print(f"Error analyzing {source_file}: {analysis_result['error']}")
+        return []
+
     functions = []
+    for func_info in analysis_result['functions']:
+        # Convert parameters to a simplified string format for test generation
+        if func_info['parameters']:
+            params = ', '.join([param['full'] for param in func_info['parameters']])
+        else:
+            params = "void"
 
-    try:
-        with open(source_file, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-    except Exception as e:
-        print(f"Error reading {source_file}: {e}")
-        return functions
-
-    # Remove comments to avoid false matches
-    content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
-    content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
-
-    # Pattern to match function definitions (K&R and ANSI style)
-    # This is a simplified pattern - may need refinement for complex cases
-    function_pattern = r'^([a-zA-Z_][a-zA-Z0-9_\s\*]*)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{'
-
-    lines = content.split('\n')
-    for i, line in enumerate(lines, 1):
-        match = re.match(function_pattern, line.strip())
-        if match:
-            return_type = match.group(1).strip()
-            func_name = match.group(2).strip()
-
-            # Skip if it looks like a macro or struct definition
-            if func_name.isupper() or return_type.startswith('#'):
-                continue
-
-            # Extract parameter list (simplified)
-            paren_start = line.find('(')
-            paren_end = line.find(')', paren_start)
-            if paren_start != -1 and paren_end != -1:
-                params = line[paren_start+1:paren_end].strip()
-            else:
-                params = "void"
-
-            functions.append({
-                'name': func_name,
-                'return_type': return_type,
-                'params': params,
-                'line': i
-            })
+        functions.append({
+            'name': func_info['name'],
+            'return_type': func_info['return_type'],
+            'params': params,
+            'line': func_info['line_number'],
+            'is_parm_function': func_info.get('is_parm_function', False),
+            'parameter_count': func_info['parameter_count'],
+            'complexity': func_info['complexity']['category']
+        })
 
     return functions
 

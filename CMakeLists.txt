@@ -268,4 +268,16 @@ set_tests_properties(test_moveA PROPERTIES
     TIMEOUT 30
 )
 
+# test_mainA - Unit test target
+add_executable(test_mainA tests/unit/test_mainA.c)
+target_link_libraries(test_mainA PRIVATE unity)
+target_include_directories(test_mainA PRIVATE Include)
+
+# Add to CTest
+add_test(NAME test_mainA COMMAND test_mainA)
+set_tests_properties(test_mainA PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    TIMEOUT 30
+)
+
 # End Unit Tests

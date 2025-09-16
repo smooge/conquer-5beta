@@ -48,3 +48,4 @@ Thumbs.db
 
 # Debug symbols
 *.dSYM/
+_modernization/scripts/__pycache__/

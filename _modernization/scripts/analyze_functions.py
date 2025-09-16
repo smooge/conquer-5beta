@@ -32,12 +32,12 @@ def analyze_function_complexity(func_body):
     # Count different complexity indicators
     metrics = {
         'lines': len(func_body.split('\n')),
-        'if_statements': len(re.findall(r'\\bif\\s*\\(', func_body)),
-        'loops': len(re.findall(r'\\b(for|while|do)\\s*\\(', func_body)),
-        'switch_statements': len(re.findall(r'\\bswitch\\s*\\(', func_body)),
-        'function_calls': len(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*\\s*\\(', func_body)),
+        'if_statements': len(re.findall(r'\bif\s*\(', func_body)),
+        'loops': len(re.findall(r'\b(for|while|do)\s*\(', func_body)),
+        'switch_statements': len(re.findall(r'\bswitch\s*\(', func_body)),
+        'function_calls': len(re.findall(r'[a-zA-Z_][a-zA-Z0-9_]*\s*\(', func_body)),
         'nested_braces': func_body.count('{'),
-        'return_statements': len(re.findall(r'\\breturn\\b', func_body)),
+        'return_statements': len(re.findall(r'\breturn\b', func_body)),
     }
 
     # Calculate cyclomatic complexity (simplified)
@@ -65,7 +65,7 @@ def analyze_function_complexity(func_body):
 
 def extract_function_signature(func_line, following_lines):
     """
-    Extract complete function signature handling K&R and ANSI styles.
+    Extract complete function signature handling K&R, ANSI, and PARM_N macro styles.
     """
     # Handle multi-line function declarations
     signature = func_line
@@ -80,14 +80,56 @@ def extract_function_signature(func_line, following_lines):
 
     return signature.strip()
 
+def parse_parm_macro(parm_string):
+    """
+    Parse PARM_N macro parameters into structured format.
+
+    PARM_N macros have format: PARM_1(type, name) or PARM_2(type1, name1, type2, name2)
+    """
+    # Extract the content inside the PARM_N(...) macro
+    match = re.search(r'PARM_(\d+)\s*\(([^)]+)\)', parm_string)
+    if not match:
+        return [], False
+
+    param_count = int(match.group(1))
+    params_content = match.group(2).strip()
+
+    if param_count == 0:
+        return [], True
+
+    # Split by commas and group into (type, name) pairs
+    parts = [part.strip() for part in params_content.split(',')]
+    params = []
+
+    # PARM_N macros alternate between type and name
+    for i in range(0, len(parts), 2):
+        if i + 1 < len(parts):
+            param_type = parts[i].strip()
+            param_name = parts[i + 1].strip()
+
+            params.append({
+                'type': param_type,
+                'name': param_name,
+                'full': f"{param_type} {param_name}"
+            })
+
+    return params, True
+
 def parse_parameters(param_string):
     """
     Parse function parameters into structured format.
+    Handles both standard ANSI C and PARM_N macro formats.
     """
     if not param_string or param_string.strip() in ['void', '']:
         return []
 
-    # Simple parameter parsing (may need refinement for complex types)
+    # Check if this is a PARM_N macro
+    if 'PARM_' in param_string:
+        params, is_parm = parse_parm_macro(param_string)
+        if is_parm:
+            return params
+
+    # Standard ANSI C parameter parsing
     params = []
     param_parts = param_string.split(',')
 
@@ -132,7 +174,7 @@ def extract_function_body(lines, start_line_idx):
         if in_function and brace_count == 0:
             break
 
-    return '\\n'.join(body_lines)
+    return '\n'.join(body_lines)
 
 def analyze_source_file(source_file):
     """
@@ -145,30 +187,73 @@ def analyze_source_file(source_file):
         return {'error': f"Could not read file: {e}", 'functions': []}
 
     # Remove comments
-    content = re.sub(r'/\\*.*?\\*/', '', content, flags=re.DOTALL)
+    content = re.sub(r'/\*.*?\*/', '', content, flags=re.DOTALL)
     content = re.sub(r'//.*$', '', content, flags=re.MULTILINE)
 
-    lines = content.split('\\n')
+    lines = content.split('\n')
     functions = []
 
-    # Pattern to match function definitions
-    function_pattern = r'^\\s*([a-zA-Z_][a-zA-Z0-9_\\s\\*]*?)\\s+([a-zA-Z_][a-zA-Z0-9_]*)\\s*\\([^)]*\\)\\s*\\{'
-
     for i, line in enumerate(lines):
-        match = re.search(function_pattern, line)
-        if match:
-            return_type = match.group(1).strip()
-            func_name = match.group(2).strip()
+        func_name = None
+        return_type = None
+        is_parm_function = False
 
-            # Skip if it looks like a macro or struct definition
-            if func_name.isupper() or return_type.startswith('#'):
-                continue
+        # Look for PARM_N pattern (can be on current line or next line)
+        parm_match = re.search(r'^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s+PARM_\d+\s*\([^)]*\)', line)
+        if parm_match:
+            func_name = parm_match.group(1).strip()
+            is_parm_function = True
+            # Look for return type on previous line
+            if i > 0:
+                prev_line = lines[i-1].strip()
+                if prev_line and not prev_line.startswith('#') and not '{' in prev_line:
+                    return_type = prev_line
+            if not return_type:
+                return_type = 'unknown'
+        else:
+            # Look for standard function pattern with opening brace
+            std_match = re.search(r'^\s*([a-zA-Z_][a-zA-Z0-9_\s\*]*?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)\s*\{', line)
+            if std_match:
+                return_type = std_match.group(1).strip()
+                func_name = std_match.group(2).strip()
+                is_parm_function = False
+            else:
+                # Check if next line has opening brace for multi-line function
+                if i + 1 < len(lines) and lines[i + 1].strip() == '{':
+                    # Look for function signature pattern
+                    func_match = re.search(r'^\s*([a-zA-Z_][a-zA-Z0-9_\s\*]*?)\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\([^)]*\)', line)
+                    if func_match:
+                        return_type = func_match.group(1).strip()
+                        func_name = func_match.group(2).strip()
+                        is_parm_function = False
+                    else:
+                        continue
+                else:
+                    continue
 
-            # Extract complete signature
-            following_lines = lines[i+1:i+10]  # Look ahead for multi-line signatures
-            full_signature = extract_function_signature(line, following_lines)
+        if not func_name:
+            continue
 
-            # Extract parameter list
+        # Skip if it looks like a macro or struct definition
+        if func_name.isupper() or return_type.startswith('#'):
+            continue
+
+        # Extract complete signature
+        following_lines = lines[i+1:i+10]  # Look ahead for multi-line signatures
+        full_signature = extract_function_signature(line, following_lines)
+
+        # Extract parameter list
+        if is_parm_function:
+            # For PARM_N functions, extract the PARM_N(...) part
+            parm_match = re.search(r'PARM_\d+\s*\([^)]*\)', full_signature)
+            if parm_match:
+                param_string = parm_match.group()
+                parameters = parse_parameters(param_string)
+            else:
+                param_string = ""
+                parameters = []
+        else:
+            # For standard functions
             paren_start = full_signature.find('(')
             paren_end = full_signature.rfind(')')
             if paren_start != -1 and paren_end != -1:
@@ -178,32 +263,33 @@ def analyze_source_file(source_file):
                 param_string = ""
                 parameters = []
 
-            # Extract function body for analysis
-            func_body = extract_function_body(lines, i)
-            complexity = analyze_function_complexity(func_body)
+        # Extract function body for analysis
+        func_body = extract_function_body(lines, i)
+        complexity = analyze_function_complexity(func_body)
 
-            # Determine if this is K&R style
-            is_kr_style = False
-            if i + 1 < len(lines):
-                next_line = lines[i + 1].strip()
-                # K&R style typically has parameter declarations on following lines
-                if next_line and not next_line.startswith('{') and ';' in next_line:
-                    is_kr_style = True
+        # Determine if this is K&R style
+        is_kr_style = False
+        if i + 1 < len(lines):
+            next_line = lines[i + 1].strip()
+            # K&R style typically has parameter declarations on following lines
+            if next_line and not next_line.startswith('{') and ';' in next_line:
+                is_kr_style = True
 
-            function_info = {
-                'name': func_name,
-                'return_type': return_type,
-                'parameters': parameters,
-                'parameter_string': param_string,
-                'line_number': i + 1,
-                'signature': full_signature,
-                'complexity': complexity,
-                'is_kr_style': is_kr_style,
-                'parameter_count': len(parameters),
-                'body_preview': func_body[:200] + '...' if len(func_body) > 200 else func_body
-            }
+        function_info = {
+            'name': func_name,
+            'return_type': return_type,
+            'parameters': parameters,
+            'parameter_string': param_string,
+            'line_number': i + 1,
+            'signature': full_signature,
+            'complexity': complexity,
+            'is_kr_style': is_kr_style,
+            'is_parm_function': is_parm_function,
+            'parameter_count': len(parameters),
+            'body_preview': func_body[:200] + '...' if len(func_body) > 200 else func_body
+        }
 
-            functions.append(function_info)
+        functions.append(function_info)
 
     return {
         'file': str(source_file),
@@ -235,21 +321,26 @@ def format_output(analysis_results, format_type='json'):
                 output.append(f"Error analyzing {result['file']}: {result['error']}")
                 continue
 
-            output.append(f"\\n=== {result['file']} ===")
+            output.append(f"\n=== {result['file']} ===")
             output.append(f"Total functions: {result['function_count']}")
 
             if result['functions']:
-                output.append("\\nFunctions:")
+                output.append("\nFunctions:")
                 output.append(f"{'Name':<25} {'Return':<15} {'Params':<8} {'Complexity':<12} {'Style':<8} {'Line':<6}")
                 output.append("-" * 80)
 
                 for func in result['functions']:
-                    style = 'K&R' if func['is_kr_style'] else 'ANSI'
+                    if func.get('is_parm_function', False):
+                        style = 'PARM'
+                    elif func['is_kr_style']:
+                        style = 'K&R'
+                    else:
+                        style = 'ANSI'
                     complexity = f"{func['complexity']['category']} ({func['complexity']['score']})"
 
                     output.append(f"{func['name']:<25} {func['return_type']:<15} {func['parameter_count']:<8} {complexity:<12} {style:<8} {func['line_number']:<6}")
 
-        return '\\n'.join(output)
+        return '\n'.join(output)
 
     elif format_type == 'summary':
         total_functions = sum(r.get('function_count', 0) for r in analysis_results)
@@ -267,14 +358,14 @@ def format_output(analysis_results, format_type='json'):
                     complexity_totals[category] += count
                 kr_total += result['analysis_summary']['kr_style_functions']
 
-        output.append(f"\\nComplexity Distribution:")
+        output.append(f"\nComplexity Distribution:")
         for category, count in complexity_totals.items():
             percentage = (count / total_functions * 100) if total_functions > 0 else 0
             output.append(f"  {category}: {count} ({percentage:.1f}%)")
 
-        output.append(f"\\nK&R Style Functions: {kr_total} ({kr_total/total_functions*100:.1f}%)")
+        output.append(f"\nK&R Style Functions: {kr_total} ({kr_total/total_functions*100:.1f}%)")
 
-        return '\\n'.join(output)
+        return '\n'.join(output)
 
     else:
         return "Unknown format type"

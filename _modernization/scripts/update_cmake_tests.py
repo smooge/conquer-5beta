@@ -142,11 +142,11 @@ def update_cmake_file(cmake_file, test_configs, dry_run=False):
         existing_tests = set(re.findall(r'add_executable\(([^)]+)', existing_section))
 
         # Build new testing section
-        new_section = testing_section_start + "\\n"
-        new_section += "enable_testing()\\n\\n"
+        new_section = testing_section_start + "\n"
+        new_section += "enable_testing()\n\n"
 
         # Add existing tests first (preserve order)
-        new_section += existing_section[len(testing_section_start):].strip() + "\\n\\n"
+        new_section += existing_section[len(testing_section_start):].strip() + "\n\n"
 
         # Add new tests
         for config in test_configs:
@@ -154,7 +154,7 @@ def update_cmake_file(cmake_file, test_configs, dry_run=False):
             if test_name not in existing_tests:
                 new_section += generate_cmake_target(config)
 
-        new_section += "\\n" + testing_section_end
+        new_section += "\n" + testing_section_end
 
         # Replace the section
         new_content = content[:start_idx] + new_section + content[end_idx + len(testing_section_end):]
@@ -173,7 +173,7 @@ enable_testing()
 {testing_section_end}
 """
 
-        new_content = content.rstrip() + "\\n" + testing_section
+        new_content = content.rstrip() + "\n" + testing_section
 
     if dry_run:
         print(f"Would update {cmake_file} with {len(test_configs)} test configurations")
@@ -251,7 +251,7 @@ def main():
     success = update_cmake_file(cmake_file, test_configs, args.dry_run)
 
     if success and not args.dry_run:
-        print("\\nNext steps:")
+        print("\nNext steps:")
         print("1. Run 'cmake ..' from the build directory to regenerate build files")
         print("2. Run 'make' to build the new test targets")
         print("3. Run 'ctest' to execute all tests")
