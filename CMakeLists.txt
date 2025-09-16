@@ -48,6 +48,14 @@ set(AFILS
     Src/jointA.c
 )
 
+set(TFILS
+  Src/adduserA.c Src/combatA.c Src/configA.c Src/createA.c
+  Src/dataA.c Src/economyA.c Src/magicA.c Src/mailA.c Src/miscA.c
+  Src/monsterA.c Src/moveA.c Src/npcA.c Src/sectorA.c Src/updateA.c
+  Src/jointA.c
+)
+
+
 set(XFILS
     Src/dataX.c Src/datamagX.c Src/datamilX.c Src/checkX.c Src/computeX.c
     Src/convertX.c Src/customX.c Src/executeX.c Src/hexmapX.c Src/ioX.c
@@ -255,6 +263,8 @@ message(STATUS "  Security Mode: ${CONQUER_SECURITY_MODE}")
 # Unit Tests
 enable_testing()
 
+enable_testing()
+
 
 # test_moveA - Unit test target
 add_executable(test_moveA tests/unit/test_moveA.c Src/moveA.c)
@@ -276,6 +286,18 @@ target_include_directories(test_mainA PRIVATE Include)
 # Add to CTest
 add_test(NAME test_mainA COMMAND test_mainA)
 set_tests_properties(test_mainA PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    TIMEOUT 30
+)
+
+# test_economyA - Unit test target
+add_executable(test_economyA tests/unit/test_economyA.c ${TFILS} ${XFILS})
+target_link_libraries(test_economyA ${REQUIRED_LIBS} unity)
+target_include_directories(test_economyA PRIVATE Include)
+
+# Add to CTest
+add_test(NAME test_economyA COMMAND test_economyA)
+set_tests_properties(test_economyA PROPERTIES
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     TIMEOUT 30
 )

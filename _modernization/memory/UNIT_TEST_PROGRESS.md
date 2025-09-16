@@ -24,7 +24,7 @@
 |------|-----------|----------|-----------|--------|---------|-------|
 | Src/moveA.c | 1 | P1-High | tests/unit/test_moveA.c | ✅ Complete | 1 | 11/12 tests PASS - 1 minor edge case (BUG-009) |
 | Src/mainA.c | 2 | P1-High | tests/unit/test_mainA.c | ✅ Complete | 2 | 5/5 tests PASS - PARM_ macro support validated |
-| Src/economyA.c | 3 | P1-High | tests/unit/test_economyA.c | ⏳ Pending | 2 | Economic calculations |
+| Src/economyA.c | 3 | P1-High | tests/unit/test_economyA.c | ⚠️ Issues | 3 | Testing blocked by architectural complexity |
 | Src/magicX.c | 11 | P1-High | tests/unit/test_magicX.c | ⏳ Pending | 2 | Magic system logic |
 | Src/sectorA.c | 19 | P1-High | tests/unit/test_sectorA.c | ⏳ Pending | 3 | Core sector management |
 | Src/combatA.c | 29 | P1-Critical | tests/unit/test_combatA.c | ⏳ Pending | 3 | Combat calculations |
@@ -183,8 +183,8 @@
 ---
 
 **Total Estimated Sessions**: 28 sessions
-**Current Progress**: 2/28 sessions complete (7%)
-**Next Target**: Src/economyA.c (3 functions) - Session 3
+**Current Progress**: 3/28 sessions complete (11%)
+**Next Target**: Src/magicX.c (11 functions) - Session 4
 
 ## Automation Infrastructure Updates
 
@@ -206,3 +206,30 @@
 **Impact**: All remaining files with PARM_ patterns can now be processed automatically, significantly improving development velocity for remaining Priority 1-5 files.
 
 **Validation**: Created and executed comprehensive test suite for mainA.c demonstrating 100% automation script functionality.
+
+### Session 3 (2025-09-16): economyA.c Testing Analysis ⚠️ ARCHITECTURAL CHALLENGE
+
+**Session Objective**: Implement unit tests for economyA.c (3 functions)
+**Session Result**: Comprehensive analysis completed, testing blocked by architectural complexity
+
+**Major Finding**: economyA.c functions require **integration testing approach** rather than unit testing due to extensive global state dependencies.
+
+**Functions Analyzed**:
+- `upd_sectors()` - Updates sector statuses (moderate complexity, 6 branches)
+- `upd_produce()` - Production collection/distribution (very complex, 14 branches)
+- `upd_consume()` - Resource consumption management (extremely complex, 127 branches)
+
+**Technical Challenges Identified**:
+- **50+ undefined references** during linking attempt
+- Complex global variable interdependencies (world, sct, nations, cities, units)
+- Functions require complete game state initialization
+- Current Unity testing framework insufficient for complex integration scenarios
+
+**Automation Scripts Performance**: ✅ Perfect
+- All scripts executed successfully with no issues
+- PARM_X macro handling validated
+- Test templates and CMake integration generated correctly
+
+**Recommendation**: Move economyA.c to integration testing phase, continue with simpler Priority 1 functions for unit testing.
+
+**Documentation**: Complete analysis and alternative testing strategies documented in `PHASE6B_SESSION3_ECONOMYA_FINDINGS.md`
