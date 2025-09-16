@@ -29,13 +29,13 @@ gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Includ
 gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -fsanitize=address -fsanitize=undefined -I Include Src/*.c -o program
 
 # Cross-platform build test (test on all target platforms)
-# Debian/Ubuntu: gcc -std=c2x -D_POSIX_C_SOURCE=200809L *.c
-# Fedora: gcc -std=c2x -D_POSIX_C_SOURCE=200809L *.c
-# macOS: clang -std=c2x -D_POSIX_C_SOURCE=200809L *.c
-# FreeBSD: clang -std=c2x -D_POSIX_C_SOURCE=200809L *.c
+# Debian/Ubuntu: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
+# Fedora: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
+# macOS: clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
+# FreeBSD: clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
 
 # Static analysis with clang
-clang --analyze -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra *.c
+clang --analyze -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -I Include Src/*.c
 
 # Format code (if clang-format is available)
 clang-format -i *.c *.h
@@ -85,7 +85,7 @@ Before changing a single line of code, establishing a modern, strict, and contro
    - Include coverage files: `*.gcov`, `*.gcda`, `*.gcno`
 4. **Modern Compiler and Strict Warnings**: Use GCC or Clang with highest warning levels:
    ```bash
-   gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 *.c -o program
+   gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
    ```
    - `-Wall`: Enables all standard, high-priority warnings
    - `-Wextra`: Enables additional useful warnings not covered by `-Wall`
@@ -179,43 +179,9 @@ Due to the extensive nature of documenting 50+ source files, Phase 3 is now orga
    - Identify function dependencies and call patterns
    - Document any non-obvious behavior or edge cases
 
-2. **Standard Documentation Format**:
-   ```c
-   /*
-    * function_name - Brief one-line description
-    *
-    * Detailed description explaining the function's purpose,
-    * algorithm, and any important implementation details.
-    *
-    * Parameters:
-    *   param1 - Description of first parameter (constraints, valid ranges)
-    *   param2 - Description of second parameter (must not be NULL)
-    *
-    * Returns:
-    *   Description of return value and meaning of different return codes
-    *   NULL on error, valid pointer on success
-    *   -1 on failure, 0 on success, positive value for count/size
-    *
-    * Side Effects:
-    *   - Modifies global state if applicable
-    *   - Allocates memory that caller must free
-    *   - May block on I/O operations
-    *
-    * Notes:
-    *   - Thread safety information
-    *   - Performance considerations
-    *   - Historical context if relevant
-    */
-   ```
+2. **Documentation Standards**: Follow the function documentation format and legacy code guidelines detailed in the [Code Quality Standards](#code-quality-standards) section.
 
-3. **Special Documentation for Legacy Code**:
-   - **Unclear Logic**: Document confusing or non-obvious code sections
-   - **Magic Numbers**: Explain the meaning of hardcoded constants
-   - **Workarounds**: Document any platform-specific hacks or workarounds
-   - **Assumptions**: Note assumptions about input data, system state, etc.
-   - **Historical Context**: Preserve information about why code was written this way
-
-4. **Direct Analysis Approach**:
+3. **Direct Analysis Approach**:
    - Analyze each function by reading and understanding the code directly
    - Understand function purpose, parameters, return values, and side effects
    - Document complex algorithms, data flow, and business logic
@@ -314,7 +280,7 @@ This assessment becomes the foundation for Phase 3 documentation work and ensure
 
 **Completion Criteria**: All source files compile with zero warnings using:
 ```bash
-gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic
+gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
 ```
 
 ### Phase 5: Modern Build System (CMake) 🛠️
@@ -603,6 +569,46 @@ int process(const char *data, size_t size) {
 
 ## Code Quality Standards
 
+### Function Documentation Requirements
+
+All functions must be documented before modernization using this standard format:
+
+```c
+/*
+ * function_name - Brief one-line description
+ *
+ * Detailed description explaining the function's purpose,
+ * algorithm, and any important implementation details.
+ *
+ * Parameters:
+ *   param1 - Description of first parameter (constraints, valid ranges)
+ *   param2 - Description of second parameter (must not be NULL)
+ *
+ * Returns:
+ *   Description of return value and meaning of different return codes
+ *   NULL on error, valid pointer on success
+ *   -1 on failure, 0 on success, positive value for count/size
+ *
+ * Side Effects:
+ *   - Modifies global state if applicable
+ *   - Allocates memory that caller must free
+ *   - May block on I/O operations
+ *
+ * Notes:
+ *   - Thread safety information
+ *   - Performance considerations
+ *   - Historical context if relevant
+ */
+```
+
+### Special Documentation for Legacy Code
+- **Unclear Logic**: Document confusing or non-obvious code sections
+- **Magic Numbers**: Explain the meaning of hardcoded constants
+- **Workarounds**: Document any platform-specific hacks or workarounds
+- **Assumptions**: Note assumptions about input data, system state, etc.
+- **Historical Context**: Preserve information about why code was written this way
+
+### General Code Standards
 - All functions must have proper prototypes in header files
 - **All routines must have comments at the beginning explaining what the code does**
 - Use consistent indentation (4 spaces recommended)
