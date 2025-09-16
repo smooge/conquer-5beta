@@ -53,18 +53,18 @@ static int find_project_root(void) {
 
     printf("DEBUG: Current working directory: %s\n", cwd);
 
-    /* Try current directory first */
-    snprintf(test_path, sizeof(test_path), "%s/CMakeLists.txt", cwd);
+    /* Try parent directory first (main project root) */
+    snprintf(test_path, sizeof(test_path), "%s/../CMakeLists.txt", cwd);
     if (stat(test_path, &st) == 0) {
-        strcpy(PROJECT_ROOT, cwd);
+        snprintf(PROJECT_ROOT, sizeof(PROJECT_ROOT), "%s/..", cwd);
         printf("DEBUG: Found project root: %s\n", PROJECT_ROOT);
         return 0;
     }
 
-    /* Try parent directory */
-    snprintf(test_path, sizeof(test_path), "%s/../CMakeLists.txt", cwd);
+    /* Try current directory as fallback */
+    snprintf(test_path, sizeof(test_path), "%s/CMakeLists.txt", cwd);
     if (stat(test_path, &st) == 0) {
-        snprintf(PROJECT_ROOT, sizeof(PROJECT_ROOT), "%s/..", cwd);
+        strcpy(PROJECT_ROOT, cwd);
         printf("DEBUG: Found project root: %s\n", PROJECT_ROOT);
         return 0;
     }

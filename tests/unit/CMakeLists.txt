@@ -14,6 +14,9 @@
 # Isolated tests of extracted checkX.c functions
 add_conquer_test(unit_checkx_isolated test_checkx_isolated.c)
 
+# Security pattern testing for checkX.c functions
+add_conquer_test(unit_checkx_security_patterns test_checkx_security_patterns.c)
+
 # Test template example (will be populated as we modernize)
 # add_conquer_test(unit_string_utils test_string_utils.c)
 

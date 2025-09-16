@@ -152,6 +152,77 @@ fprintf(fupdate, "%s", buffer);
 
 **Status**: OPEN
 
+### BUG-005: get_userid() Memory Management Issues
+**Priority**: MEDIUM
+**File**: Src/checkX.c
+**Function**: get_userid()
+**Discovered**: During security pattern testing with test_checkx_security_patterns.c
+
+**Description**: Multiple memory management and buffer safety issues in get_userid() function.
+
+**Reproduction Steps**:
+1. Call `get_userid(NULL)` - function allocates 12 bytes with malloc()
+2. Function doesn't provide clear ownership of allocated memory
+3. Call `get_userid()` with small buffer causes strcpy() without bounds checking
+4. Multiple calls create potential memory leaks without clear free() responsibility
+
+**Impact**: Memory leaks during normal operation, potential buffer overflow from strcpy() without bounds checking.
+
+**Proposed Fix**: Implement comprehensive memory safety:
+```c
+char* get_userid(char *outname) {
+    struct passwd *pwtemp = NULL;
+
+    if ((pwtemp = getpwuid(getuid())) == NULL) {
+        if (outname != NULL) {
+            /* Use safe string copy with bounds checking */
+            outname[0] = '\0';
+        }
+        return NULL;
+    }
+
+    if (outname == NULL) {
+        /* Clear documentation: caller must free() */
+        if ((outname = malloc(strlen(pwtemp->pw_name) + 1)) == NULL) {
+            fprintf(stderr, "Memory allocation failure\n");
+            return NULL;
+        }
+    }
+
+    /* Use safe string copy */
+    strncpy(outname, pwtemp->pw_name, 11);
+    outname[11] = '\0';  /* Ensure null termination */
+    return outname;
+}
+```
+
+**Status**: OPEN
+
+### BUG-006: Security Pattern - Systematic NULL Pointer Vulnerabilities
+**Priority**: HIGH
+**File**: Src/checkX.c
+**Function**: Multiple functions (user_exists, check_lock, canseelogin)
+**Discovered**: During systematic security pattern analysis
+
+**Description**: Multiple functions in checkX.c lack NULL pointer validation, creating a pattern of vulnerability.
+
+**Functions Affected**:
+- `user_exists()`: No NULL check before getpwnam(who)
+- `check_lock()`: No NULL check before open(filename, ...)
+- `canseelogin()`: No NULL check before strcmp(loginname, ...)
+
+**Impact**: Systematic crashes when NULL pointers are passed to these security-critical functions.
+
+**Proposed Fix**: Implement systematic NULL checks across all checkX.c functions:
+```c
+/* Pattern for all functions */
+if (parameter == NULL) {
+    return appropriate_error_value;
+}
+```
+
+**Status**: OPEN
+
 ---
 
 ## Fixed Bugs
@@ -162,10 +233,10 @@ fprintf(fupdate, "%s", buffer);
 
 ## Bug Statistics
 
-**Total Active Bugs**: 4
+**Total Active Bugs**: 6
 - **CRITICAL**: 1
-- **HIGH**: 2
-- **MEDIUM**: 1
+- **HIGH**: 3
+- **MEDIUM**: 2
 - **LOW**: 0
 
 **Total Fixed Bugs**: 0

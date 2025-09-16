@@ -1,131 +1,108 @@
-Start testing: Sep 15 10:17 EDT
+Start testing: Sep 16 11:18 EDT
 ----------------------------------------------------------
-1/3 Testing: regression_input_validation
-1/3 Test: regression_input_validation
-Command: "/home/ssmoogen/conquer-project/conquer/tests/regression/regression_input_validation"
-Directory: /home/ssmoogen/conquer-project/conquer/tests/regression
-"regression_input_validation" start time: Sep 15 10:17 EDT
-Output:
-----------------------------------------------------------
-/home/ssmoogen/conquer-project/conquer/tests/regression/test_input_validation.c:83:test_string_length_validation:PASS
-/home/ssmoogen/conquer-project/conquer/tests/regression/test_input_validation.c:84:test_buffer_boundary_validation:PASS
-/home/ssmoogen/conquer-project/conquer/tests/regression/test_input_validation.c:85:test_null_pointer_validation:PASS
-/home/ssmoogen/conquer-project/conquer/tests/regression/test_input_validation.c:86:test_integer_validation:PASS
-
------------------------
-4 Tests 0 Failures 0 Ignored 
-OK
-<end of output>
-Test time =   0.00 sec
-----------------------------------------------------------
-Test Passed.
-"regression_input_validation" end time: Sep 15 10:17 EDT
-"regression_input_validation" time elapsed: 00:00:00
-----------------------------------------------------------
-
-2/3 Testing: regression_compilation_verification
-2/3 Test: regression_compilation_verification
+3/4 Testing: regression_compilation_verification
+3/4 Test: regression_compilation_verification
 Command: "/home/ssmoogen/conquer-project/conquer/tests/regression/regression_compilation_verification"
 Directory: /home/ssmoogen/conquer-project/conquer/tests/regression
-"regression_compilation_verification" start time: Sep 15 10:17 EDT
+"regression_compilation_verification" start time: Sep 16 11:18 EDT
 Output:
 ----------------------------------------------------------
 DEBUG: Current working directory: /home/ssmoogen/conquer-project/conquer/tests/regression
-DEBUG: Found project root: /home/ssmoogen/conquer-project/conquer/tests/regression
-DEBUG: SRC_PATH: /home/ssmoogen/conquer-project/conquer/tests/regression/Src
-DEBUG: INCLUDE_PATH: -I/home/ssmoogen/conquer-project/conquer/tests/regression/Include
+DEBUG: Found project root: /home/ssmoogen/conquer-project/conquer/tests/regression/..
+DEBUG: SRC_PATH: /home/ssmoogen/conquer-project/conquer/tests/regression/../Src
+DEBUG: INCLUDE_PATH: -I/home/ssmoogen/conquer-project/conquer/tests/regression/../Include
 === Conquer C2023 Compilation Verification Tests ===
 Testing Phase 7A.1 success: All source files compile with C2023 standards
-Compiler flags: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -c -I/home/ssmoogen/conquer-project/conquer/tests/regression/Include
+Compiler flags: gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -c -I/home/ssmoogen/conquer-project/conquer/tests/regression/../Include
 Expected files: 63 C source files 
 
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mainA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/dataA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/combatA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/moveA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mainA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/dataA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/combatA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/moveA.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:343:test_core_engine_compilation:PASS
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/ioX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/ioX.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:184:test_io_data_compilation:FAIL: Expected 0 Was -1. ioX.c should compile successfully
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mainG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/displayG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/infoG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/inputG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mainG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/displayG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/infoG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/inputG.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:345:test_interface_compilation:PASS
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/magicA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/monsterA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/npcA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/clanA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/magicA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/monsterA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/npcA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/clanA.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:346:test_game_content_compilation:PASS
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/utilityX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/utilityX.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:347:test_utility_compilation:PASS
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/jointA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/jointA.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:283:test_additional_files_compilation:FAIL: Expected 0 Was -1. jointA.c should compile successfully
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/adduserA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/armyG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/caravanG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/checkX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/combatA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/computeX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/configA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/convertX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/createA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/customG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/customX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/dataA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/dataG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/dataX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/datamagX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/datamilX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/displayG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/economyA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/emailG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/enlistG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/executeX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/hexmapG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/hexmapX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/ieditG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/infoG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/ioG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/ioX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/iodataG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/iodataX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/jointA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/jointG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/keybindG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/magicA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/magicG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/magicX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mailA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mailG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mailX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mainA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/mainG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/memoryX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/miscX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/monsterA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/moveA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/moveG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/moveX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/navyG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/npcA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/ntninfoG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/pagerG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/regionG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/sectorA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/sectorG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/sectorX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/selectG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/selectX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/time_ckG.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/unitsX.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/updateA.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/vms.c does not exist
-SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/Src/xferG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/adduserA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/armyG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/caravanG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/checkX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/combatA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/computeX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/configA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/convertX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/createA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/customG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/customX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/dataA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/dataG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/dataX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/datamagX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/datamilX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/displayG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/economyA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/emailG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/enlistG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/executeX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/hexmapG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/hexmapX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/ieditG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/infoG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/ioG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/ioX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/iodataG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/iodataX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/jointA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/jointG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/keybindG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/magicA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/magicG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/magicX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mailA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mailG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mailX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mainA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/mainG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/memoryX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/miscX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/monsterA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/moveA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/moveG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/moveX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/navyG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/npcA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/ntninfoG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/pagerG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/regionG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/sectorA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/sectorG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/sectorX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/selectG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/selectX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/time_ckG.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/unitsX.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/updateA.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/vms.c does not exist
+SKIP: File /home/ssmoogen/conquer-project/conquer/tests/regression/../Src/xferG.c does not exist
 /home/ssmoogen/conquer-project/conquer/tests/regression/test_compilation_verification.c:349:test_remaining_files_compilation:PASS
 
 === Compilation Verification Complete ===
@@ -138,31 +115,8 @@ Test time =   0.01 sec
 ----------------------------------------------------------
 Test Fail Reason:
 Error regular expression found in output. Regex=[FAIL]
-"regression_compilation_verification" end time: Sep 15 10:17 EDT
+"regression_compilation_verification" end time: Sep 16 11:18 EDT
 "regression_compilation_verification" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-3/3 Testing: security_simple_security
-3/3 Test: security_simple_security
-Command: "/home/ssmoogen/conquer-project/conquer/tests/security/security_simple_security"
-Directory: /home/ssmoogen/conquer-project/conquer/tests/security
-"security_simple_security" start time: Sep 15 10:17 EDT
-Output:
-----------------------------------------------------------
-/home/ssmoogen/conquer-project/conquer/tests/security/test_simple_security.c:116:test_safe_string_copy:PASS
-/home/ssmoogen/conquer-project/conquer/tests/security/test_simple_security.c:117:test_array_bounds_checking:PASS
-/home/ssmoogen/conquer-project/conquer/tests/security/test_simple_security.c:118:test_memory_allocation_safety:PASS
-/home/ssmoogen/conquer-project/conquer/tests/security/test_simple_security.c:119:test_format_string_safety:PASS
-
------------------------
-4 Tests 0 Failures 0 Ignored 
-OK
-<end of output>
-Test time =   0.00 sec
-----------------------------------------------------------
-Test Passed.
-"security_simple_security" end time: Sep 15 10:17 EDT
-"security_simple_security" time elapsed: 00:00:00
-----------------------------------------------------------
-
-End testing: Sep 15 10:17 EDT
+End testing: Sep 16 11:18 EDT

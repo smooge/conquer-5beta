@@ -31,7 +31,7 @@
 ### 3. Complete Test Validation ✅
 **Final Test Results**:
 ```
-Test project /home/ssmoogan/conquer-project/conquer/build
+Test project /home/ssmoogen/conquer-project/conquer/build
     Start 1: regression_input_validation .......... Passed    0.00 sec
     Start 2: regression_compilation_verification .. Passed    0.20 sec
     Start 3: security_simple_security ............. Passed    0.00 sec
@@ -144,7 +144,7 @@ static int find_project_root(void) {
 ### Key Commands for Next Session
 ```bash
 # Navigate to build directory
-cd /home/ssmoogan/conquer-project/conquer/build
+cd /home/ssmoogen/conquer-project/conquer/build
 
 # Run all tests
 ctest

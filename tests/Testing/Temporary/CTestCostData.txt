@@ -1,5 +1,6 @@
-regression_input_validation 1 0.000556167
+regression_input_validation 3 0.000159208
 regression_compilation_verification 0 0
-security_simple_security 1 0.000514375
+security_simple_security 3 0.00014682
+unit_checkx_isolated 2 0.000830125
 ---
 regression_compilation_verification
