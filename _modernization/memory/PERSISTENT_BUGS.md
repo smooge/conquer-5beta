@@ -97,6 +97,33 @@ int canseelogin(void) {
 
 **Status**: OPEN
 
+### BUG-003: goto_cvn() Incorrect Coordinate Comparison
+**Priority**: MEDIUM
+**File**: Src/selectG.c
+**Function**: goto_cvn()
+**Discovered**: During Phase 4 documentation of selectG.c
+
+**Description**: Function incorrectly compares YREAL with c1_ptr->xloc when it should compare XREAL with xloc. This is a logic error in coordinate validation that could cause incorrect caravan navigation behavior.
+
+**Reproduction Steps**:
+1. Navigate to a caravan using goto_cvn()
+2. Function checks `if (YREAL != c1_ptr->xloc)` at line 1012
+3. Expected: Should check `if (XREAL != c1_ptr->xloc)` for X-coordinate validation
+4. Bug causes incorrect coordinate comparison (Y vs X mismatch)
+
+**Impact**: Navigation to caravans may work incorrectly when caravan X-coordinate differs from current Y-coordinate, potentially causing navigation failures or unexpected map positioning.
+
+**Proposed Fix**: Change the coordinate comparison to match X with X:
+```c
+/* Before (buggy) */
+if (YREAL != c1_ptr->xloc) {
+
+/* After (fixed) */
+if (XREAL != c1_ptr->xloc) {
+```
+
+**Status**: OPEN
+
 ---
 
 ## Fixed Bugs
@@ -107,10 +134,10 @@ int canseelogin(void) {
 
 ## Bug Statistics
 
-**Total Active Bugs**: 2
+**Total Active Bugs**: 3
 - **CRITICAL**: 1
 - **HIGH**: 1
-- **MEDIUM**: 0
+- **MEDIUM**: 1
 - **LOW**: 0
 
 **Total Fixed Bugs**: 0
