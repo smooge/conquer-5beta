@@ -51,6 +51,11 @@
 
 ## User-Added Todos
 
+### CLAUDE.md Maintenance (HIGH PRIORITY)
+- [ ] **Fix Build Command Inconsistencies**: Standardize all gcc commands in CLAUDE.md (lines 26, 29, 88, 32-33 have variations)
+- [ ] **Consolidate Documentation Standards**: Move scattered documentation requirements to dedicated section
+- [ ] **Monthly CLAUDE.md Audits**: Use maintenance strategy for regular conflict detection and cleanup
+
 ### Build System Cleanup & Modernization
 - [ ] **Convert Legacy Makefiles**: Replace all old Makefiles in subdirectories (Src/, Auxil/, Docs/, Include/) with CMake
 - [ ] **Remove Old Makefiles**: Clean up legacy Makefile.src, Makefile.aux, Makefile.dcm, Makefile.inc from repository
