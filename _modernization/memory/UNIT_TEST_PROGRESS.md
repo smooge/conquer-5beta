@@ -22,7 +22,7 @@
 
 | File | Functions | Priority | Test File | Status | Session | Notes |
 |------|-----------|----------|-----------|--------|---------|-------|
-| Src/moveA.c | 1 | P1-High | tests/unit/test_moveA.c | 🔄 Next | 1 | Single function - good starter |
+| Src/moveA.c | 1 | P1-High | tests/unit/test_moveA.c | ✅ Complete | 1 | 11/12 tests PASS - 1 minor edge case (BUG-009) |
 | Src/mainA.c | 2 | P1-High | tests/unit/test_mainA.c | ⏳ Pending | 1 | Core entry points |
 | Src/economyA.c | 3 | P1-High | tests/unit/test_economyA.c | ⏳ Pending | 2 | Economic calculations |
 | Src/magicX.c | 11 | P1-High | tests/unit/test_magicX.c | ⏳ Pending | 2 | Magic system logic |

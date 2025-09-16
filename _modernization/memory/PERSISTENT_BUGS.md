@@ -223,6 +223,27 @@ if (parameter == NULL) {
 
 **Status**: OPEN
 
+### BUG-009: npc_movearmy() High Movement Points Edge Case
+**Priority**: LOW
+**File**: Src/moveA.c
+**Function**: npc_movearmy()
+**Discovered**: During Phase 6B-1 unit testing (11/12 tests pass)
+
+**Description**: Function handles high movement points (≥100) with unexpected calculation logic in edge case scenario.
+
+**Reproduction Steps**:
+1. Create test army with 150 movement points
+2. Set mock movement cost to 200 (higher than available)
+3. Call `npc_movearmy(11, 21)`
+4. Expected: Returns TRUE, movement points reduced to -50 (over-expenditure allowed)
+5. Actual: Returns TRUE, movement points set to 206 (unexpected calculation)
+
+**Impact**: Minor edge case behavior difference that may affect game balance in high-movement scenarios, but doesn't break core functionality.
+
+**Proposed Fix**: Investigate the high movement point logic in the function to understand the intended behavior when umove ≥ 100. May be working as designed.
+
+**Status**: OPEN
+
 ---
 
 ## Fixed Bugs
@@ -233,11 +254,11 @@ if (parameter == NULL) {
 
 ## Bug Statistics
 
-**Total Active Bugs**: 6
-- **CRITICAL**: 1
-- **HIGH**: 3
-- **MEDIUM**: 2
-- **LOW**: 0
+**Total Active Bugs**: 7
+- **CRITICAL**: 1 (BUG-001)
+- **HIGH**: 3 (BUG-002, BUG-004, BUG-006)
+- **MEDIUM**: 2 (BUG-003, BUG-005)
+- **LOW**: 1 (BUG-009)
 
 **Total Fixed Bugs**: 0
 

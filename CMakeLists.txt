@@ -252,3 +252,20 @@ message(STATUS "  Large Maps: ${CONQUER_LARGE_MAPS}")
 message(STATUS "  Many Units: ${CONQUER_MANY_UNITS}")
 message(STATUS "  Compression: ${CONQUER_ENABLE_COMPRESSION}")
 message(STATUS "  Security Mode: ${CONQUER_SECURITY_MODE}")
+# Unit Tests
+enable_testing()
+
+
+# test_moveA - Unit test target
+add_executable(test_moveA tests/unit/test_moveA.c Src/moveA.c)
+target_link_libraries(test_moveA PRIVATE unity)
+target_include_directories(test_moveA PRIVATE Include)
+
+# Add to CTest
+add_test(NAME test_moveA COMMAND test_moveA)
+set_tests_properties(test_moveA PROPERTIES
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    TIMEOUT 30
+)
+
+# End Unit Tests
