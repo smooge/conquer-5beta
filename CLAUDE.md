@@ -804,15 +804,28 @@ PHASE{N}_{TYPE}_{COMPONENT}_{YYYYMMDD}_{HHMMSS}.md
 - `PERSISTENT_BUGS.md` - Bug tracking for issues found during testing and modernization
 
 ### Session End Management
+
+**Two Types of Session Documentation:**
+
+#### 1. Memory Files (Every Session End)
 When the user indicates it's time to end a session, Claude must:
 1. Save current progress to a memory file in `_modernization/memory/` using the naming convention above
 2. Include completed tasks, current status, and next steps
 3. Document any important decisions or discoveries made during the session
 4. Ensure the memory file provides sufficient context for future sessions
-5. **Git commit session memory files and session logs**: Always remember to `git add` and `git commit` the session memory files in `_modernization/memory/` and session logs in `_modernization/claude/sessions/` at the end of each session to preserve context and progress tracking
+5. **Git commit memory files**: Always `git add` and `git commit` session memory files to preserve progress tracking
 
-### Formal Session Termination
-**When the user formally quits a session**, Claude must automatically execute this sequence:
+#### 2. Session Logs (Major Sessions Only)
+Create session logs in `_modernization/claude/sessions/` for:
+- **Major milestone completions** (Phase completions, significant feature implementations)
+- **Multi-file work sessions** (sessions spanning multiple source files or major changes)
+- **Complex problem-solving sessions** (sessions involving significant debugging or analysis)
+- **Weekly summary sessions** (consolidating week's progress)
+
+**Regular single-file documentation or minor bug fixes do not require session logs.**
+
+### Session Log Creation Process
+**When creating a session log**, Claude must execute this sequence:
 
 #### 1. Work Completion Summary
 Create a comprehensive session summary including:
