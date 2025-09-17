@@ -23,6 +23,12 @@ add_conquer_test(unit_checkx_security_patterns test_checkx_security_patterns.c)
 # magicX.c unit tests - Public functions (magic_ok, rand_magic, mgk_sctval)
 add_conquer_test_with_deps(unit_magicX_simple test_magicX_simple.c ../../Src/magicX.c)
 
+# sectorA.c isolated tests - Simple functions extracted to avoid global dependencies
+add_conquer_test(unit_sectorA_isolated test_sectorA_isolated.c)
+
+# convertX.c utility tests - Pure mathematical and string functions extracted
+add_conquer_test(unit_convertX_utilities test_convertX_utilities.c)
+
 # Additional unit tests to be added during modernization
 message(STATUS "Unit test directory configured - core game logic baseline tests added")
 message(STATUS "Baseline tests added for checkX.c functions")
