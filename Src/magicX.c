@@ -39,6 +39,14 @@
  *   - Modifies current nation's maxmove (maximum movement points)
  *   - Uses global ntn_ptr for the current nation
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure and constants
+ *   Key Tests: Each MM_* constant case, boundary conditions for movement, default case
+ *   Dependencies: Mock ntn_ptr structure, magic constants (MM_WARRIOR, etc.)
+ *   Mock Requirements: Simple nation structure with aplus/dplus/maxmove fields
+ *   Complexity: Simple (8 cases) - ideal pure function with clear inputs/outputs
+ *
  * Notes:
  *   - Static function, only called internally by add_powers()
  *   - Powers include warrior/captain/warlord (+10% combat), archery (+5% attack/+10% defense),
@@ -114,6 +122,14 @@ mil_uppow PARM_1(long, powerval)
  *   - Modifies current nation's aplus/dplus when reproduction overflows
  *   - Modifies current nation's maxmove for certain powers
  *   - Uses global ntn_ptr and race_info array
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation and race_info structures
+ *   Key Tests: Each MC_* constant case, overflow logic, reproduction limits, default case
+ *   Dependencies: Mock ntn_ptr, mock race_info array with repro_limit values
+ *   Mock Requirements: Nation structure with repro/aplus/dplus/maxmove/race, race_info array
+ *   Complexity: Moderate (6 cases with complex overflow math) - excellent unit test candidate
  *
  * Notes:
  *   - Static function, only called internally by add_powers()
@@ -212,6 +228,14 @@ civ_uppow PARM_1(long, powerval)
  *   - Modifies current nation's dplus (defense bonus) for illusion-based powers
  *   - Uses global ntn_ptr for the current nation
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure and constants
+ *   Key Tests: Defense powers (MW_ILLUSION/HIDDEN/THEVOID), attack powers (MW_SEEALL/VISION), default case
+ *   Dependencies: Mock ntn_ptr structure, magic constants (MW_* values)
+ *   Mock Requirements: Simple nation structure with aplus/dplus fields
+ *   Complexity: Simple (3 main cases) - excellent pure function for unit testing
+ *
  * Notes:
  *   - Static function, only called internally by add_powers()
  *   - Illusion/hidden/void powers provide +5% defense bonus
@@ -259,6 +283,14 @@ wiz_uppow PARM_1(long, powerval)
  *   - Reduces current nation's dplus (defense bonus percentage)
  *   - Modifies current nation's maxmove (reverses movement changes)
  *   - Uses global ntn_ptr for the current nation
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure, validate reverse of mil_uppow
+ *   Key Tests: Each MM_* constant case, movement boundary conditions, symmetry with mil_uppow
+ *   Dependencies: Mock ntn_ptr structure, magic constants (MM_WARRIOR, etc.)
+ *   Mock Requirements: Simple nation structure with aplus/dplus/maxmove fields
+ *   Complexity: Simple (8 cases) - perfect unit test candidate with clear inverse logic
  *
  * Notes:
  *   - Static function, only called internally by kill_powers()
@@ -336,6 +368,14 @@ mil_downpow PARM_1(long, powerval)
  *   - Modifies current nation's aplus/dplus when reproduction underflows
  *   - Modifies current nation's maxmove for certain powers
  *   - Uses global ntn_ptr for the current nation
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure, validate reverse of civ_uppow
+ *   Key Tests: Each MC_* constant case, underflow logic, minimum reproduction (5%), symmetry tests
+ *   Dependencies: Mock ntn_ptr structure, magic constants (MC_RELIGION, etc.)
+ *   Mock Requirements: Nation structure with repro/aplus/dplus/maxmove fields
+ *   Complexity: Moderate (6 cases with complex underflow math) - excellent unit test candidate
  *
  * Notes:
  *   - Static function, only called internally by kill_powers()
@@ -427,6 +467,14 @@ civ_downpow PARM_1(long, powerval)
  *   - Reduces current nation's dplus (defense bonus) for illusion-based powers
  *   - Uses global ntn_ptr for the current nation
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure, validate reverse of wiz_uppow
+ *   Key Tests: Defense powers removal, attack powers removal, default case, symmetry tests
+ *   Dependencies: Mock ntn_ptr structure, magic constants (MW_* values)
+ *   Mock Requirements: Simple nation structure with aplus/dplus fields
+ *   Complexity: Simple (3 main cases) - perfect unit test candidate with clear inverse logic
+ *
  * Notes:
  *   - Static function, only called internally by kill_powers()
  *   - Exactly reverses the effects of wiz_uppow() for each power type
@@ -476,6 +524,14 @@ wiz_downpow PARM_1(long, powerval)
  *   - Applies stat bonuses by calling appropriate *_uppow() functions
  *   - Skips powers the nation already possesses
  *   - Uses global ntn_ptr for the current nation
+ *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with minimal world setup or extensive mocking
+ *   Key Tests: Input validation, power addition logic, ADDMAGIC macro, each powtype case
+ *   Dependencies: Global ntn_ptr, mclass_list array, ADDMAGIC macro, *_uppow functions
+ *   Mock Requirements: Complex - mclass_list with maxval, nation structure, magic macros
+ *   Complexity: Moderate (global dependencies) - requires integration setup for full testing
  *
  * Notes:
  *   - Public interface for adding magic powers to nations
@@ -547,6 +603,14 @@ add_powers PARM_2(int, powtype, long, powlist)
  *   - Only affects powers the nation currently possesses
  *   - Uses global ntn_ptr for the current nation
  *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with minimal world setup or extensive mocking
+ *   Key Tests: Input validation, power removal logic, KILLMAGIC macro, each powtype case
+ *   Dependencies: Global ntn_ptr, mclass_list array, KILLMAGIC macro, *_downpow functions
+ *   Mock Requirements: Complex - mclass_list with maxval, nation structure, magic macros
+ *   Complexity: Moderate (global dependencies) - requires integration setup for full testing
+ *
  * Notes:
  *   - Public interface for removing magic powers from nations
  *   - Validates input parameters before processing
@@ -615,6 +679,14 @@ kill_powers PARM_2(int, powtype, long, powlist)
  *   - None (read-only validation function)
  *   - Uses global ntn_ptr and race_info array
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation and race_info structures
+ *   Key Tests: Power already possessed, race restrictions, prerequisite validation, edge cases
+ *   Dependencies: Mock ntn_ptr, race_info array, mclass_list, MAGIC/MIL_MAGIC/CIV_MAGIC/WIZ_MAGIC macros
+ *   Mock Requirements: Nation with powers array, race_info with pow_limit, mclass_list with pow_list
+ *   Complexity: Moderate (multiple validation checks) - good unit test candidate with clear logic
+ *
  * Notes:
  *   - Checks if power is already possessed (returns FALSE)
  *   - Checks race-specific power limitations using race_info
@@ -670,6 +742,14 @@ magic_ok PARM_2(int, magic_type, int, new_mint)
  * Side Effects:
  *   - None (does not modify nation state, only generates candidates)
  *   - Uses rand_val() for random number generation
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock random generator and magic_ok function
+ *   Key Tests: Success case, failure case (500 attempts), edge cases, random distribution
+ *   Dependencies: Mock rand_val function, mock magic_ok function, mclass_list array
+ *   Mock Requirements: Controllable rand_val, mock magic_ok for predictable validation
+ *   Complexity: Moderate (loop with validation) - excellent unit test candidate with mockable dependencies
  *
  * Notes:
  *   - Maximum 500 attempts to find valid power (prevents infinite loops)
@@ -732,6 +812,14 @@ rand_magic PARM_1( int, magic_type )
  * Side Effects:
  *   - None (read-only calculation function)
  *   - Uses global sct[][] map array for terrain data
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock nation structure and sector array
+ *   Key Tests: Each vegetation type, each altitude type, stacking bonuses, boundary conditions
+ *   Dependencies: Mock nation with powers array, mock sct[][] array, XY_ONMAP macro, MAGIC macro
+ *   Mock Requirements: Nation structure with powers, 2D sector array with vegetation/altitude
+ *   Complexity: Moderate (terrain logic matrix) - excellent unit test candidate with clear inputs/outputs
  *
  * Notes:
  *   - Vegetation bonuses: desert/ice (+20 dervish/destroyer), forest (+20 druid/+5 botanist),

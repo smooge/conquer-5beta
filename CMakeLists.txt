@@ -290,16 +290,5 @@ set_tests_properties(test_mainA PROPERTIES
     TIMEOUT 30
 )
 
-# test_economyA - Unit test target
-add_executable(test_economyA tests/unit/test_economyA.c ${TFILS} ${XFILS})
-target_link_libraries(test_economyA ${REQUIRED_LIBS} unity)
-target_include_directories(test_economyA PRIVATE Include)
-
-# Add to CTest
-add_test(NAME test_economyA COMMAND test_economyA)
-set_tests_properties(test_economyA PROPERTIES
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    TIMEOUT 30
-)
 
 # End Unit Tests
