@@ -323,12 +323,41 @@ All functions must be documented before modernization using this standard format
  *   - Allocates memory that caller must free
  *   - May block on I/O operations
  *
+ * Testing Notes:
+ *   Category: A (Unit) | B (Integration) | C (System) | D (Mock) | E (Skip)
+ *   Approach: [Unit tests with mocks | Integration testing | System testing]
+ *   Key Tests: [List of critical test scenarios]
+ *   Dependencies: [Global variables, initialization requirements]
+ *   Mock Requirements: [What needs to be mocked for testing]
+ *   Complexity: [Simple | Moderate | Complex] - [suitability assessment]
+ *
  * Notes:
  *   - Thread safety information
  *   - Performance considerations
  *   - Historical context if relevant
  */
 ```
+
+### Testing Notes Guidelines
+
+**MANDATORY**: All function documentation must include Testing Notes section to prevent retesting attempts.
+
+**Category Classification**:
+- **Category A (Unit Testable)**: Isolated functions, minimal dependencies
+- **Category B (Integration Required)**: Requires world state or multiple modules
+- **Category C (System Level Only)**: Requires full game engine initialization
+- **Category D (Mock Intensive)**: Testable with extensive mocking
+- **Category E (Deferred/Skip)**: Skip until post-modernization
+
+**Reference Documents**:
+- Always check `_modernization/claude/reports/FUNCTION_TESTING_CLASSIFICATION.md` before testing
+- Follow `_modernization/memory/TESTING_SESSION_GUIDELINES.md` for session planning
+
+**Testing Notes Benefits**:
+- **Immediate Context**: Testing approach visible with function code
+- **Knowledge Preservation**: Testing insights travel with function during refactoring
+- **Session Efficiency**: Prevents retesting classified functions
+- **Modernization Planning**: Clear testing roadmap for each function
 
 ### Special Documentation for Legacy Code
 - **Unclear Logic**: Document confusing or non-obvious code sections

@@ -1,9 +1,24 @@
 # Unit Test Development Progress Tracker
 
-**Last Updated**: 2025-09-16
+**Last Updated**: 2025-09-17
 **Total Files**: 63
 **Total Functions**: ~850+
 **Current Phase**: 6B-1 (Foundation & High Priority)
+
+## ⚡ IMPORTANT: Testing Classification System
+
+**MANDATORY CHECK**: Before starting ANY testing session, ALWAYS consult:
+- `_modernization/claude/reports/FUNCTION_TESTING_CLASSIFICATION.md` - Primary classification registry
+- `_modernization/memory/TESTING_SESSION_GUIDELINES.md` - Session planning guidelines
+
+**Purpose**: Prevent retesting of functions already classified as requiring integration/system testing
+
+**Classification Categories**:
+- **Category A (Unit Testable)**: Isolated functions, standard Unity testing ✅
+- **Category B (Integration Required)**: Requires world state, integration testing 🔧
+- **Category C (System Level Only)**: Full game engine initialization, system testing 🌐
+- **Category D (Mock Intensive)**: Heavy mocking required, assess cost 🎭
+- **Category E (Deferred/Skip)**: Skip until post-modernization ⏸️
 
 ## Progress Summary
 
@@ -24,7 +39,7 @@
 |------|-----------|----------|-----------|--------|---------|-------|
 | Src/moveA.c | 1 | P1-High | tests/unit/test_moveA.c | ✅ Complete | 1 | 11/12 tests PASS - 1 minor edge case (BUG-009) |
 | Src/mainA.c | 2 | P1-High | tests/unit/test_mainA.c | ✅ Complete | 2 | 5/5 tests PASS - PARM_ macro support validated |
-| Src/economyA.c | 3 | P1-High | tests/unit/test_economyA.c | ⚠️ Issues | 3 | Testing blocked by architectural complexity |
+| Src/economyA.c | 3 | P1-High | tests/unit/test_economyA.c | 🔧 Category B | 3 | CLASSIFIED: Integration testing required (world state dependencies) |
 | Src/magicX.c | 11 | P1-High | tests/unit/test_magicX.c | ⏳ Pending | 2 | Magic system logic |
 | Src/sectorA.c | 19 | P1-High | tests/unit/test_sectorA.c | ⏳ Pending | 3 | Core sector management |
 | Src/combatA.c | 29 | P1-Critical | tests/unit/test_combatA.c | ⏳ Pending | 3 | Combat calculations |

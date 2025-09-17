@@ -64,12 +64,21 @@ extern char *sct_status;
  *   - Writes progress information to fupdate file
  *   - Uses global sct_ptr for sector access
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with minimal world setup
+ *   Key Tests: Sector status updates, boundary calculations, null safety
+ *   Dependencies: sct array (m2alloc), upd_init(), sct_ptr, sct_status, fupdate
+ *   Mock Requirements: File I/O operations (fupdate), find_area() function
+ *   Complexity: Moderate (6 branches) - suitable for integration testing
+ *
  * Notes:
  *   - Processes entire MAPX by MAPY grid systematically
  *   - Siege status can be cleared or set based on SET_SIEGE flag
  *   - Devastation status is only set, never cleared automatically
  *   - Nation boundary calculation is performed for all nations 1 to MAXNTN-1
  *   - Status array accessed via SCT_STATUS macro for efficiency
+ *   - Requires complete world initialization sequence before execution
  */
 void
 upd_sectors PARM_0(void)
@@ -137,6 +146,14 @@ upd_sectors PARM_0(void)
  *   - Uses and modifies global production adjustment tracking variables
  *   - Frees allocated production sheets via free(prod_ptr)
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with full economic system setup
+ *   Key Tests: Production calculations, overflow protection, memory management
+ *   Dependencies: world.np[], ntn_ptr, city_ptr, region arrays, msg system
+ *   Mock Requirements: File I/O (fupdate), msg_grouped(), region_produce()
+ *   Complexity: Very Complex (14 branches) - requires extensive integration setup
+ *
  * Notes:
  *   - Skips inactive and monster nations for production processing
  *   - BIGITEM constant prevents integer overflow on large accumulations
@@ -144,6 +161,7 @@ upd_sectors PARM_0(void)
  *   - Special tracking for MTRLS_JEWELS and MTRLS_METALS affects global economy
  *   - Memory management critical - frees prod_ptr after each region
  *   - Reports include both regional detail and national summaries
+ *   - Requires complete economic system initialization before execution
  */
 void
 upd_produce PARM_0(void)
@@ -296,6 +314,14 @@ upd_produce PARM_0(void)
  *   - Writes major events to news file (famines, desertions)
  *   - Updates city material stores and handles debt conversion
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: System-level integration testing with complete game state
+ *   Key Tests: Unit survival mechanics, resource calculations, memory management
+ *   Dependencies: Complete unit system (armies, navies, caravans, cities)
+ *   Mock Requirements: File I/O, msg system, complex unit/sector interactions
+ *   Complexity: Extremely Complex (127 branches) - full integration testing only
+ *
  * Notes:
  *   - Monster nations have different consumption rules and may skip some processing
  *   - Supply mechanics vary by unit type and status (fort, grouped, etc.)
@@ -304,6 +330,7 @@ upd_produce PARM_0(void)
  *   - Percentage-based calculations for casualties and desertions
  *   - Special handling for mercenary reputation and loyalty
  *   - Environmental exposure varies by season and unit type
+ *   - Most complex function in economic system - requires full game state
  */
 void
 upd_consume PARM_0(void)

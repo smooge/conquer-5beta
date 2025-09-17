@@ -48,12 +48,21 @@
  *   - Updates group location/movement for leading units via set_grploc/set_grpmove
  *   - Modifies global movemode variable (MOVE_ARMY or MOVE_FLYARMY)
  *
+ * Testing Notes:
+ *   Category: A (Unit Testable)
+ *   Approach: Standard unit testing with mocked dependencies
+ *   Key Tests: Input validation, movement calculations, boundary checking, flying vs ground
+ *   Dependencies: army_ptr (mockable), movement cost functions (mockable)
+ *   Mock Requirements: map_within(), unit_flight(), mv_cost(), set_grploc(), set_grpmove()
+ *   Complexity: Simple - well suited for comprehensive unit testing
+ *
  * Notes:
  *   - Operates on global army_ptr which must be set before calling
  *   - Movement cost threshold of 100 represents some special movement state
  *   - Flying units use different movement mode affecting terrain costs
  *   - Leading units update entire group location, others move individually
  *   - Function assumes army_ptr points to valid army data structure
+ *   - Excellent unit testing candidate with clear input/output behavior
  */
 int
 npc_movearmy PARM_2(int, x, int, y)

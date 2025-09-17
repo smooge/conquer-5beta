@@ -43,11 +43,20 @@
  * Side Effects:
  *   None - pure function with no side effects
  *
+ * Testing Notes:
+ *   Category: A (Unit Testable)
+ *   Approach: Standard unit testing with platform variation
+ *   Key Tests: Path separators per platform, ASCII chars, boundary values
+ *   Dependencies: None - pure function
+ *   Mock Requirements: None - self-contained logic
+ *   Complexity: Trivial - ideal unit testing candidate
+ *
  * Notes:
  *   Platform-specific path separators are handled via conditional compilation:
  *   - MS_DOS: backslash (\) is a path separator
  *   - VMS: bracket (]) and colon (:) are path separators
  *   - All platforms: forward slash (/) is a path separator
+ *   - Perfect unit testing example with clear behavior and no dependencies
  */
 static int
 fname_char PARM_1(int, ch)
@@ -101,12 +110,21 @@ char lock_string[FILELTH];
  *   - May fork processes or execute system commands
  *   - Modifies global variables and game state
  *
+ * Testing Notes:
+ *   Category: D (Mock Intensive)
+ *   Approach: Unit testing with extensive mocking of system calls
+ *   Key Tests: Command line parsing, flag validation, directory operations
+ *   Dependencies: File system, environment variables, getopt(), chdir()
+ *   Mock Requirements: File I/O, system calls, getopt functions, exit()
+ *   Complexity: Complex - main functions are typically mock-intensive to test
+ *
  * Notes:
  *   - Requires setuid permissions for multi-user operation
  *   - Uses file locking to prevent data corruption
  *   - Supports multiple platforms (Unix, VMS, MS-DOS)
  *   - Most operations require administrator (LOGIN) privileges
  *   - Command line format: program [-nc] [-ACEQITZamx -dDIR -oOUTFILE -rSCENARIO]
+ *   - Main functions are often better tested through integration/system testing
  */
 int
 main PARM_2 (int, argc, char **, argv)
