@@ -1,8 +1,10 @@
 # Persistent Bug Tracking - Conquer C2023 Modernization
 
-**Purpose**: Track bugs discovered during unit testing and modernization that need to be fixed during the modernization process.
+**MIGRATION NOTICE**: Bug tracking has moved to GitHub Issues (https://github.com/smooge/conquer-5beta/issues). This file now serves as a backup/fallback and cross-reference to GitHub issues.
 
-**Usage**: Claude Code should add bugs found during testing, analysis, or modernization work to this file. Each bug should include reproduction steps, severity, and proposed fixes.
+**Primary Usage**: Use `gh issue create` to file new bugs as GitHub issues. Only use this file when GitHub/gh CLI is unavailable.
+
+**File Purpose**: Maintain cross-reference between internal bug IDs and GitHub issue numbers for legacy tracking.
 
 ---
 
@@ -40,7 +42,7 @@
 
 ## Active Bugs
 
-### BUG-001: user_exists() NULL Pointer Crash
+### BUG-001: user_exists() NULL Pointer Crash [GitHub #1](https://github.com/smooge/conquer-5beta/issues/1)
 **Priority**: CRITICAL
 **File**: Src/checkX.c
 **Function**: user_exists()
@@ -67,7 +69,7 @@ int user_exists(char *who) {
 
 **Status**: OPEN
 
-### BUG-002: canseelogin() Unsafe String Comparison
+### BUG-002: canseelogin() Unsafe String Comparison [GitHub #2](https://github.com/smooge/conquer-5beta/issues/2)
 **Priority**: HIGH
 **File**: Src/checkX.c
 **Function**: canseelogin()
@@ -97,7 +99,7 @@ int canseelogin(void) {
 
 **Status**: OPEN
 
-### BUG-003: goto_cvn() Incorrect Coordinate Comparison
+### BUG-003: goto_cvn() Incorrect Coordinate Comparison [GitHub #3](https://github.com/smooge/conquer-5beta/issues/3)
 **Priority**: MEDIUM
 **File**: Src/selectG.c
 **Function**: goto_cvn()
@@ -124,7 +126,7 @@ if (XREAL != c1_ptr->xloc) {
 
 **Status**: OPEN
 
-### BUG-004: Multiple Insecure fprintf() Usage (Security)
+### BUG-004: Multiple Insecure fprintf() Usage (Security) [GitHub #4](https://github.com/smooge/conquer-5beta/issues/4)
 **Priority**: HIGH
 **File**: Src/checkX.c
 **Function**: checkout()
@@ -152,7 +154,7 @@ fprintf(fupdate, "%s", buffer);
 
 **Status**: OPEN
 
-### BUG-005: get_userid() Memory Management Issues
+### BUG-005: get_userid() Memory Management Issues [GitHub #5](https://github.com/smooge/conquer-5beta/issues/5)
 **Priority**: MEDIUM
 **File**: Src/checkX.c
 **Function**: get_userid()
@@ -198,7 +200,7 @@ char* get_userid(char *outname) {
 
 **Status**: OPEN
 
-### BUG-006: Security Pattern - Systematic NULL Pointer Vulnerabilities
+### BUG-006: Security Pattern - Systematic NULL Pointer Vulnerabilities [GitHub #6](https://github.com/smooge/conquer-5beta/issues/6)
 **Priority**: HIGH
 **File**: Src/checkX.c
 **Function**: Multiple functions (user_exists, check_lock, canseelogin)
@@ -223,7 +225,7 @@ if (parameter == NULL) {
 
 **Status**: OPEN
 
-### BUG-009: npc_movearmy() High Movement Points Edge Case
+### BUG-009: npc_movearmy() High Movement Points Edge Case [GitHub #7](https://github.com/smooge/conquer-5beta/issues/7)
 **Priority**: LOW
 **File**: Src/moveA.c
 **Function**: npc_movearmy()

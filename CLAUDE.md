@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL PATH REQUIREMENTS
+
+**ALWAYS USE CORRECT PROJECT PATH:**
+- **Correct path**: `/home/ssmoogen/conquer-project/conquer/`
+- **NEVER use**: `/home/ssmoogan/` (common typo - incorrect spelling)
+- **ALWAYS verify**: All file paths start with `/home/ssmoogen/` (double-o, not single-o)
+- **Apply to**: All file operations, session memory files, documentation paths
+
 ## Project Overview
 
 This is a C modernization project focused on upgrading legacy pre-ANSI C codebase to C2023 standards. The primary goals are to improve **correctness, security, portability, and maintainability** for use on today's 64-bit systems while preserving functionality.
@@ -27,6 +35,12 @@ gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Includ
 
 # Build with additional safety flags
 gcc -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -Werror -g -O2 -fsanitize=address -fsanitize=undefined -I Include Src/*.c -o program
+
+# INTENSIVE ANALYSIS - Comprehensive warning detection (use for thorough analysis)
+gcc -O2 -g -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough -Wsign-conversion -fanalyzer -std=c2x -D_POSIX_C_SOURCE=200809L Src/*.c -o program
+
+# INTENSIVE ANALYSIS - Single file testing (recommended for initial analysis)
+gcc -O2 -g -Wall -Wextra -Wformat -Wformat=2 -Wconversion -Wimplicit-fallthrough -Wsign-conversion -fanalyzer -std=c2x -D_POSIX_C_SOURCE=200809L -c filename.c
 
 # Cross-platform build test
 # All platforms: gcc/clang -std=c2x -D_POSIX_C_SOURCE=200809L -Wall -Wextra -Wpedantic -g -O2 -I Include Src/*.c -o program
@@ -612,7 +626,7 @@ PHASE{N}_{TYPE}_{COMPONENT}_{YYYYMMDD}_{HHMMSS}.md
 - `DOCUMENTATION_STRATEGY.md` - Always current strategy
 - `NEXT_SESSION_INSTRUCTIONS.md` - Instructions for next session
 - `PERSISTENT_TODOS.md` - General project todos that persist across sessions
-- `PERSISTENT_BUGS.md` - Bug tracking for issues found during testing and modernization
+- `PERSISTENT_BUGS.md` - Bug tracking fallback (only when GitHub/gh CLI unavailable)
 
 ### Session End Management
 
@@ -703,26 +717,20 @@ Session Export Date: [YYYY-MM-DD HH:MM:SS]
 
 ## Bug Tracking During Modernization
 
-### PERSISTENT_BUGS.md Usage
+### GitHub Issues Integration
 
-**Purpose**: Track bugs discovered during unit testing, code analysis, and modernization work that need to be fixed as part of the modernization process.
+**Purpose**: Track bugs discovered during unit testing, code analysis, and modernization work using GitHub Issues for better visibility and collaboration.
 
-**When to Add Bugs**:
+**When to Create GitHub Issues**:
 - Unit tests reveal crashes, segmentation faults, or undefined behavior
 - Code analysis identifies security vulnerabilities or memory safety issues
 - Function modernization uncovers logic errors or data corruption risks
 - Integration testing finds race conditions or concurrency problems
 
-**Bug Entry Requirements**:
-1. **Detailed reproduction steps** with specific function calls and parameters
-2. **Impact assessment** on system stability, security, and functionality
-3. **Proposed fix** with concrete code examples showing the solution
-4. **Priority level** based on security and stability implications
-5. **Discovery context** (unit testing, analysis, modernization phase)
-
-**Example Bug Entry Format**:
-```markdown
-### BUG-XXX: Brief Description
+**Issue Creation Using gh CLI**:
+```bash
+# Create bug report with template
+gh issue create --title "Bug: Brief Description" --body "$(cat <<'EOF'
 **Priority**: CRITICAL/HIGH/MEDIUM/LOW
 **File**: Src/filename.c
 **Function**: function_name()
@@ -738,20 +746,33 @@ Session Export Date: [YYYY-MM-DD HH:MM:SS]
 **Impact**: Crashes affect system stability and security
 
 **Proposed Fix**: Add NULL pointer validation:
-\`\`\`c
+```c
 if (param == NULL) {
     return -1;  /* Error code */
 }
-\`\`\`
+```
+EOF
+)" --label "bug,modernization"
 
-**Status**: OPEN
+# For security issues, add security label
+gh issue create --title "Security: Buffer overflow in function_name" --body "..." --label "bug,security,modernization"
+
+# For critical issues, add priority label
+gh issue create --title "Critical: Segfault in core function" --body "..." --label "bug,critical,modernization"
 ```
 
-**Integration with Modernization**:
-- Reference bug numbers in commit messages when fixing issues
-- Update bug status to IN_PROGRESS when starting fixes
-- Move resolved bugs to Fixed Bugs section with commit references
-- Use bug database to prioritize modernization work on critical functions
+**Fallback to PERSISTENT_BUGS.md**:
+**Only use `_modernization/memory/PERSISTENT_BUGS.md` when GitHub/gh CLI is unavailable**:
+- Network connectivity issues preventing GitHub access
+- Authentication problems with gh CLI
+- Repository access restrictions
+
+**GitHub Issues Integration with Modernization**:
+- Reference issue numbers in commit messages when fixing bugs: `Fix #123: Add NULL pointer validation`
+- Use `gh issue edit` to update status and add progress comments
+- Close issues automatically with commit messages: `Closes #123: Fix segfault in function_name`
+- Use issue labels for organization: `bug`, `security`, `modernization`, `critical`, `documentation`
+- Link related issues for tracking dependencies
 
 ## Script-Driven Modernization Benefits
 
