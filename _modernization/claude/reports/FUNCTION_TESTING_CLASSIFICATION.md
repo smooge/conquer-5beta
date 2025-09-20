@@ -1035,7 +1035,7 @@ Function identified for testing
 - **adduserA.c** - User addition utilities
 - **vms.c** - VMS compatibility layer
 
-### iodataX.c - IN PROGRESS ⚙️ (Functions 1-6)
+### iodataX.c - IN PROGRESS ⚙️ (Functions 1-12)
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
@@ -1045,25 +1045,34 @@ Function identified for testing
 | `wr_unumlist()` | B - Integration | Moderate | Linked list serialization with count validation and error handling | Integration testing |
 | `wr_maplist()` | B - Integration | Moderate | Similar to wr_unumlist but for MAP_STRUCT data persistence | Integration testing |
 | `write_data()` | C - System Level | Extremely Complex | Master world persistence function requiring complete game state (270+ lines) | System testing |
+| `set_convert()` | A - Unit | Simple | Version conversion logic with clear input/output contract | Unit testing |
+| `rd_header()` | B - Integration | Moderate | File header reading with validation requiring global arrays | Integration testing |
+| `rd_worlddata()` | C - System Level | Extremely Complex | Complex world data reading with multiple version conversion paths | System testing |
+| `rd_maplist()` | B - Integration | Moderate | Linked list reading for map data with memory allocation | Integration testing |
+| `rd_unumlist()` | B - Integration | Moderate | Linked list reading for unit numbers with memory allocation | Integration testing |
+| `switch_24attr()` | A - Unit | Simple | Attribute conversion helper with clear array transformation logic | Unit testing |
 
-**Session**: Functions 1-6 Classification (2025-09-20) - 6 of 22 functions (27% complete)
+**Sessions**:
+- Functions 1-6 Classification (2025-09-20): 6 of 22 functions (27% complete)
+- Functions 7-12 Classification (2025-09-20): 12 of 22 functions (55% complete)
 
-**Category Distribution (Functions 1-6)**:
-- **Category A (Unit)**: 1 function (17%) - fput_string
-- **Category B (Integration)**: 4 functions (67%) - syserr_msg, wr_header, wr_unumlist, wr_maplist
-- **Category C (System Level)**: 1 function (17%) - write_data
+**Category Distribution (Functions 1-12)**:
+- **Category A (Unit)**: 3 functions (25%) - fput_string, set_convert, switch_24attr
+- **Category B (Integration)**: 7 functions (58%) - syserr_msg, wr_header, wr_unumlist, wr_maplist, rd_header, rd_maplist, rd_unumlist
+- **Category C (System Level)**: 2 functions (17%) - write_data, rd_worlddata
 
-**Key Findings from Functions 1-6**:
-- **Data I/O Infrastructure**: Complete file writing pipeline from error handling to world persistence
-- **Integration-Heavy Design**: Most functions require global state and linked data structures
-- **Single Unit Testable**: fput_string() provides clean error-checked file output wrapper
-- **System Complexity**: write_data() represents one of the most complex functions (master persistence)
+**Key Findings from Functions 7-12**:
+- **Version Conversion Foundation**: set_convert() and switch_24attr() provide clean unit testable conversion utilities
+- **Read/Write Symmetry**: Reading functions (rd_*) mirror writing functions (wr_*) with similar complexity
+- **Data Persistence Pipeline**: Complete I/O infrastructure for both reading and writing game state
+- **Backward Compatibility**: Extensive version conversion support for maintaining save file compatibility
 
-**Architecture Notes for Functions 1-6**:
-- Error handling infrastructure (syserr_msg, fput_string) provides foundation for safe I/O
-- Header writing (wr_header) handles version compatibility and cross-platform type information
-- Linked list serialization (wr_unumlist, wr_maplist) implements data structure persistence
-- Master persistence (write_data) orchestrates complete game world serialization
+**Architecture Notes for Functions 1-12**:
+- **I/O Foundation**: Complete file persistence system with error handling (syserr_msg, fput_string)
+- **Version Management**: Header reading/writing with compatibility validation (wr_header, rd_header)
+- **Data Serialization**: Symmetric read/write operations for linked lists (wr_unumlist/rd_unumlist, wr_maplist/rd_maplist)
+- **World Persistence**: Master functions for complete game state (write_data, rd_worlddata)
+- **Conversion Utilities**: Clean helper functions for version compatibility (set_convert, switch_24attr)
 
 ### ioX.c - COMPLETED ✅ - 100% COMPLETE
 

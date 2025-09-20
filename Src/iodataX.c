@@ -660,6 +660,14 @@ static long sum_bytes = 0L, bytes;
  *   - Sets global convert_level variable
  *   - Affects subsequent data reading operations
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple logic function with clear input/output contract
+ *   Approach: Unit testing with various patch level inputs and validation of conversion logic
+ *   Key Tests: Boundary conditions (level 23), current patch level, invalid levels
+ *   Dependencies: Global convert_level variable, PATCHLEVEL constant
+ *   Mock Requirements: Mock PATCHLEVEL constant for testing different scenarios
+ *   Complexity: Simple - Clear conditional logic with minimal dependencies
+ *
  * Notes:
  *   - Only supports conversion from patch levels 23 and higher
  *   - Older patch levels require special handling during data reads
@@ -700,6 +708,14 @@ set_convert PARM_1(int, level)
  *   - Reads patch level and sets up conversion if needed
  *   - Reads and validates all type and structure sizes
  *   - May set convert_level for older data files
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires file I/O, global arrays, and error reporting infrastructure
+ *   Approach: Integration testing with mock files and controlled global state
+ *   Key Tests: Version validation, patch level conversion, type size validation, error conditions
+ *   Dependencies: Global fupdate, VERSION, PATCHLEVEL, dio_types, dio_structs arrays
+ *   Mock Requirements: Mock FILE* operations, mock global arrays for validation
+ *   Complexity: Moderate - File parsing with extensive validation and error handling
  *
  * Notes:
  *   - Critical for ensuring data file compatibility
@@ -812,6 +828,14 @@ rd_header PARM_1(FILE *, filep)
  *   - Reads world structure based on convert_level
  *   - Initializes new fields for converted data
  *   - Sets global world structure with read data
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Extremely complex function requiring complete world structure knowledge
+ *   Approach: System testing with full game state or extensive mocking of world structures
+ *   Key Tests: Each patch level conversion (24-27), normal read, field preservation, new field initialization
+ *   Dependencies: Complete world structure, convert_level global, multiple versioned structures
+ *   Mock Requirements: Extensive mocking of world structures and file I/O operations
+ *   Complexity: Extremely Complex - Multiple conversion paths, large data structures, version-specific logic
  *
  * Notes:
  *   - Handles conversion from patch levels 24, 25, 26, 27 to current
@@ -1223,6 +1247,14 @@ rd_worlddata PARM_1(FILE *, in_stream)
  *   - Constructs linked list of map structures
  *   - Frees allocated memory on read errors
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires file I/O, memory allocation, and linked list construction
+ *   Approach: Integration testing with mock file operations and controlled memory allocation
+ *   Key Tests: Multiple map reading, linked list construction, error handling, memory cleanup
+ *   Dependencies: FILE* operations, new_map() allocation, fupdate global, fread()
+ *   Mock Requirements: Mock FILE* operations, mock new_map() with controllable failure scenarios
+ *   Complexity: Moderate - File I/O with linked list construction and error handling
+ *
  * Notes:
  *   - Part of the sector mapping persistence system
  *   - Creates proper linked list structure with next pointers
@@ -1278,6 +1310,14 @@ rd_maplist PARM_2(FILE *, in_stream, int, num_maps)
  *   - Constructs linked list of unit numbering structures
  *   - Frees allocated memory on read errors
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Similar to rd_maplist with UNITNUM-specific processing
+ *   Approach: Integration testing with mock file operations and UNITNUM allocation
+ *   Key Tests: Multiple UNITNUM reading, linked list construction, error scenarios, memory management
+ *   Dependencies: FILE* operations, new_unum() allocation, fupdate global, fread()
+ *   Mock Requirements: Mock FILE* operations, mock new_unum() with failure testing capabilities
+ *   Complexity: Moderate - Identical pattern to rd_maplist with different data types
+ *
  * Notes:
  *   - Part of the unit identification and tracking system
  *   - Creates proper linked list structure with next pointers
@@ -1332,6 +1372,14 @@ rd_unumlist PARM_2(FILE *, in_stream, int, num_unum)
  *   - Initializes all new attributes with default starting values
  *   - Copies compatible attributes from old to new format
  *   - Modifies the target attribute array in place
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Pure data transformation with clear input/output arrays
+ *   Approach: Unit testing with controlled attribute arrays and validation of conversion mapping
+ *   Key Tests: All attribute mappings, default value initialization, array boundary conditions
+ *   Dependencies: bute_info global array, BUTE_NUMBER constant, attribute mapping constants
+ *   Mock Requirements: Mock bute_info array with controlled default values
+ *   Complexity: Simple - Array processing with clear mapping logic and minimal side effects
  *
  * Notes:
  *   - Part of patch 24 data conversion system
