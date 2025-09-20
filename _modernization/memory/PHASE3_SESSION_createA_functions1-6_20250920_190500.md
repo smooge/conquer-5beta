@@ -74,29 +74,54 @@
 **Helper Function Design**: Clean separation between counting, modification, and generation
 **Testing Implications**: Clear testing approach for each function type identified
 
-## Next Session Planning
+## Next Session Planning - REVISED STRATEGY
 
-### Target: Functions 7-12 (Second Checkpoint)
-**Remaining Functions**: 10 functions (7-16) for future sessions
-**Expected Next Batch**: Functions 7-12 (6 more functions)
-- `liz_takeit()` - Static lizard helper
-- `pir_oksect()` - Static pirate helper
-- `pir_takeit()` - Static pirate helper
-- `createworld()` - **MASSIVE** 700+ line world generation function
-- `bld_lizards()` - Lizard nation creation
-- `bld_savages()` - Savage nation creation
+### Revised Multi-Session Approach for Complex Functions
 
-**Strategic Considerations**:
-- **createworld()** is extremely complex - may require special analysis approach
-- **Nation builders** (bld_*) likely Category C (System Level) due to full world dependencies
-- **Static helpers** (liz_takeit, pir_*) probably Category B integration functions
+**STRATEGIC DECISION**: Breaking remaining 10 functions into 3 focused sessions to manage complexity effectively.
 
-### Session Strategy for Functions 7-12
-1. **Load createA.c** and focus on functions 7-12
-2. **Special Attention**: createworld() may need detailed complexity analysis
-3. **Nation Function Pattern**: Expect similar patterns across bld_* functions
-4. **Checkpoint Process**: Commit after 6-function analysis, save session memory
-5. **Context Management**: End session after checkpoint to prevent context issues
+### Session 2: Functions 7-9 (Helper Functions)
+**Target**: 3 static helper functions only
+- `liz_takeit()` - Static lizard territory helper (lines 1148-1160)
+- `pir_oksect()` - Static pirate validation helper (lines 1670-1678)
+- `pir_takeit()` - Static pirate ocean conversion helper (lines 1704-1711)
+
+**Rationale**: Small batch of similar helper functions, manageable session size
+**Expected Classifications**: All likely Category B (Integration) due to terrain modification
+**Session Benefits**: Quick turnaround, establishes pattern for static helpers
+
+### Session 3: Function 10 (Mega Function)
+**Target**: `createworld()` ONLY (lines 412-1121)
+- **Single Function Focus**: 700+ line world generation master function
+- **Special Analysis**: Requires detailed complexity breakdown and architectural analysis
+- **Expected Classification**: Category C (System Level) - requires full infrastructure
+- **Strategic Approach**: Dedicated session for comprehensive analysis of most complex function
+
+### Session 4: Functions 11-16 (Nation Builders + Remaining)
+**Target**: Remaining 6 functions for final completion
+- `bld_lizards()` - Lizard nation creation (lines 1201-1337)
+- `bld_savages()` - Savage nation creation (lines 1376-1482)
+- `bld_nomads()` - Nomad nation creation (lines 1523-1644)
+- `bld_pirates()` - Pirate nation creation (lines 1752-1897)
+- `populate()` - NPC initialization (lines 1932-1983)
+- `rawmaterials()` - Resource distribution (lines 2023-2143)
+
+**Expected Pattern**: Likely all Category C (System Level) due to full world dependencies
+**Completion Goal**: Finish createA.c classification entirely
+
+### Advantages of Revised Strategy
+1. **Complexity Management**: Isolates massive createworld() function for focused analysis
+2. **Context Efficiency**: Smaller sessions prevent context overload
+3. **Pattern Recognition**: Groups similar function types for consistent analysis
+4. **Quality Focus**: Dedicated attention to most complex function in the codebase
+5. **Progress Visibility**: Clear milestones and completion tracking
+
+### Session Strategy for Functions 7-9 (Next Session)
+1. **Load createA.c** and focus specifically on lines 1148-1711
+2. **Helper Function Analysis**: Analyze terrain modification patterns
+3. **Quick Classification**: All likely Category B, should be rapid analysis
+4. **Checkpoint Process**: Commit after 3-function analysis, save session memory
+5. **Context Management**: End session cleanly for createworld() preparation
 
 ## Session Outcomes Summary
 
