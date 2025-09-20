@@ -1261,6 +1261,14 @@ int x_focus, y_focus;
  *   - Increases population in destination sector (x, y)
  *   - Uses OLD_POP() macro to access pre-migration population levels
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Population migration callback requiring controlled world state
+ *   Approach: Integration testing with controlled sector setup and population values
+ *   Key Tests: Population redistribution calculations, global state interaction, attractiveness weighting
+ *   Dependencies: get_reach(), OLD_POP() macro, global variables (x_focus, y_focus, global_int), sector array
+ *   Mock Requirements: Mock get_reach() function, controlled sector data, test population distributions
+ *   Complexity: Moderate - callback function with global state dependencies and migration calculations
+ *
  * Notes:
  *   - Used as callback with map_loop() for population redistribution
  *   - Migration amount = (sector_attractiveness * source_population) / total_attractiveness
@@ -1302,6 +1310,14 @@ upd_movepop PARM_2(int, x, int, y)
  *   - Updates WORLDMTRLS[] array with total materials
  *   - Updates WORLDCIV, WORLDMIL, WORLDSCT, WORLDSCORE, WORLDNTN globals
  *   - Calls ntn_totals() for each nation to recalculate nation statistics
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - World statistics calculator requiring full nation data structures
+ *   Approach: Integration testing with controlled nation setup and material distributions
+ *   Key Tests: World total calculations, overflow prevention, nation filtering, initialization values
+ *   Dependencies: world.np[] nation array, nation data structures, ntn_totals() function, BIGINT/BIGITEM constants
+ *   Mock Requirements: Mock nations with controlled material/population/score values, ntn_totals() function
+ *   Complexity: Moderate - straightforward aggregation with well-defined inputs and overflow protection
  *
  * Notes:
  *   - Initializes all world totals to 1 to prevent division by zero
@@ -1401,6 +1417,14 @@ wrld_totals PARM_0(void)
  * Side Effects:
  *   (none)
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Pure validation function with clear input/output contract
+ *   Approach: Unit tests with comprehensive designation and tradegood value combinations
+ *   Key Tests: MAJ_NONE validation, MAJ_FARM compatibility, exact matches, city substitution rules
+ *   Dependencies: IS_FARM() and IS_CITY() macros, designation constants (MAJ_*)
+ *   Mock Requirements: Minimal - only requires designation constants and helper macros
+ *   Complexity: Simple - pure function with clear boolean logic ideal for comprehensive unit testing
+ *
  * Notes:
  *   - MAJ_NONE value means tradegood must be actively used (not none)
  *   - MAJ_FARM value accepts any farming sector type
@@ -1454,6 +1478,14 @@ ucheck_tgsetting PARM_2(int, value, int, setting)
  *   - Processes tradegood effects on nation attributes
  *   - Updates nation scores and world statistics
  *   - Eliminates nations that fall below survival thresholds
+ *
+ * Testing Notes:
+ *   Category: C (System) - Complex nation orchestration requiring complete game engine setup
+ *   Approach: System testing with full world state, nations, sectors, armies, and magic systems
+ *   Key Tests: Population growth calculations, migration system, attribute recalculation, nation elimination
+ *   Dependencies: Complete game world (sectors, nations, armies), magic system, seasonal calculations, file I/O
+ *   Mock Requirements: Extensive - world state, sector ownership, army lists, magic powers, file handles
+ *   Complexity: Complex - master nation processing function requiring full game engine initialization
  *
  * Notes:
  *   - Extremely complex function handling many game systems
@@ -1942,6 +1974,14 @@ upd_nations PARM_1(int, which)
  *   - Handles combat, economics, population, and diplomacy
  *   - Generates news and update reports
  *   - Increments turn counter
+ *
+ * Testing Notes:
+ *   Category: C (System) - Master orchestration function requiring complete game engine
+ *   Approach: System testing with full integration test suite and complete world state setup
+ *   Key Tests: Update sequence coordination, subsystem integration, turn progression, state consistency
+ *   Dependencies: All game subsystems (combat, economics, nations, armies, input processing, file I/O)
+ *   Mock Requirements: Complete game engine mock or full system integration environment
+ *   Complexity: Complex - top-level orchestration function coordinating entire game turn processing
  *
  * Notes:
  *   Update sequence:

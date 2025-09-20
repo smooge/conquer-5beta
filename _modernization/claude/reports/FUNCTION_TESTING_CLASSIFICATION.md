@@ -77,12 +77,14 @@
 **Key Findings**: Requires `m2alloc()` allocation, `upd_init()` initialization, full world state
 **Architecture Notes**: Part of integrated game update cycle, not isolatable units
 
-### updateA.c - IN PROGRESS 🔄
+### updateA.c - COMPLETED ✅ - 100% COMPLETE
 
 **Sessions**:
 - Functions 1-6 Classification (2025-09-20): 6 of 17 functions (35% complete)
 - Functions 7-12 Classification (2025-09-20): 12 of 17 functions (71% complete)
-**Current Progress**: 12 of 17 functions classified (71% complete)
+- Functions 13-17 Classification (2025-09-20): 17 of 17 functions (100% complete)
+
+**FINAL STATUS**: ✅ **17 of 17 functions classified (100% COMPLETE)** ⭐
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
@@ -98,16 +100,34 @@
 | `score_ntn()` | A - Unit | Simple | Pure calculation function with nation scoring | Unit testing |
 | `upd_seenem()` | B - Integration | Moderate | Diplomatic callback requiring world state setup | Integration testing |
 | `upd_cntreach()` | A - Unit | Simple | Callback accumulator with minimal dependencies | Unit testing |
+| `upd_movepop()` | B - Integration | Moderate | Population migration callback requiring controlled world state | Integration testing |
+| `wrld_totals()` | B - Integration | Moderate | World statistics calculator requiring full nation data structures | Integration testing |
+| `ucheck_tgsetting()` | A - Unit | Simple | Pure validation function with clear input/output contract | Unit testing |
+| `upd_nations()` | C - System Level | Complex | Complex nation orchestration requiring complete game engine setup | System testing |
+| `update()` | C - System Level | Complex | Master orchestration function requiring complete game engine | System testing |
 
-**Category Distribution (Functions 1-12)**:
-- **Category A (Unit)**: 3 functions (25%) - upd_spells, score_ntn, upd_cntreach
-- **Category B (Integration)**: 6 functions (50%) - upd_init, upd_finish, upd_navy, upd_cvn, upd_military, upd_seenem
-- **Category C (System)**: 3 functions (25%) - upd_rovers, upd_army, upd_input
+**Final Category Distribution (All Functions 1-17)**:
+- **Category A (Unit)**: 4 functions (24%) - upd_spells, score_ntn, upd_cntreach, ucheck_tgsetting
+- **Category B (Integration)**: 8 functions (47%) - upd_init, upd_finish, upd_navy, upd_cvn, upd_military, upd_seenem, upd_movepop, wrld_totals
+- **Category C (System)**: 5 functions (29%) - upd_rovers, upd_army, upd_input, upd_nations, update
 
-**Next Session**: Continue with functions 13-17 (upd_movepop through update)
+**Key Findings from Functions 13-17**:
+- **Strong Unit Testing Addition**: ucheck_tgsetting() provides another pure validation function ready for unit testing
+- **Population System**: upd_movepop() demonstrates integration-level population migration mechanics
+- **World Statistics**: wrld_totals() offers clean integration testing opportunity for aggregation calculations
+- **Master Functions**: upd_nations() and update() represent the apex of system complexity requiring full game engine
 
-**Session**: Previous analysis
-**Key Findings**: Central orchestration function requiring full game engine state
+**Final Architecture Analysis**:
+- **Excellent Unit Testing Foundation**: 4 Category A functions ready for immediate testing
+- **Integration Testing Opportunities**: 8 functions suitable for controlled integration testing
+- **System Testing Requirements**: 5 functions requiring full game engine for meaningful testing
+- **Complete Update Pipeline**: Full coverage from initialization to finalization
+
+**Complete updateA.c Testing Strategy**:
+- **Phase 1**: Unit test 4 Category A functions for immediate validation
+- **Phase 2**: Integration test 8 Category B functions with controlled setup
+- **Phase 3**: System test 5 Category C functions post-modernization
+- **Strategic Value**: Comprehensive testing foundation for entire game update system
 
 ### checkX.c - ANALYZED ✅
 
