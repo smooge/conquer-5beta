@@ -528,6 +528,14 @@ city_sort PARM_0(void)
  *   - Reorders ntn_ptr->cvn_list in ascending cvnid order
  *   - Updates next pointers to maintain linked list integrity
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Bubble sort requiring caravan list setup
+ *   Approach: Integration testing with controlled caravan list setup and mock nation structure
+ *   Key Tests: Empty list, single element, multiple caravans, ID ordering validation
+ *   Dependencies: ntn_ptr->cvn_list, caravan structures with cvnid field
+ *   Mock Requirements: Mock caravan structures, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - bubble sort algorithm with linked list manipulation
+ *
  * Notes:
  *   - Uses bubble sort algorithm (O(n²) complexity)
  *   - Essential for consistent caravan numbering and display
@@ -589,6 +597,14 @@ cvn_sort PARM_0(void)
  *   - Reorders ntn_ptr->item_list in ascending itemid order
  *   - Updates next pointers to maintain linked list integrity
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Bubble sort requiring item list setup
+ *   Approach: Integration testing with controlled item list setup and mock nation structure
+ *   Key Tests: Empty list, single item, multiple items, ID ordering validation
+ *   Dependencies: ntn_ptr->item_list, item structures with itemid field
+ *   Mock Requirements: Mock item structures, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - bubble sort algorithm with linked list manipulation
+ *
  * Notes:
  *   - Uses bubble sort algorithm (O(n²) complexity)
  *   - Essential for consistent item numbering and inventory display
@@ -638,7 +654,7 @@ item_sort PARM_0(void)
  * align_armynear - Establish proximity links between co-located armies
  *
  * Scans through the nation's army list and sets up "nrby" (nearby) pointers
- * to link armies that are located in the same sector. This creates a 
+ * to link armies that are located in the same sector. This creates a
  * secondary linked list structure for quick access to units at the same
  * coordinates.
  *
@@ -652,6 +668,14 @@ item_sort PARM_0(void)
  *   - Sets nrby pointer for each army to point to next army at same location
  *   - Sets nrby to NULL if no other army is at the same coordinates
  *   - Must be called after army_sort() to work on sorted list
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Proximity linking requiring army list setup and coordinate management
+ *   Approach: Integration testing with controlled army list setup and coordinate positioning
+ *   Key Tests: Empty list, single army, multiple armies same location, multiple armies different locations, mixed scenarios
+ *   Dependencies: ntn_ptr->army_list, army structures with xloc/yloc fields
+ *   Mock Requirements: Mock army structures with coordinates, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - coordinate comparison with pointer manipulation
  *
  * Notes:
  *   - Assumes army list is already sorted by army_sort()
@@ -700,6 +724,14 @@ align_armynear PARM_0(void)
  *   - Zeroes all bytes in the array via clr_memory()
  *   - Calls errormsg() and abrt() on allocation failure
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Map memory allocation with clear interface, testable with mock malloc
+ *   Approach: Unit testing with mock malloc and memory validation
+ *   Key Tests: New allocation (NULL input), memory reuse (existing pointer), malloc failure, memory initialization
+ *   Dependencies: malloc(), clr_memory(), errormsg(), abrt(), MAPX/MAPY constants
+ *   Mock Requirements: Mock malloc for failure testing, mock clr_memory, mock errormsg/abrt
+ *   Complexity: Simple - straightforward memory allocation with error handling
+ *
  * Notes:
  *   - Optimized for map-sized data structures
  *   - Allows memory reuse to avoid repeated allocations
@@ -739,6 +771,14 @@ new_mapchar PARM_1(char *, mem_ptr)
  *   - Allocates MAPX * MAPY * sizeof(short) bytes if mem_ptr is NULL
  *   - Zeroes all bytes in the array via clr_memory()
  *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Map memory allocation with clear interface, testable with mock malloc
+ *   Approach: Unit testing with mock malloc and memory validation
+ *   Key Tests: New allocation (NULL input), memory reuse (existing pointer), malloc failure, memory initialization
+ *   Dependencies: malloc(), clr_memory(), errormsg(), abrt(), MAPX/MAPY constants
+ *   Mock Requirements: Mock malloc for failure testing, mock clr_memory, mock errormsg/abrt
+ *   Complexity: Simple - straightforward memory allocation with error handling
  *
  * Notes:
  *   - For map data requiring values > 255 (char range)
@@ -780,6 +820,14 @@ new_mapshort PARM_1(short *, mem_ptr)
  *   - Allocates MAPX * MAPY * sizeof(long) bytes if mem_ptr is NULL
  *   - Zeroes all bytes in the array via clr_memory()
  *   - Calls errormsg() and abrt() on allocation failure
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Map memory allocation with clear interface, testable with mock malloc
+ *   Approach: Unit testing with mock malloc and memory validation
+ *   Key Tests: New allocation (NULL input), memory reuse (existing pointer), malloc failure, memory initialization
+ *   Dependencies: malloc(), clr_memory(), errormsg(), abrt(), MAPX/MAPY constants
+ *   Mock Requirements: Mock malloc for failure testing, mock clr_memory, mock errormsg/abrt
+ *   Complexity: Simple - straightforward memory allocation with error handling
  *
  * Notes:
  *   - For map data requiring large numeric values
