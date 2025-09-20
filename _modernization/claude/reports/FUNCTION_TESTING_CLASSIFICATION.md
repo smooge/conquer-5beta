@@ -261,7 +261,41 @@
 - Destruction calculations are cleanly isolated and unit testable
 - Most functions have clear input/output contracts suitable for testing
 
-**Next Steps**: Continue with functions 13-18 to complete Phase 3 documentation coverage
+### combatA.c - ANALYZED ✅ (Functions 13-18)
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `get_cside()` | B - Integration | Moderate | Combat side allocation with global state dependencies | Integration testing |
+| `get_combat()` | B - Integration | Moderate | Combat structure management, global combat_list | Integration testing |
+| `calc_relsize()` | A - Unit | Simple | Pure calculation function, well-defined unit size logic | Unit testing |
+| `battle_grouping()` | C - System Level | Very Complex | World-wide unit organization, full game state dependencies | System testing |
+| `join_sides()` | B - Integration | Moderate | Combat side merging with linked list manipulation | Integration testing |
+| `merge_allies()` | C - System Level | Very Complex | Diplomatic system orchestration, complex alliance logic | System testing |
+
+**Sessions**:
+- Functions 1-6: New Methodology Demonstration (2025-09-20)
+- Functions 7-12: 6-Function Checkpoint Strategy (2025-09-20)
+- Functions 13-18: 6-Function Checkpoint Strategy Continued (2025-09-20)
+**Progress**: 18 of 29 functions classified (62% complete)
+
+**Category Distribution (Functions 1-18)**:
+- **Category A (Unit)**: 5 functions (28%) - add_cbmail, init_combat_roll, combat_roll, cb_destval, calc_relsize
+- **Category B (Integration)**: 9 functions (50%) - new_cunit, distance_add, cbval_army, cbval_navy, cbval_cvn, cb_value, get_cside, get_combat, join_sides
+- **Category C (System)**: 4 functions (22%) - combat_init, damage_unit, battle_grouping, merge_allies
+
+**Key Findings from Functions 13-18**:
+- **Unit Testing Addition**: calc_relsize() provides another pure calculation function ready for unit testing
+- **Combat Infrastructure**: get_cside() and get_combat() form the foundation infrastructure for combat system
+- **System Orchestration**: battle_grouping() and merge_allies() require full world state for meaningful operation
+- **Integration Patterns**: join_sides() continues the pattern of moderate complexity integration functions
+
+**Architecture Notes for Functions 13-18**:
+- Combat structure management cleanly separated between creation (get_combat) and organization (battle_grouping)
+- Size calculation (calc_relsize) maintains minimal dependencies suitable for unit testing
+- Alliance merging requires diplomatic system integration making it system-level complexity
+- Side joining operations have well-defined interfaces suitable for integration testing
+
+**Next Steps**: Continue with functions 19-24 to approach completion of Phase 3 documentation coverage
 
 ---
 

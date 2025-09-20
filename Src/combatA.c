@@ -1436,6 +1436,14 @@ cb_value PARM_4(CSIDE_PTR, cs_ptr, CUNIT_PTR, cu_ptr,
  *   - Prints error if MAX_COMBAT limit exceeded
  *   - Calls abrt() on memory allocation failure
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with mock COMBAT_STRUCT and world state
+ *   Key Tests: NULL safety, sector owner position 0, memory allocation, initialization
+ *   Dependencies: COMBAT_STRUCT, world.sct[][], global country variable
+ *   Mock Requirements: Combat structure with cside array, sector ownership data
+ *   Complexity: Moderate - memory management with global state dependencies
+ *
  * Notes:
  *   - Sector owner always placed in position 0
  *   - Other nations assigned to first available slot
@@ -1528,6 +1536,14 @@ get_cside PARM_4(COMBAT_PTR, cb_ptr, int, ntnnum, int, x, int, y)
  *   - Adds new combat to global combat_list
  *   - Calls abrt() on memory allocation failure
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with mock global combat_list
+ *   Key Tests: Coordinate matching, new combat creation, memory allocation, list linking
+ *   Dependencies: Global combat_list, COMBAT_STRUCT allocation
+ *   Mock Requirements: Pre-populated combat_list for search testing
+ *   Complexity: Moderate - global state management with linked list operations
+ *
  * Notes:
  *   - Searches existing combats by coordinates first
  *   - Creates new combat if none found at location
@@ -1592,6 +1608,14 @@ get_combat PARM_2(int, x, int, y)
  *
  * Side Effects:
  *   - None (pure calculation function)
+ *
+ * Testing Notes:
+ *   Category: A (Unit Testable)
+ *   Approach: Unit tests with mock CUNIT structures for each unit type
+ *   Key Tests: NULL safety, army calculation, naval calculation, caravan calculation, unknown types
+ *   Dependencies: CUNIT_PTR with union, ainfo_list[] for monsters, navy_holds() function
+ *   Mock Requirements: Mock ainfo_list[] and navy_holds() for predictable test values
+ *   Complexity: Simple - pure calculation function with well-defined inputs
  *
  * Notes:
  *   - Army units: uses strength (monsters use strength * minsth)
@@ -1670,6 +1694,14 @@ calc_relsize PARM_1(CUNIT_PTR, cu_ptr)
  *   - Calculates cover bonuses for units providing cover
  *   - Tracks undead units for zombie generation
  *   - Adds distance attackers to distance_list
+ *
+ * Testing Notes:
+ *   Category: C (System Level Only)
+ *   Approach: System testing requiring full world initialization
+ *   Key Tests: Unit grouping, cover calculations, distance list management, combat structure creation
+ *   Dependencies: Full world state (nations, armies, navies, caravans), global variables, combat system
+ *   Mock Requirements: Extensive - entire game world, all unit lists, combat structures
+ *   Complexity: Complex - orchestrates multiple subsystems with full world state dependencies
  *
  * Notes:
  *   - Excludes agents and scouts (with probability PSCOUT)
@@ -1852,6 +1884,14 @@ battle_grouping PARM_0(void)
  *   - Adds size totals from cs2_ptr to cs1_ptr
  *   - cs2_ptr left in undefined state (caller must free)
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with mock CSIDE structures and unit lists
+ *   Key Tests: NULL safety, unit list merging, size totals, empty list handling, linked list integrity
+ *   Dependencies: CSIDE_PTR structures with combat group arrays and unit lists
+ *   Mock Requirements: Pre-populated CSIDE structures with various unit configurations
+ *   Complexity: Moderate - linked list manipulation with multiple combat groups
+ *
  * Notes:
  *   - Processes all combat groups (SWEEPER through PROTECTED)
  *   - Maintains linked list integrity when merging
@@ -1911,6 +1951,14 @@ join_sides PARM_2(CSIDE_PTR, cs1_ptr, CSIDE_PTR, cs2_ptr)
  *   - Frees memory of absorbed sides
  *   - Compacts side array to remove empty slots
  *   - May change side ownership if smaller ally absorbs larger
+ *
+ * Testing Notes:
+ *   Category: C (System Level Only)
+ *   Approach: System testing requiring full diplomatic system and world state
+ *   Key Tests: Alliance verification, diplomatic compatibility, side merging, ownership transfer logic
+ *   Dependencies: Full world state, diplomatic system, nation structures, combat side management
+ *   Mock Requirements: Extensive - entire diplomatic matrix, nation relationships, complex alliance webs
+ *   Complexity: Complex - orchestrates diplomatic logic with combat system integration
  *
  * Notes:
  *   - Requires mutual alliance (both nations allied to each other)
