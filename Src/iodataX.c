@@ -90,6 +90,14 @@ static DIO_STRUCT dio_structs[DIOS_NUMBER] = {
  *   - Writes error message to fupdate file stream
  *   - Calls perror() if NO_PERROR is not defined
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires global file pointer and program state
+ *   Approach: Integration testing with mock file I/O and controlled globals
+ *   Key Tests: Error message formatting, conditional perror() usage
+ *   Dependencies: fupdate file pointer, prog_name global variable
+ *   Mock Requirements: FILE* fupdate, prog_name string, perror() conditionally
+ *   Complexity: Simple - Basic error reporting with platform-specific behavior
+ *
  * Notes:
  *   - Function depends on global fupdate file pointer
  *   - Uses global prog_name for error message prefix
@@ -124,6 +132,14 @@ syserr_msg PARM_1(char *, estr)
  *   - Writes string to specified file
  *   - Calls abrt() to terminate program on write failure
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Self-contained with clear input/output contract
+ *   Approach: Unit testing with mock FILE operations and error simulation
+ *   Key Tests: Successful write, EOF error handling, abrt() call verification
+ *   Dependencies: fputs() function, abrt() function for error termination
+ *   Mock Requirements: Mock FILE* operations, stub abrt() function
+ *   Complexity: Simple - Straightforward error-checked file output wrapper
+ *
  * Notes:
  *   - Provides error-checked file output for critical data operations
  *   - Used extensively during data file writing
@@ -157,6 +173,14 @@ fput_string PARM_2(char *, outstr, FILE *, filep)
  *   - Writes PATCHLEVEL number to file
  *   - Writes all type sizes from dio_types array
  *   - Writes all structure sizes from dio_structs array
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires global arrays and string formatting
+ *   Approach: Integration testing with controlled global data and mock I/O
+ *   Key Tests: Version string output, patch level formatting, type/struct size arrays
+ *   Dependencies: VERSION, PATCHLEVEL constants, dio_types[], dio_structs[] arrays
+ *   Mock Requirements: Mock FILE*, sprintf() buffer, fput_string() integration
+ *   Complexity: Moderate - Iterates through multiple global arrays with formatting
  *
  * Notes:
  *   - Header format is critical for data file compatibility
@@ -206,6 +230,14 @@ wr_header PARM_1(FILE *, filep)
  *   - Writes binary UNITNUM data to file
  *   - Calls abrt() if write fails or count mismatch occurs
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires linked list traversal and file I/O
+ *   Approach: Integration testing with mock linked lists and controlled file operations
+ *   Key Tests: Linked list iteration, count validation, fwrite() error handling
+ *   Dependencies: UNUM_PTR linked list structure, fwrite(), fupdate global
+ *   Mock Requirements: Mock FILE* operations, constructed UNITNUM linked lists
+ *   Complexity: Moderate - Linked list processing with count verification and error handling
+ *
  * Notes:
  *   - Validates data integrity by checking written count vs expected
  *   - Part of the larger data persistence system
@@ -253,6 +285,14 @@ wr_unumlist PARM_3(FILE *, out_stream, UNUM_PTR, unum_list, int, num_unum)
  * Side Effects:
  *   - Writes binary MAP_STRUCT data to file
  *   - Calls abrt() if write fails or count mismatch occurs
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Similar to wr_unumlist with MAP_STRUCT processing
+ *   Approach: Integration testing with mock linked lists and file operations
+ *   Key Tests: MAP_STRUCT iteration, count validation, binary write operations
+ *   Dependencies: MAP_PTR linked list structure, fwrite(), fupdate global
+ *   Mock Requirements: Mock FILE* operations, constructed MAP_STRUCT linked lists
+ *   Complexity: Moderate - Identical pattern to wr_unumlist with different data types
  *
  * Notes:
  *   - Part of the sector mapping persistence system
@@ -303,6 +343,14 @@ wr_maplist PARM_3(FILE *, out_stream, MAP_PTR, map_list, int, num_maps)
  *   - Removes old data file and renames temporary file
  *   - May add spell caster units for data conversion
  *   - Uses compression if COMPRESS is defined
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Requires complete game world state and file system
+ *   Approach: System testing with full world initialization or extensive mocking
+ *   Key Tests: File creation, compression handling, world serialization, atomic file operations
+ *   Dependencies: Complete world state, nation lists, all game entities, file system
+ *   Mock Requirements: Entire game world or extensive I/O mocking framework
+ *   Complexity: Extremely Complex - 270+ lines, full world persistence, atomic operations
  *
  * Notes:
  *   - Critical function for game persistence

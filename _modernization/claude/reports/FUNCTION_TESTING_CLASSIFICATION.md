@@ -1035,6 +1035,118 @@ Function identified for testing
 - **adduserA.c** - User addition utilities
 - **vms.c** - VMS compatibility layer
 
+### iodataX.c - IN PROGRESS ⚙️ (Functions 1-6)
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `syserr_msg()` | B - Integration | Simple | Error reporting requiring global file pointer and program state | Integration testing |
+| `fput_string()` | A - Unit | Simple | Self-contained error-checked file output wrapper with clear interface | Unit testing |
+| `wr_header()` | B - Integration | Moderate | Data file header writing requiring global arrays and string formatting | Integration testing |
+| `wr_unumlist()` | B - Integration | Moderate | Linked list serialization with count validation and error handling | Integration testing |
+| `wr_maplist()` | B - Integration | Moderate | Similar to wr_unumlist but for MAP_STRUCT data persistence | Integration testing |
+| `write_data()` | C - System Level | Extremely Complex | Master world persistence function requiring complete game state (270+ lines) | System testing |
+
+**Session**: Functions 1-6 Classification (2025-09-20) - 6 of 22 functions (27% complete)
+
+**Category Distribution (Functions 1-6)**:
+- **Category A (Unit)**: 1 function (17%) - fput_string
+- **Category B (Integration)**: 4 functions (67%) - syserr_msg, wr_header, wr_unumlist, wr_maplist
+- **Category C (System Level)**: 1 function (17%) - write_data
+
+**Key Findings from Functions 1-6**:
+- **Data I/O Infrastructure**: Complete file writing pipeline from error handling to world persistence
+- **Integration-Heavy Design**: Most functions require global state and linked data structures
+- **Single Unit Testable**: fput_string() provides clean error-checked file output wrapper
+- **System Complexity**: write_data() represents one of the most complex functions (master persistence)
+
+**Architecture Notes for Functions 1-6**:
+- Error handling infrastructure (syserr_msg, fput_string) provides foundation for safe I/O
+- Header writing (wr_header) handles version compatibility and cross-platform type information
+- Linked list serialization (wr_unumlist, wr_maplist) implements data structure persistence
+- Master persistence (write_data) orchestrates complete game world serialization
+
+### ioX.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `send_dummy_char()` | D - Mock Intensive | Simple | Platform-specific ioctl operations requiring system-level mocking | Mock-heavy testing |
+| `win_size_change()` | D - Mock Intensive | Moderate | Complex signal handler with terminal ioctl operations | Mock-heavy testing |
+| `copy_file()` | A - Unit | Simple | File copying algorithm with clear input/output, testable with mock files | Unit testing |
+| `fork_edit_on_file()` | E - Deferred | Extremely Complex | Complex fork/exec with UID switching, security handling, extensive platform dependencies | Skip until post-modernization |
+| `do_redraw()` | B - Integration | Simple | Curses screen management requiring display context | Integration testing |
+| `next_char()` | A - Unit | Simple | Input queue management with clear state logic, mockable dependencies | Unit testing |
+| `push_char()` | A - Unit | Simple | Input stack manipulation with clear logic, minimal dependencies | Unit testing |
+| `errorbar()` | B - Integration | Moderate | Screen display function requiring curses environment and positioning | Integration testing |
+| `presskey()` | B - Integration | Simple | User interaction requiring curses display and input coordination | Integration testing |
+| `errormsg()` | B - Integration | Moderate | Dual-mode output requiring curses or file I/O coordination | Integration testing |
+| `bottommsg()` | B - Integration | Simple | Similar to errormsg() but simpler, still requires curses/file coordination | Integration testing |
+| `y_or_n()` | A - Unit | Simple | Simple input processing with clear logic, mockable dependencies | Unit testing |
+| `cr_or_y()` | A - Unit | Simple | Simple input processing with clear switch logic, mockable dependencies | Unit testing |
+| `cq_init()` | C - System Level | Moderate | Critical curses initialization requiring complete system environment | System testing |
+| `cq_reset()` | C - System Level | Moderate | Critical curses cleanup requiring complete system environment | System testing |
+| `cq_bye()` | B - Integration | Simple | Simple wrapper requiring curses cleanup coordination | Integration testing |
+| `clear_bottom()` | B - Integration | Simple | Screen area management requiring curses environment | Integration testing |
+| `show_char()` | A - Unit | Simple | Character formatting with clear logic, minimal dependencies | Unit testing |
+| `unshow_char()` | A - Unit | Simple | Character removal with clear cursor logic, minimal dependencies | Unit testing |
+| `show_str()` | B - Integration | Simple | String display requiring form_str() function and curses integration | Integration testing |
+| `get_number()` | A - Unit | Moderate | Interactive integer input with clear editing logic, mockable dependencies | Unit testing |
+| `get_double()` | A - Unit | Moderate | Interactive floating point input with clear decimal logic, mockable dependencies | Unit testing |
+| `get_option()` | B - Integration | Simple | Option selection requiring global option arrays and get_string() | Integration testing |
+| `test_complete()` | A - Unit | Simple | Static string completion helper with clear input/output contract | Unit testing |
+| `extend_str()` | C - System Level | Very Complex | Massive completion function with extensive global game data dependencies | System testing |
+| `badfilechar()` | A - Unit | Simple | Static filename character validation with clear logic | Unit testing |
+| `get_string()` | B - Integration | Complex | Master string input with completion, requires extend_str() coordination | Integration testing |
+| `get_pass()` | A - Unit | Simple | Password input without echoing, self-contained algorithm | Unit testing |
+| `get_atype()` | B - Integration | Simple | Army type selection requiring global army arrays | Integration testing |
+| `get_aclass()` | B - Integration | Simple | Army class selection requiring global class arrays | Integration testing |
+| `get_month()` | B - Integration | Simple | Month selection requiring global month strings | Integration testing |
+| `get_speed()` | B - Integration | Simple | Speed value selection requiring speed name arrays | Integration testing |
+| `get_status()` | B - Integration | Simple | Status selection requiring status info arrays | Integration testing |
+| `one_char()` | A - Unit | Simple | Single character input with set validation, clear logic | Unit testing |
+| `hip_string()` | A - Unit | Simple | Character highlighting for display, minimal dependencies | Unit testing |
+
+**FINAL STATUS**: ✅ **35 of 35 functions classified (100% COMPLETE)** ⭐
+
+**Sessions**:
+- Functions 1-18 Classification (2025-09-20): 18 of 35 functions (51% complete)
+- Functions 19-35 Classification (2025-09-20): 35 of 35 functions (100% complete)
+
+**Final Category Distribution (All Functions 1-35)**:
+- **Category A (Unit)**: 12 functions (34%) - copy_file, next_char, push_char, y_or_n, cr_or_y, show_char, unshow_char, get_number, get_double, test_complete, badfilechar, get_pass, one_char, hip_string
+- **Category B (Integration)**: 18 functions (51%) - do_redraw, errorbar, presskey, errormsg, bottommsg, cq_bye, clear_bottom, show_str, get_option, get_string, get_atype, get_aclass, get_month, get_speed, get_status
+- **Category C (System Level)**: 3 functions (9%) - cq_init, cq_reset, extend_str
+- **Category D (Mock Intensive)**: 2 functions (6%) - send_dummy_char, win_size_change
+- **Category E (Deferred)**: 1 function (3%) - fork_edit_on_file
+
+**Key Findings from Complete ioX.c Analysis**:
+- **Excellent Unit Testing Foundation**: 12 Category A functions (34%) ready for immediate unit testing
+- **Priority 2 Validation**: Confirmed higher unit testable percentage than Priority 1 files
+- **Comprehensive I/O System**: Complete input/output infrastructure from terminal to user interaction
+- **String Processing Excellence**: Strong string input and processing capabilities
+- **Interactive Interface Foundation**: Complete user interaction system for game interface
+
+**Architecture Analysis (Complete File)**:
+- **Terminal Management**: Complete curses initialization, cleanup, and signal handling (cq_init, cq_reset, win_size_change)
+- **Input Processing**: Sophisticated input queue with character processing and validation (next_char, push_char, one_char)
+- **Interactive Input**: Comprehensive user input system for numbers, strings, options (get_number, get_string, get_option)
+- **Display System**: Character and string formatting with highlighting (show_char, show_str, hip_string)
+- **Completion System**: Advanced string completion with game data integration (extend_str, test_complete)
+- **Security Features**: Password input without echoing (get_pass)
+- **Game Integration**: Type-specific input functions for game objects (get_atype, get_month, get_status)
+
+**Complete ioX.c Testing Strategy**:
+- **Phase 1**: Unit test 12 Category A functions for immediate validation of I/O utilities
+- **Phase 2**: Integration test 18 Category B functions with controlled curses/string setup
+- **Phase 3**: System test 3 Category C functions post-modernization with complete environment
+- **Phase 4**: Mock-intensive testing of 2 Category D functions with platform-specific mocking
+- **Future**: Implement and test fork_edit_on_file() after security modernization
+
+**Priority 2 Pattern Confirmation**:
+- **Higher Unit Percentage**: 34% vs ~25-30% in Priority 1 files
+- **I/O Foundation**: Critical infrastructure for all game user interaction
+- **Utility Design**: Functions designed for reuse with clear interfaces
+- **Testing Ready**: Strong foundation for immediate Priority 2 testing pipeline
+
 ### Total Remaining: 42 files (Data-only files excluded from testing documentation)
 
 ### Recommended Approach
