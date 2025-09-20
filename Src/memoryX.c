@@ -66,6 +66,14 @@
  *   - Zeroes len bytes starting at mem_ptr
  *   - No bounds checking performed - caller must ensure valid memory range
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple memory clearing wrapper, pure function
+ *   Approach: Unit testing with mock memory blocks and boundary testing
+ *   Key Tests: Normal clearing, zero-length clearing, large block clearing
+ *   Dependencies: memset() function (standard library)
+ *   Mock Requirements: None - uses standard library functions
+ *   Complexity: Simple - platform abstraction wrapper with clear interface
+ *
  * Notes:
  *   - Platform abstraction layer for memory clearing
  *   - Used throughout the codebase for structure initialization
@@ -108,6 +116,14 @@ clr_memory PARM_2(char *, mem_ptr, int, len)
  *   - Counts default world unit numbering structures
  *   - Calls ntn_sort() to reorganize nations if in update mode
  *   - Prints progress to update log file
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - World-wide data cleanup requiring complete game state
+ *   Approach: System testing with complete game infrastructure and full world setup
+ *   Key Tests: Nation counting, entity cleanup, territory calculation, update mode handling
+ *   Dependencies: Complete game world (nations, armies, navies, cities, items), dest_ntn(), find_area(), ntn_sort()
+ *   Mock Requirements: Extensive - full game state, file I/O, all entity types
+ *   Complexity: Very Complex - touches all game data structures and performs major reorganization
  *
  * Notes:
  *   - Essential for maintaining data integrity between turns
@@ -237,6 +253,14 @@ align_data PARM_0(void)
  *   - Sets up row pointers for direct array access
  *   - Calls errormsg() and abrt() on allocation failure
  *
+ * Testing Notes:
+ *   Category: A (Unit) - 2D array allocation with error handling, testable with mock malloc
+ *   Approach: Unit testing with mock malloc to test allocation and failure scenarios
+ *   Key Tests: Normal allocation, malloc failure, zero dimensions, large arrays
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc for failure testing, mock errormsg/abrt for error handling
+ *   Complexity: Moderate - 2D array setup with pointer arithmetic and error handling
+ *
  * Notes:
  *   - Memory layout: [row_pointers][data_block]
  *   - Enables efficient 2D array access patterns
@@ -285,6 +309,14 @@ m2alloc PARM_3 (int, nrows, int, ncols, int, entrysize)
  *   - Reorders ntn_ptr->army_list in ascending armyid order
  *   - Updates next pointers to maintain proper linked list structure
  *   - If skipnears is FALSE, calls align_armynear() to set proximity links
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Bubble sort requiring army list setup and proximity functions
+ *   Approach: Integration testing with controlled army list setup and mock proximity functions
+ *   Key Tests: Empty list, single element, multiple armies, proximity linking, skipnears flag
+ *   Dependencies: ntn_ptr->army_list, align_armynear()
+ *   Mock Requirements: Mock army structures, mock align_armynear() function
+ *   Complexity: Moderate - bubble sort with proximity linking coordination
  *
  * Notes:
  *   - Uses bubble sort algorithm (O(n²) complexity)
@@ -356,6 +388,14 @@ army_sort PARM_1(int, skipnears)
  *   - Reorders ntn_ptr->navy_list in ascending navyid order
  *   - Updates next pointers to maintain linked list integrity
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Bubble sort requiring navy list setup
+ *   Approach: Integration testing with controlled navy list setup and mock nation structure
+ *   Key Tests: Empty list, single element, multiple navies, ID ordering validation
+ *   Dependencies: ntn_ptr->navy_list, navy structures with navyid field
+ *   Mock Requirements: Mock navy structures, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - bubble sort algorithm with linked list manipulation
+ *
  * Notes:
  *   - Uses bubble sort algorithm (O(n²) complexity)
  *   - Handles empty and single-element lists efficiently
@@ -418,6 +458,14 @@ navy_sort PARM_0(void)
  *   - Reorders ntn_ptr->city_list in alphabetical order by name
  *   - Updates next pointers to maintain linked list integrity
  *   - Uses str_test() for string comparison
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Bubble sort requiring city list setup and string comparison
+ *   Approach: Integration testing with controlled city list setup and mock string functions
+ *   Key Tests: Empty list, single city, multiple cities, alphabetical ordering, string comparison edge cases
+ *   Dependencies: ntn_ptr->city_list, city structures with name field, str_test()
+ *   Mock Requirements: Mock city structures, mock nation pointer (ntn_ptr), mock str_test()
+ *   Complexity: Moderate - bubble sort with string comparison logic
  *
  * Notes:
  *   - Uses bubble sort algorithm with string comparison
