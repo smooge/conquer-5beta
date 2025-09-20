@@ -1200,6 +1200,14 @@ liz_takeit PARM_2(int, x, int, y)
  *   - Creates army and city structures
  *   - Updates news file with creation count
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Complex NPC nation creation requiring complete infrastructure
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: Nation creation, fortress placement, resource allocation, army generation
+ *   Dependencies: crt_ntn(), crt_city(), crt_army(), global arrays, nation table, news file
+ *   Mock Requirements: Would require mocking entire nation/city/army creation system
+ *   Complexity: Very Complex - 130+ lines with multi-system coordination
+ *
  * Notes:
  *   - 25% chance for equatorial placement preference
  *   - Requires suitable land with limited water access
@@ -1375,6 +1383,14 @@ bld_lizards PARM_0(void)
  *   - Claims territory for each unit placement
  *   - Updates news file with creation count
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Complex NPC nation creation requiring complete infrastructure
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: Nation creation, unit placement, monster generation, territory claiming
+ *   Dependencies: crt_ntn(), crt_army(), rand_monstunit(), global arrays, nation table
+ *   Mock Requirements: Would require mocking entire army creation and monster systems
+ *   Complexity: Very Complex - 100+ lines with multi-system coordination
+ *
  * Notes:
  *   - 33% chance for edge region placement preference
  *   - Avoids water and peak sectors for placement
@@ -1521,6 +1537,14 @@ bld_savages PARM_0(void)
  *   - Places world.nomads number of cavalry units
  *   - Claims territory for each unit placement
  *   - Updates news file with creation count
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Complex NPC nation creation requiring complete infrastructure
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: Nation creation, cavalry unit placement, unit type distribution, mobility settings
+ *   Dependencies: crt_ntn(), crt_army(), unitbyname(), global arrays, nation table
+ *   Mock Requirements: Would require mocking entire army creation and unit type systems
+ *   Complexity: Very Complex - 120+ lines with multi-system coordination
  *
  * Notes:
  *   - 33% chance for edge region placement preference
@@ -1751,6 +1775,14 @@ pir_takeit PARM_2(int, x, int, y)
  *   - Creates naval and army units
  *   - Updates news file with creation count
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Complex NPC nation creation requiring complete infrastructure
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: Island creation, naval fleet generation, fortress construction, terrain modification
+ *   Dependencies: crt_ntn(), crt_city(), crt_army(), crt_navy(), map_loop(), global arrays
+ *   Mock Requirements: Would require mocking entire nation/city/army/navy creation systems
+ *   Complexity: Very Complex - 140+ lines with multi-system coordination and terrain modification
+ *
  * Notes:
  *   - 33% chance for equatorial placement preference
  *   - Creates artificial islands by terrain conversion
@@ -1931,6 +1963,14 @@ bld_pirates PARM_0(void)
  *   - Reports missing documentation files
  *   - Establishes initial world population
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Master population orchestration requiring complete infrastructure
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: NPC nation creation sequence, help file validation, error handling
+ *   Dependencies: All bld_* functions, read_npc(), file system access, help file arrays
+ *   Mock Requirements: Would require mocking entire NPC creation pipeline and file system
+ *   Complexity: Moderate - Orchestration function calling all nation builders
+ *
  * Notes:
  *   - Called during world creation after terrain generation
  *   - NPC counts controlled by world configuration parameters
@@ -2021,6 +2061,14 @@ populate PARM_0(void)
  *   - Calls getmetal(), getjewel(), getspell() for special resources
  *   - Displays progress messages during placement
  *   - Creates economic diversity across the world
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Global resource distribution requiring complete world state
+ *   Approach: System testing post-modernization with full game engine setup
+ *   Key Tests: Resource placement patterns, terrain-appropriate distribution, economic balance
+ *   Dependencies: getmetal(), getjewel(), getspell(), map_loop(), global sector arrays
+ *   Mock Requirements: Would require mocking entire world state and resource systems
+ *   Complexity: Very Complex - 120+ lines with global world modification and economic logic
  *
  * Notes:
  *   - Called after world terrain and population creation
