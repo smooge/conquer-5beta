@@ -2793,6 +2793,14 @@ luck_string PARM_1(int, roll)
  *   - May damage or destroy fortifications
  *   - Adds participants to combat mail list
  *
+ * Testing Notes:
+ *   Category: C (System Level Only)
+ *   Approach: System testing requiring full game engine initialization
+ *   Key Tests: Combat resolution accuracy, damage calculations, battle outcomes
+ *   Dependencies: World state, combat structures, units, nations, sectors, messages
+ *   Mock Requirements: Extensive - world.np[], combat sides, units, sectors, RNG
+ *   Complexity: Complex - Core battle mechanics with multi-system coordination
+ *
  * Notes:
  *   - Calculates battle odds from relative combat strengths
  *   - Uses combat_roll() for random elements
@@ -3053,6 +3061,14 @@ fight_it_out PARM_4(int, atype, int, type,
  *   - Generates news entries for battles
  *   - Updates global cb_xloc, cb_yloc for current battle
  *
+ * Testing Notes:
+ *   Category: C (System Level Only)
+ *   Approach: System testing requiring complete combat infrastructure
+ *   Key Tests: Multi-battle resolution, alliance merging, combat ordering
+ *   Dependencies: Full combat system, world state, all nations, message system
+ *   Mock Requirements: Prohibitive - entire game state and combat infrastructure
+ *   Complexity: Complex - Primary combat orchestration function
+ *
  * Notes:
  *   - Processes SWEEPER attacks before ATTACKER attacks
  *   - SWEEPER attacks limited to DEFENDER targets and below
@@ -3248,6 +3264,14 @@ begin_battles PARM_0(void)
  *   - Could include artillery, magic, naval bombardment
  *   - Framework exists but mechanics not yet implemented
  *   - Called after normal sector-based combat resolution
+ *
+ * Testing Notes:
+ *   Category: E (Deferred/Skip)
+ *   Approach: Skip until post-modernization (unimplemented function)
+ *   Key Tests: N/A - function currently empty/placeholder
+ *   Dependencies: None currently (unimplemented)
+ *   Mock Requirements: N/A until implementation
+ *   Complexity: Simple - Currently just tracking message output
  */
 /* GRAB_BATTLES -- Perform distance battles */
 static void
@@ -3276,6 +3300,14 @@ grab_battles PARM_0(void)
  *   - Frees sct_combval sector tracking memory
  *   - Resets global combat_list and distance_list to NULL
  *   - Sends queued news reports via send_sortednews()
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with controlled memory allocation setup
+ *   Key Tests: Complete cleanup verification, memory leak detection, list traversal
+ *   Dependencies: Combat structures, linked lists, global combat_list, distance_list
+ *   Mock Requirements: Mock combat structures and linked lists for systematic testing
+ *   Complexity: Moderate - Memory management with multiple linked data structures
  *
  * Notes:
  *   - Traverses and frees entire combat_list linked list
@@ -3372,6 +3404,14 @@ wipe_map PARM_0(void)
  *   - Updates nation combat bonuses
  *   - May damage or destroy fortifications
  *   - Generates news reports about battles
+ *
+ * Testing Notes:
+ *   Category: C (System Level Only)
+ *   Approach: System testing as main entry point requiring complete game state
+ *   Key Tests: Full combat system integration, turn-based resolution, cleanup
+ *   Dependencies: Complete game world, all subsystems, file handles, turn processing
+ *   Mock Requirements: Prohibitive - would require mocking entire game engine
+ *   Complexity: Complex - Top-level orchestration of entire combat system
  *
  * Notes:
  *   - Called once per update turn from main game loop

@@ -337,6 +337,49 @@
 - **Integration Candidates**: 11 functions suitable for focused integration testing with controlled setup
 - **System Testing Deferral**: 5 functions require post-modernization system testing approach
 
+### combatA.c - COMPLETED ✅ (Functions 25-29) - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `fight_it_out()` | C - System Level | Very Complex | Core battle mechanics with multi-system coordination | System testing |
+| `begin_battles()` | C - System Level | Very Complex | Primary combat orchestration requiring complete infrastructure | System testing |
+| `grab_battles()` | E - Deferred/Skip | Simple | Unimplemented placeholder function | Skip until implementation |
+| `wipe_map()` | B - Integration | Moderate | Memory management with multiple linked data structures | Integration testing |
+| `combat()` | C - System Level | Very Complex | Top-level orchestration of entire combat system | System testing |
+
+**Sessions**:
+- Functions 1-6: New Methodology Demonstration (2025-09-20)
+- Functions 7-12: 6-Function Checkpoint Strategy (2025-09-20)
+- Functions 13-18: 6-Function Checkpoint Strategy Continued (2025-09-20)
+- Functions 19-24: 6-Function Checkpoint Strategy Continued (2025-09-20)
+- Functions 25-29: 6-Function Checkpoint Strategy Completed (2025-09-20)
+
+**FINAL STATUS**: ✅ **29 of 29 functions classified (100% COMPLETE)** ⭐
+
+**Final Category Distribution (All Functions 1-29)**:
+- **Category A (Unit)**: 8 functions (28%) - add_cbmail, init_combat_roll, combat_roll, cb_destval, calc_relsize, order_attacks, add_fightlist, luck_string
+- **Category B (Integration)**: 12 functions (41%) - new_cunit, distance_add, cbval_army, cbval_navy, cbval_cvn, cb_value, get_cside, get_combat, join_sides, set_hostilities, calc_strengths, wipe_map
+- **Category C (System)**: 8 functions (28%) - combat_init, damage_unit, battle_grouping, merge_allies, give_zombies, fight_it_out, begin_battles, combat
+- **Category E (Deferred)**: 1 function (3%) - grab_battles
+
+**Key Findings from Functions 25-29**:
+- **Combat Core**: fight_it_out() represents the heart of the battle system with extensive dependencies
+- **System Orchestration**: begin_battles() and combat() manage the complete combat workflow
+- **Memory Management**: wipe_map() provides clean integration testing opportunity for memory operations
+- **Implementation Gap**: grab_battles() identified as placeholder requiring future implementation
+
+**Final Architecture Analysis**:
+- **Excellent Unit Testing Foundation**: 8 Category A functions ready for immediate testing
+- **Integration Testing Opportunities**: 12 functions suitable for controlled integration testing
+- **System Testing Requirements**: 8 functions requiring full game engine for meaningful testing
+- **Clean Separation**: Clear distinction between utilities, integration functions, and system orchestration
+
+**Complete combatA.c Testing Strategy**:
+- **Phase 1**: Unit test 8 Category A functions for immediate validation
+- **Phase 2**: Integration test 12 Category B functions with controlled setup
+- **Phase 3**: System test 8 Category C functions post-modernization
+- **Future**: Implement and test grab_battles() after distance combat implementation
+
 ---
 
 ## Quick Reference Guidelines
