@@ -373,6 +373,40 @@ All functions must be documented before modernization using this standard format
 - **Session Efficiency**: Prevents retesting classified functions
 - **Modernization Planning**: Clear testing roadmap for each function
 
+### Function Testing Classification Methodology
+
+**NEW APPROACH**: Instead of attempting unit testing on intertangled code, systematically classify each function's testability and document the assessment directly in the function's header comments.
+
+**6-Function Checkpoint Strategy**:
+- **Batch Size**: Analyze up to 6 functions per session to manage context usage
+- **Checkpoint Process**: After each 6-function batch, create git commit and save session memory
+- **Context Management**: Clear context between sessions to prevent compaction issues
+- **Progress Tracking**: Update `_modernization/claude/reports/FUNCTION_TESTING_CLASSIFICATION.md` after each checkpoint
+
+**Session Workflow**:
+1. **Load Target File**: Read source file and identify next 6 functions to analyze
+2. **Function Analysis**: For each function, determine Category A/B/C/D/E classification
+3. **Add Testing Notes**: Enhance function documentation with comprehensive Testing Notes sections
+4. **Update Registry**: Add classifications to FUNCTION_TESTING_CLASSIFICATION.md
+5. **Git Checkpoint**: Commit changes with descriptive message
+6. **Save Session**: Create session memory file for next session continuation
+7. **Clear Context**: End session to prevent context issues
+
+**Checkpoint Commit Format**:
+```
+Testing Classification: [filename] functions [X-Y] - [Category summary]
+
+Added Testing Notes sections to functions:
+- function1() - Category A (Unit testable)
+- function2() - Category B (Integration required)
+- function3() - Category C (System level)
+
+Progress: [X] of [Y] functions classified in [filename]
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
 ### Special Documentation for Legacy Code
 - **Unclear Logic**: Document confusing or non-obvious code sections
 - **Magic Numbers**: Explain the meaning of hardcoded constants

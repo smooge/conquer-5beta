@@ -74,6 +74,14 @@ static int strength_inc;
  *   - Modifies global cb_mail array
  *   - Prints warning to fupdate if MAX_COMBAT limit reached
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock cb_mail array and fprintf
+ *   Key Tests: Empty slot insertion, duplicate prevention, overflow handling, boundary conditions
+ *   Dependencies: Mock cb_mail global array, mock fupdate file handle
+ *   Mock Requirements: Global cb_mail array, fupdate file pointer
+ *   Complexity: Simple (array manipulation) - excellent unit test candidate
+ *
  * Notes:
  *   - Prevents duplicate entries for the same nation
  *   - Uses -1 as empty slot marker in cb_mail array
@@ -113,6 +121,14 @@ add_cbmail PARM_1(int, cntry)
  *   - Modifies global cb_boundary and cb_dicelimit variables
  *   - May reset NUMDICE to 10 if invalid (outside 1-100 range)
  *   - Prints warning to stderr if NUMDICE is invalid
+ *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock NUMDICE global and errormsg function
+ *   Key Tests: Valid NUMDICE values (1-100), invalid values, boundary calculations, dice limit computation
+ *   Dependencies: Mock NUMDICE global variable, mock errormsg function
+ *   Mock Requirements: Global NUMDICE variable, errormsg function for error reporting
+ *   Complexity: Simple (mathematical calculation) - perfect unit test candidate
  *
  * Notes:
  *   - Calculates cb_boundary as multiple of 100 divisible by NUMDICE
@@ -156,6 +172,14 @@ init_combat_roll PARM_0(void)
  * Side Effects:
  *   - None (pure function)
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit testing with mock rand_val function and global variables
+ *   Key Tests: Multiple dice combinations, boundary calculations, result range validation (0-100)
+ *   Dependencies: Mock rand_val function, global cb_dicelimit and cb_boundary variables
+ *   Mock Requirements: Controllable rand_val for predictable testing, combat globals
+ *   Complexity: Simple (arithmetic calculation) - excellent unit test candidate
+ *
  * Notes:
  *   - Uses rand_val() for individual die rolls
  *   - Requires init_combat_roll() to be called first
@@ -192,6 +216,14 @@ combat_roll PARM_0(void)
  *   - Allocates memory that must be freed by caller
  *   - Sets global country as unit owner
  *   - Calls abrt() and prints error on allocation failure
+ *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with malloc mocking or actual memory allocation
+ *   Key Tests: Successful allocation, malloc failure, field initialization, memory leak prevention
+ *   Dependencies: Global country variable, malloc/errormsg/abrt functions
+ *   Mock Requirements: Mock malloc for failure testing, mock country global, mock error functions
+ *   Complexity: Moderate (memory allocation with globals) - suitable for integration testing
  *
  * Notes:
  *   - Initializes all numeric fields to 0
@@ -244,6 +276,14 @@ new_cunit PARM_1(Ucombattype, type)
  *   - Modifies global distance_list linked list
  *   - Updates static last_dist pointer for efficient list building
  *   - Calls abrt() on memory allocation failure
+ *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with mock global linked list and malloc
+ *   Key Tests: NULL input handling, successful list addition, malloc failure, list ordering
+ *   Dependencies: Global distance_list, static last_dist, malloc/errormsg/abrt functions
+ *   Mock Requirements: Mock distance_list global, mock malloc for failure scenarios
+ *   Complexity: Moderate (linked list with global state) - requires integration setup
  *
  * Notes:
  *   - Returns early if cu_ptr is NULL
@@ -302,6 +342,14 @@ distance_add PARM_3(CUNIT_PTR, cu_ptr, int, x, int, y)
  *   - Validates and resets combat constants if out of range
  *   - Allocates global sct_combval map memory
  *   - Prints initialization messages to fupdate
+ *
+ * Testing Notes:
+ *   Category: C (System Level)
+ *   Approach: System testing with full game initialization or extensive mocking
+ *   Key Tests: Parameter validation/reset, undead unit type discovery, memory allocation
+ *   Dependencies: Global game constants, unitbyname(), fupdate, new_mapchar(), is_update
+ *   Mock Requirements: Extensive - all combat globals, unit system, file I/O, memory allocation
+ *   Complexity: Complex (multiple subsystem dependencies) - system testing required
  *
  * Notes:
  *   - Called once per combat() invocation

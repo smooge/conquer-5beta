@@ -222,6 +222,33 @@
 - **String utilities testing**: Search, completion matching, and boundary conditions
 - **Economic calculations**: Population efficiency algorithm with diminishing returns
 
+### combatA.c - ANALYZED ✅ (Functions 1-6)
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `add_cbmail()` | A - Unit | Simple | Array manipulation with duplicate prevention | Unit testing |
+| `init_combat_roll()` | A - Unit | Simple | Mathematical calculation, parameter validation | Unit testing |
+| `combat_roll()` | A - Unit | Simple | Arithmetic function with mockable random generator | Unit testing |
+| `new_cunit()` | B - Integration | Moderate | Memory allocation with global dependencies | Integration testing |
+| `distance_add()` | B - Integration | Moderate | Linked list management with global state | Integration testing |
+| `combat_init()` | C - System Level | Complex | Multi-subsystem initialization, extensive dependencies | System testing |
+
+**Session**: New Methodology Demonstration (2025-09-20)
+**Progress**: 6 of 29 functions classified (21% complete)
+**Key Findings**:
+- **Mixed Classification**: 3 Category A (Unit), 2 Category B (Integration), 1 Category C (System)
+- **Good Unit Testing Candidates**: Simple utility functions (mail, dice, calculations)
+- **Integration Dependencies**: Memory allocation and linked list functions require global state
+- **System Complexity**: Initialization functions depend on multiple game subsystems
+
+**Architecture Notes**:
+- Combat utility functions cleanly separated and unit testable
+- Memory management functions have moderate global dependencies
+- System initialization requires extensive subsystem coordination
+- Static functions provide good encapsulation for unit testing
+
+**Next Steps**: Continue with functions 7-12 to maintain 6-function checkpoint strategy
+
 ---
 
 ## Quick Reference Guidelines
