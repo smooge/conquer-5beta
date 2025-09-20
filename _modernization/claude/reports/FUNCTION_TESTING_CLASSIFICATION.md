@@ -77,11 +77,22 @@
 **Key Findings**: Requires `m2alloc()` allocation, `upd_init()` initialization, full world state
 **Architecture Notes**: Part of integrated game update cycle, not isolatable units
 
-### updateA.c - ANALYZED ✅
+### updateA.c - IN PROGRESS 🔄
+
+**Session**: Phase 3 Functions 1-6 Classification (2025-09-20)
+**Progress**: 6 of 17 functions classified (35% complete)
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
+| `upd_init()` | B - Integration | Moderate | Memory allocation + file I/O with global state | Integration testing |
+| `upd_finish()` | B - Integration | Moderate | File closure + external functions + cleanup | Integration testing |
+| `upd_rovers()` | C - System Level | Complex | Multi-system coordination with AI behavior | System testing |
+| `upd_army()` | C - System Level | Complex | 400+ lines, full world state, multi-pass logic | System testing |
+| `upd_navy()` | B - Integration | Moderate | Nation/navy state setup with status logic | Integration testing |
+| `upd_cvn()` | B - Integration | Moderate | Nation/caravan state with siege logic | Integration testing |
 | `update()` | C - System Level | Extremely Complex | Master game update function | System testing only |
+
+**Next Session**: Continue with functions 7-12 (upd_military through wrld_totals)
 
 **Session**: Previous analysis
 **Key Findings**: Central orchestration function requiring full game engine state

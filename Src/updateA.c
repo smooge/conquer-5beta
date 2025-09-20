@@ -55,6 +55,14 @@ itemtype j_produced, m_produced;
  *   - Opens news file for writing (fnews global file pointer)
  *   - Calls abrt() if news file cannot be opened
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with controlled file system setup
+ *   Key Tests: Memory allocation success/failure, file creation/access scenarios
+ *   Dependencies: Global variables (sct_status, fnews, newsfile), file system access
+ *   Mock Requirements: File system operations, global variable initialization
+ *   Complexity: Moderate - Simple logic with critical I/O operations
+ *
  * Notes:
  *   - Uses global TURN and START_TURN to calculate news file number
  *   - News filename format: "<newsfile>.XXX" where XXX is turn number
@@ -94,6 +102,14 @@ upd_init PARM_0(void)
  *   - Increments global TURN counter
  *   - Calls sort_news() to organize news entries
  *   - Frees sct_status memory allocation
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with file system and external function coordination
+ *   Key Tests: News header formatting, file closure, turn increment, memory cleanup
+ *   Dependencies: Global variables (fnews, TURN), file system, sort_news() function
+ *   Mock Requirements: File system operations, sort_news() external function
+ *   Complexity: Moderate - Multiple external dependencies with cleanup responsibilities
  *
  * Notes:
  *   - News sections: Global Headlines, Common Market, Real Estate, War, Personal
@@ -143,6 +159,14 @@ upd_finish PARM_0(void)
  *   - Modifies army positions for units with rover status
  *   - Updates global weights calculation for each nation
  *   - Generates update log messages about relocation
+ *
+ * Testing Notes:
+ *   Category: C (System Level)
+ *   Approach: System testing requiring complete world state initialization
+ *   Key Tests: Nation iteration, army roving logic, weight calculation integration
+ *   Dependencies: Global world state, nation arrays, army lists, weights system
+ *   Mock Requirements: Complete world initialization, multiple nation/army setup
+ *   Complexity: Complex - Multi-system coordination with AI behavior processing
  *
  * Notes:
  *   - Only processes active nations (skips inactive/dead nations)
@@ -199,6 +223,14 @@ upd_rovers PARM_0(void)
  *   - Handles siege status transitions
  *   - Updates grouping and leadership relationships
  *   - Writes news messages for births and promotions
+ *
+ * Testing Notes:
+ *   Category: C (System Level)
+ *   Approach: System testing requiring full game engine initialization
+ *   Key Tests: Two-pass processing, leader birth mechanics, monster recruitment, healing/decay
+ *   Dependencies: Complete world state, armies, nations, random systems, news system
+ *   Mock Requirements: Extensive - full world setup, multiple armies, leader hierarchies
+ *   Complexity: Complex - Most complex update function with 400+ lines of interdependent logic
  *
  * Notes:
  *   - Two-pass algorithm: first checks groups/leaders, second sets movement
@@ -630,6 +662,14 @@ upd_army PARM_0(void)
  *   - Adjusts movement points based on unit status
  *   - Transitions repair status back to carry status
  *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with controlled nation and navy state setup
+ *   Key Tests: Spell removal, position validation, status transitions, movement calculation
+ *   Dependencies: Global nation state, navy lists, status calculation functions
+ *   Mock Requirements: Nation initialization, navy list setup, status system
+ *   Complexity: Moderate - Straightforward logic with controlled dependencies
+ *
  * Notes:
  *   - Ships in repair status (ST_REPAIR) automatically return to carry status
  *   - Movement reduced to 75% for non-moving statuses, 100% otherwise
@@ -689,6 +729,14 @@ upd_navy PARM_0(void)
  *   - Applies siege restrictions (no movement, forced siege status)
  *   - Adjusts movement points based on unit status
  *   - Transitions repair status back to carry status
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required)
+ *   Approach: Integration testing with controlled nation, caravan, and sector state
+ *   Key Tests: Spell removal, siege handling, status transitions, movement calculation
+ *   Dependencies: Global nation state, caravan lists, sector status system
+ *   Mock Requirements: Nation initialization, caravan setup, sector siege state
+ *   Complexity: Moderate - Similar to navy with additional siege logic complexity
  *
  * Notes:
  *   - Caravans affected by sector siege status unlike armies/navies
