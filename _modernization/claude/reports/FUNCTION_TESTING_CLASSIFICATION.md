@@ -222,7 +222,7 @@
 - **String utilities testing**: Search, completion matching, and boundary conditions
 - **Economic calculations**: Population efficiency algorithm with diminishing returns
 
-### combatA.c - ANALYZED ✅ (Functions 1-6)
+### combatA.c - ANALYZED ✅ (Functions 1-12)
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
@@ -232,22 +232,36 @@
 | `new_cunit()` | B - Integration | Moderate | Memory allocation with global dependencies | Integration testing |
 | `distance_add()` | B - Integration | Moderate | Linked list management with global state | Integration testing |
 | `combat_init()` | C - System Level | Complex | Multi-subsystem initialization, extensive dependencies | System testing |
+| `damage_unit()` | C - System Level | Complex | Multi-unit type damage, full world state dependencies | System testing |
+| `cbval_army()` | B - Integration | Moderate | Combat bonus calculation, world state dependencies | Integration testing |
+| `cbval_navy()` | B - Integration | Moderate | Naval combat bonuses, terrain-dependent calculations | Integration testing |
+| `cbval_cvn()` | B - Integration | Moderate | Caravan combat bonuses, defensive calculations | Integration testing |
+| `cb_destval()` | A - Unit | Simple | Fortification destruction calculation, minimal dependencies | Unit testing |
+| `cb_value()` | B - Integration | Moderate | Combat value orchestration, multiple bonus calculations | Integration testing |
 
-**Session**: New Methodology Demonstration (2025-09-20)
-**Progress**: 6 of 29 functions classified (21% complete)
+**Sessions**:
+- Functions 1-6: New Methodology Demonstration (2025-09-20)
+- Functions 7-12: 6-Function Checkpoint Strategy (2025-09-20)
+**Progress**: 12 of 29 functions classified (41% complete)
+
+**Category Distribution**:
+- **Category A (Unit)**: 4 functions (33%) - add_cbmail, init_combat_roll, combat_roll, cb_destval
+- **Category B (Integration)**: 6 functions (50%) - new_cunit, distance_add, cbval_army, cbval_navy, cbval_cvn, cb_value
+- **Category C (System)**: 2 functions (17%) - combat_init, damage_unit
+
 **Key Findings**:
-- **Mixed Classification**: 3 Category A (Unit), 2 Category B (Integration), 1 Category C (System)
-- **Good Unit Testing Candidates**: Simple utility functions (mail, dice, calculations)
-- **Integration Dependencies**: Memory allocation and linked list functions require global state
-- **System Complexity**: Initialization functions depend on multiple game subsystems
+- **Strong Unit Testing Pipeline**: 4 functions ready for immediate unit testing
+- **Combat Calculation Suite**: Multiple bonus calculation functions suitable for integration testing
+- **System Complexity**: Multi-unit damage and initialization functions require full game engine
+- **Good Separation**: Combat utilities vs system-dependent functions clearly distinguished
 
 **Architecture Notes**:
-- Combat utility functions cleanly separated and unit testable
-- Memory management functions have moderate global dependencies
-- System initialization requires extensive subsystem coordination
-- Static functions provide good encapsulation for unit testing
+- Combat bonus calculations have moderate integration requirements
+- Damage application requires full game state and multiple unit types
+- Destruction calculations are cleanly isolated and unit testable
+- Most functions have clear input/output contracts suitable for testing
 
-**Next Steps**: Continue with functions 7-12 to maintain 6-function checkpoint strategy
+**Next Steps**: Continue with functions 13-18 to complete Phase 3 documentation coverage
 
 ---
 

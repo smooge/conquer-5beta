@@ -436,6 +436,14 @@ combat_init PARM_0(void)
  *   - May create zombie/lich/wraith/nazgul units from deaths
  *   - Updates global strength_inc for monster kills
  *
+ * Testing Notes:
+ *   Category: C (System Level Only) - Requires full game engine initialization
+ *   Approach: System testing with complete world state and units
+ *   Key Tests: Army damage, naval damage, caravan damage, leader deaths
+ *   Dependencies: Global world state, nation data, unit structures, random generator
+ *   Mock Requirements: Extensive - world map, nations, armies, navies, caravans, reports
+ *   Complexity: Complex - Multi-unit type handler with extensive game state dependencies
+ *
  * Notes:
  *   - Leaders die on percentage chance rather than size reduction
  *   - Monsters are checked individually for death
@@ -912,6 +920,14 @@ damage_unit PARM_3(CUNIT_PTR, cu_ptr, int, dval, Cgrptype, sval)
  *   - Speed affects combat: SLOW +40%, MARCH -40%
  *   - Efficiency reduces bonus: penalty = bonus * (100-eff) / 200
  *   - Grouped units get +10% morale bonus (non-leaders)
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required) - Needs world state and army structures
+ *   Approach: Integration testing with minimal world setup and mock armies
+ *   Key Tests: Mercenary bonuses, national bonuses, terrain effects, status modifiers
+ *   Dependencies: Global world state, nation data, army structures, combat globals
+ *   Mock Requirements: Moderate - world.np[], army units, combat location globals
+ *   Complexity: Moderate - Complex calculation with multiple conditional paths
  */
 /* CBVAL_ARMY -- Combat bonus of a given unit */
 static int
@@ -1070,6 +1086,14 @@ cbval_army PARM_4(int, owner_id, ARMY_PTR, a1_ptr, Cgrptype, sideval,
  *   - Magical enhancement gives +30% bonus
  *   - Efficiency reduces bonus: penalty = bonus * (100-eff[0]) / 200
  *   - Naval units can fight effectively on both land and sea
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required) - Needs world state and naval structures
+ *   Approach: Integration testing with world setup and mock naval units
+ *   Key Tests: Water vs land combat, speed modifiers, magical bonuses, terrain effects
+ *   Dependencies: Global world state, nation data, naval structures, sector map
+ *   Mock Requirements: Moderate - world.np[], naval units, sector terrain data
+ *   Complexity: Moderate - Terrain-dependent calculations with magical modifiers
  */
 /* CBVAL_NAVY -- Combat bonus of a given unit */
 static int
@@ -1173,6 +1197,14 @@ cbval_navy PARM_3(int, owner_id, NAVY_PTR, y1_ptr, Cgrptype, sideval)
  *   - Magical enhancement gives +30% bonus
  *   - Efficiency reduces bonus: penalty = bonus * (100-eff) / 200
  *   - Caravans are primarily non-combat economic units
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required) - Needs world state and caravan structures
+ *   Approach: Integration testing with world setup and mock caravans
+ *   Key Tests: Speed penalties/bonuses, terrain defense, fortification bonuses
+ *   Dependencies: Global world state, nation data, caravan structures, sector map
+ *   Mock Requirements: Moderate - world.np[], caravan units, sector ownership data
+ *   Complexity: Moderate - Defensive calculations with alliance/ownership checks
  */
 /* CBVAL_CVN -- Combat bonus of a given unit */
 static int
@@ -1250,6 +1282,14 @@ cbval_cvn PARM_3(int, owner_id, CVN_PTR, v1_ptr, Cgrptype, sideval)
  *   - Regular units contribute (strength * capt_val) / 10
  *   - Used to damage city fortifications during siege combat
  *   - Does not apply to naval or caravan units
+ *
+ * Testing Notes:
+ *   Category: A (Unit Testable) - Simple calculation with minimal dependencies
+ *   Approach: Unit tests with mock combat units and army structures
+ *   Key Tests: Army vs non-army, attacker vs non-attacker, fort-damaging units
+ *   Dependencies: Combat unit structures, army type information
+ *   Mock Requirements: Minimal - CUNIT_PTR with army data, ainfo_list for unit types
+ *   Complexity: Simple - Straightforward conditional logic and arithmetic
  */
 /* CB_DESTVAL -- Destructive potential of the unit */
 static int
@@ -1306,6 +1346,14 @@ cb_destval PARM_3(CUNIT_PTR, cu_ptr, Cgrptype, sd_val, Cgrptype, oth_val)
  *   - Includes magical sector bonuses via mgk_sctval()
  *   - Invalid nation IDs return base value only
  *   - Core function used in all combat calculations
+ *
+ * Testing Notes:
+ *   Category: B (Integration Required) - Depends on unit-specific bonus functions
+ *   Approach: Integration testing with mocked cbval_*() functions and structures
+ *   Key Tests: Different unit types, cover bonuses, magical sector bonuses
+ *   Dependencies: Combat side structures, nation data, unit bonus calculation functions
+ *   Mock Requirements: Moderate - Combat sides, nations, unit types, mgk_sctval()
+ *   Complexity: Moderate - Orchestrates multiple bonus calculations with error handling
  */
 /* CB_VALUE -- Return the combat value of a given unit */
 static int
