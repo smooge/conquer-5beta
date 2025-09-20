@@ -1434,6 +1434,14 @@ switch_24attr PARM_2(short *, attr_list, short *, oattr_list)
  *   - Converts attributes for patch 24 compatibility
  *   - Frees allocated memory on read errors
  *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and nation setup
+ *   Key Tests: Version conversion paths, field mapping, error handling, memory allocation
+ *   Dependencies: File I/O, global convert_level, nation structure definitions, new_ntn()
+ *   Mock Requirements: File stream mocking, nation allocation mocking
+ *   Complexity: Complex - 200+ lines with multiple version conversion paths
+ *
  * Notes:
  *   - Handles conversion from patch levels 24 and 25
  *   - Initializes new fields added in later versions
@@ -1632,6 +1640,14 @@ rd_ntndata PARM_1(FILE *, in_stream)
  * Side Effects:
  *   - None (pure conversion function)
  *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with mockable unit type checking functions
+ *   Key Tests: Leader type handling, magician type handling, Engineer shift, boundary conditions
+ *   Dependencies: unitbyname(), a_isleader(), a_ismagician() functions
+ *   Mock Requirements: Unit type checking functions and unitbyname() lookup
+ *   Complexity: Simple - 15 lines with clear conditional logic and unit type arithmetic
+ *
  * Notes:
  *   - Part of patch 26 army data conversion system
  *   - Accounts for insertion of new spell casting leader types
@@ -1673,6 +1689,14 @@ p26_shift PARM_1(int, utype)
  *   - Allocates memory for army structure using new_army()
  *   - Applies unit type conversion for older patch levels
  *   - Frees allocated memory on read errors
+ *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and army setup
+ *   Key Tests: Version conversion, unit type shifting, error handling, memory allocation
+ *   Dependencies: File I/O, global convert_level, new_army(), p26_shift()
+ *   Mock Requirements: File stream mocking, army allocation mocking
+ *   Complexity: Moderate - 30 lines with version-specific logic and unit type conversion
  *
  * Notes:
  *   - Performs direct read for patch levels > 20
@@ -1728,6 +1752,14 @@ rd_armydata PARM_1(FILE *, in_stream)
  *
  * Side Effects:
  *   - None (pure conversion function)
+ *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with comprehensive status value mapping validation
+ *   Key Tests: All OST_* to ST_* mappings, default case handling, boundary conditions
+ *   Dependencies: OST_* and ST_* constants only
+ *   Mock Requirements: None - pure conversion function
+ *   Complexity: Simple - 40 lines with straightforward switch statement logic
  *
  * Notes:
  *   - Maps OST_* constants to ST_* constants
@@ -1795,6 +1827,14 @@ nv26_statconvert PARM_1(int, value)
  *   - Applies status conversion for older patch levels
  *   - Frees allocated memory on read errors
  *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and navy setup
+ *   Key Tests: Version conversion, status conversion, error handling, memory allocation
+ *   Dependencies: File I/O, global convert_level, new_navy(), nv26_statconvert(), unit_status(), set_status()
+ *   Mock Requirements: File stream mocking, navy allocation mocking, status manipulation mocking
+ *   Complexity: Moderate - 35 lines with version-specific logic and status conversion
+ *
  * Notes:
  *   - Performs direct read for patch levels > 20
  *   - Applies nv26_statconvert() for older patch levels
@@ -1852,6 +1892,14 @@ rd_navydata PARM_1(FILE *, in_stream)
  *   - Allocates memory for caravan structure using new_cvn()
  *   - Applies status conversion for older patch levels
  *   - Frees allocated memory on read errors
+ *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and caravan setup
+ *   Key Tests: Version conversion, status conversion, error handling, memory allocation
+ *   Dependencies: File I/O, global convert_level, new_cvn(), nv26_statconvert(), unit_status(), set_status()
+ *   Mock Requirements: File stream mocking, caravan allocation mocking, status manipulation mocking
+ *   Complexity: Moderate - 35 lines with version-specific logic and status conversion
  *
  * Notes:
  *   - Performs direct read for patch levels > 20
@@ -1911,6 +1959,14 @@ rd_cvndata PARM_1(FILE *, in_stream)
  *   - Assigns sequential city IDs during conversion
  *   - Initializes new fields for converted data
  *   - Frees allocated memory on read errors
+ *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and city setup
+ *   Key Tests: Version conversion, city ID assignment, static variable handling, error handling
+ *   Dependencies: File I/O, global convert_level, new_city(), static state management
+ *   Mock Requirements: File stream mocking, city allocation mocking, static variable control
+ *   Complexity: Complex - 70+ lines with version conversion and static ID management
  *
  * Notes:
  *   - Handles conversion from patch 27 using C27_STRUCT
@@ -2002,6 +2058,14 @@ rd_citydata PARM_1(FILE *, in_stream)
  *   - Constructs linked lists for all nation-owned entities
  *   - Sets up global world structure and sector array
  *   - Handles decompression if COMPRESS is defined
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: System testing with complete file I/O and world state setup
+ *   Key Tests: File operations, decompression, world initialization, complete data pipeline
+ *   Dependencies: Complete game world, all data structures, file system, optional compression
+ *   Mock Requirements: Entire I/O system or complete integration environment
+ *   Complexity: Extremely Complex - 300+ lines, master data loading, multi-system coordination
  *
  * Notes:
  *   - Critical function for game state loading
@@ -2317,6 +2381,14 @@ read_data PARM_0(void)
  * Side Effects:
  *   - None (read-only operation)
  *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with mock file system or temporary files
+ *   Key Tests: Existing files, non-existent files, permission issues, path validation
+ *   Dependencies: stat() system call only
+ *   Mock Requirements: File system mocking or temporary test files
+ *   Complexity: Trivial - 5 lines, simple stat() wrapper with clear interface
+ *
  * Notes:
  *   - Simple wrapper around stat() system call
  *   - Returns stat() return value directly
@@ -2349,6 +2421,14 @@ exists PARM_1(char *, file)
  *   - Creates hard link from source to destination
  *   - Removes source file after successful link
  *   - May leave partial state if link succeeds but unlink fails
+ *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with temporary files and platform-specific behavior
+ *   Key Tests: Successful rename, permission failures, cross-device moves, platform differences
+ *   Dependencies: rename(), link(), unlink() system calls, platform macros
+ *   Mock Requirements: File system operations or temporary test files
+ *   Complexity: Simple - 15 lines with platform-specific conditional logic
  *
  * Notes:
  *   - Implementation suggested by Jerry Pierce

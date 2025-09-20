@@ -66,6 +66,14 @@ static int fake_char = FALSE;
  *   - May call errormsg() if ioctl fails
  *   - Injects character into terminal input stream
  *
+ * Testing Notes:
+ *   Category: D (Mock Intensive) - Platform-specific ioctl operations requiring system-level mocking
+ *   Approach: Mock ioctl(), file descriptor operations, and terminal interface
+ *   Key Tests: Success path, ioctl failure handling, fake_char flag setting
+ *   Dependencies: WINCH_HANDLER feature flag, file descriptor 2, errormsg()
+ *   Mock Requirements: ioctl() system call, terminal device interface
+ *   Complexity: Simple (11 lines) - straightforward logic but complex system dependencies
+ *
  * Notes:
  *   - Only compiled when WINCH_HANDLER is defined
  *   - Uses file descriptor 2 (stderr) for ioctl operations
@@ -105,6 +113,14 @@ send_dummy_char()
  *   - Triggers complete screen redraw via do_redraw()
  *   - Sends dummy character to refresh input processing
  *   - May display error messages if window too small or ioctl fails
+ *
+ * Testing Notes:
+ *   Category: D (Mock Intensive) - Complex signal handler with terminal ioctl operations requiring extensive mocking
+ *   Approach: Mock signal handling, ioctl operations, curses functions, and global state
+ *   Key Tests: Window resize scenarios, minimum size enforcement, ioctl failure handling
+ *   Dependencies: SIGWINCH signal, TIOCGWINSZ/TIOCSWINSZ ioctls, curses environment
+ *   Mock Requirements: ioctl() calls, signal context, curses functions, global LINES/COLS
+ *   Complexity: Moderate (37 lines) - multiple system interactions and error handling paths
  *
  * Notes:
  *   - Only compiled when WINCH_HANDLER is defined
@@ -168,6 +184,14 @@ win_size_change PARM_1(int, sig)
  *   - Creates or overwrites destination file
  *   - Displays error messages if file operations fail
  *   - Uses global 'string' buffer for error message formatting
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - File copying algorithm with clear input/output, testable with mock files
+ *   Approach: Unit testing with mock file operations and temporary test files
+ *   Key Tests: Successful copy, source file missing, destination create failure, read/write errors
+ *   Dependencies: FILE operations (fopen, fclose, getc, putc), global string buffer, errormsg()
+ *   Mock Requirements: File system operations, error message display
+ *   Complexity: Simple (32 lines) - straightforward file copying logic with clear error paths
  *
  * Notes:
  *   - Only compiled when ALLOW_EDIT_FORK is defined
@@ -236,6 +260,14 @@ copy_file PARM_2(char *, from_file, char *, to_file)
  *   - Copies modified file back to original location
  *   - Restores curses raw mode and noecho after editor exit
  *   - Displays error messages for various failure conditions
+ *
+ * Testing Notes:
+ *   Category: E (Deferred/Skip) - Complex fork/exec with UID switching, security handling, extensive platform dependencies
+ *   Approach: Skip until post-modernization - too complex for isolated testing
+ *   Key Tests: Process creation, UID switching, file operations, editor execution, error handling
+ *   Dependencies: Process management, security model, editor programs, filesystem, curses
+ *   Mock Requirements: fork(), exec(), setuid(), file system, process synchronization
+ *   Complexity: Extremely Complex (125+ lines) - multi-system coordination with security implications
  *
  * Notes:
  *   - Only compiled when ALLOW_EDIT_FORK is defined
@@ -389,6 +421,14 @@ fork_edit_on_file PARM_2(char *, fname, char *, pstr)
  *   - Clears entire screen contents via clear()
  *   - Forces immediate screen refresh on VAXC systems
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Curses screen management requiring display context
+ *   Approach: Integration testing with curses environment setup
+ *   Key Tests: Screen clearing functionality, VAXC-specific refresh behavior
+ *   Dependencies: Curses environment (clear, refresh functions)
+ *   Mock Requirements: Curses screen state, platform-specific behavior
+ *   Complexity: Simple (12 lines) - minimal logic but requires curses context
+ *
  * Notes:
  *   - Called by win_size_change() after window resize
  *   - VAXC-specific refresh() call for compatibility
@@ -429,6 +469,14 @@ static int inch_list[LINELTH];
  *   - Decrements inch_count when popping from input stack
  *   - Resets fake_char flag when processing fake input
  *   - May block waiting for input if no characters queued
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Input queue management with clear state logic, mockable dependencies
+ *   Approach: Unit testing with mock getch() and controlled input stack state
+ *   Key Tests: Empty stack (direct getch), stacked input (LIFO order), fake character handling
+ *   Dependencies: Input stack (inch_count, inch_list), getch() function, fake_char flag
+ *   Mock Requirements: getch() function, global state variables
+ *   Complexity: Simple (19 lines) - clear conditional logic with straightforward state management
  *
  * Notes:
  *   - Part of input queue management system
@@ -474,6 +522,14 @@ next_char PARM_0(void)
  *   - Displays serious error message if stack overflows
  *   - Character will be returned by next call to next_char()
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Input stack manipulation with clear logic, minimal dependencies
+ *   Approach: Unit testing with controlled stack state and overflow testing
+ *   Key Tests: Normal push operation, stack overflow condition, LIFO behavior verification
+ *   Dependencies: Input stack arrays (inch_count, inch_list), errormsg() for overflow
+ *   Mock Requirements: errormsg() function for overflow handling
+ *   Complexity: Simple (10 lines) - straightforward array manipulation with overflow check
+ *
  * Notes:
  *   - Input stack has capacity LINELTH (maximum line length)
  *   - Stack operates as LIFO (last in, first out)
@@ -511,6 +567,14 @@ push_char PARM_1(int, ch_in)
  *   - Right-aligns secondary message
  *   - Draws separator line of dashes at LINES-2
  *   - Uses standout/standend for highlighting
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Screen display function requiring curses environment and positioning
+ *   Approach: Integration testing with curses environment setup and screen validation
+ *   Key Tests: Message display formatting, alignment calculations, standout highlighting
+ *   Dependencies: Curses environment (move, standout, mvprintw, addch), LINES/COLS globals
+ *   Mock Requirements: Curses functions, screen dimensions, VERSION/PATCHLEVEL constants
+ *   Complexity: Moderate (16 lines) - formatting logic with screen positioning calculations
  *
  * Notes:
  *   - Bar spans full screen width (COLS-1)
@@ -554,6 +618,14 @@ errorbar PARM_2( char *, str1, char *, str2)
  *   - Waits for user input (blocking)
  *   - Clears bottom line after key press
  *
+ * Testing Notes:
+ *   Category: B (Integration) - User interaction requiring curses display and input coordination
+ *   Approach: Integration testing with curses environment and mock input
+ *   Key Tests: Message display, user input handling, screen clearing
+ *   Dependencies: Curses environment (mvaddstr, refresh), next_char(), clear_bottom()
+ *   Mock Requirements: Curses functions, input simulation, screen state
+ *   Complexity: Simple (10 lines) - straightforward user interaction pattern
+ *
  * Notes:
  *   - Standard pause/continue mechanism in the game interface
  *   - Message positioned at LINES-1, COLS-16 for right alignment
@@ -591,6 +663,14 @@ presskey PARM_0(void)
  *   - In curses: generates beep sound for attention
  *   - In curses: waits for user keypress via presskey()
  *   - In non-curses: writes message to fupdate file with newline
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Dual-mode output requiring curses or file I/O coordination
+ *   Approach: Integration testing with both curses and file output modes
+ *   Key Tests: Curses mode display, file mode output, mode switching behavior
+ *   Dependencies: Curses environment or file output, in_curses flag, presskey(), fupdate
+ *   Mock Requirements: Curses functions, file I/O, mode flag, beep/audio
+ *   Complexity: Moderate (15 lines) - dual-mode logic with different output paths
  *
  * Notes:
  *   - Primary error/message display function throughout the game
@@ -632,6 +712,14 @@ errormsg PARM_1 (char *, str)
  *   - In non-curses: writes message to fupdate file with newline
  *   - Does not beep or wait for user input
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Similar to errormsg() but simpler, still requires curses/file coordination
+ *   Approach: Integration testing with both curses and file output modes
+ *   Key Tests: Curses mode display, file mode output, non-blocking behavior
+ *   Dependencies: Curses environment or file output, in_curses flag, fupdate
+ *   Mock Requirements: Curses functions, file I/O, mode flag
+ *   Complexity: Simple (11 lines) - simpler version of errormsg() without user interaction
+ *
  * Notes:
  *   - Similar to errormsg() but without beep or user interaction
  *   - Used for status messages, progress updates, and information display
@@ -667,6 +755,14 @@ bottommsg PARM_1 (char *, str)
  *   - Forces screen refresh before waiting for input
  *   - Consumes one character from input stream
  *   - Does not provide feedback about invalid responses
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple input processing with clear logic, mockable dependencies
+ *   Approach: Unit testing with mock next_char() function
+ *   Key Tests: 'y' returns TRUE, 'Y' returns TRUE, other keys return FALSE
+ *   Dependencies: next_char() function (mockable), refresh() function
+ *   Mock Requirements: next_char() for input simulation, refresh() for screen
+ *   Complexity: Simple (13 lines) - straightforward character comparison logic
  *
  * Notes:
  *   - Simple binary choice input function
@@ -705,6 +801,14 @@ y_or_n PARM_0(void)
  * Side Effects:
  *   - Forces screen refresh before waiting for input
  *   - Consumes one character from input stream
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple input processing with clear switch logic, mockable dependencies
+ *   Approach: Unit testing with mock next_char() function
+ *   Key Tests: 'y'/'Y' return TRUE, space/return return TRUE, other keys return FALSE
+ *   Dependencies: next_char() function (mockable), refresh() function
+ *   Mock Requirements: next_char() for input simulation, refresh() for screen
+ *   Complexity: Simple (19 lines) - straightforward switch statement with multiple affirmative cases
  *
  * Notes:
  *   - More permissive than y_or_n() - accepts default confirmation
@@ -750,6 +854,14 @@ cr_or_y PARM_0(void)
  *   - Enables raw input mode (crmode)
  *   - Disables character echoing (noecho)
  *   - Platform-specific terminal setup (TSERVER, VMS)
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Critical curses initialization requiring complete system environment
+ *   Approach: System testing with full curses environment and terminal setup
+ *   Key Tests: Curses initialization, signal handler setup, terminal size validation
+ *   Dependencies: Curses library, signal handling, terminal environment, platform-specific code
+ *   Mock Requirements: Complete curses environment, signal system, terminal state
+ *   Complexity: Moderate (28 lines) - platform-specific initialization with multiple system interactions
  *
  * Notes:
  *   - Must be called before any other curses operations
@@ -810,6 +922,14 @@ cq_init PARM_1 (char *, progname)
  *   - Sets in_curses global flag to FALSE
  *   - Platform-specific terminal reset (VMS)
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Critical curses cleanup requiring complete system environment
+ *   Approach: System testing with full curses environment and terminal state management
+ *   Key Tests: Signal handler cleanup, screen clearing, terminal mode restoration
+ *   Dependencies: Curses library, signal handling, terminal environment, platform-specific code
+ *   Mock Requirements: Complete curses environment, signal system, terminal state
+ *   Complexity: Moderate (30 lines) - comprehensive cleanup with multiple system interactions
+ *
  * Notes:
  *   - Should be called before any program exit
  *   - Double clear/refresh ensures clean terminal state
@@ -863,6 +983,14 @@ cq_reset PARM_0(void)
  *   - Terminates program with specified exit status
  *   - All cq_reset() side effects apply (terminal cleanup, etc.)
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Simple wrapper requiring curses cleanup coordination
+ *   Approach: Integration testing with mock cq_reset() and exit() functions
+ *   Key Tests: Cleanup function calling, exit status passing
+ *   Dependencies: cq_reset() function, exit() system call
+ *   Mock Requirements: cq_reset() function, exit() call interception
+ *   Complexity: Simple (3 lines) - straightforward wrapper function
+ *
  * Notes:
  *   - Standard way to exit the game with proper cleanup
  *   - Ensures terminal is always left in proper state
@@ -893,6 +1021,14 @@ cq_bye PARM_1 (int, status)
  *   - Clears l lines from bottom of screen (LINES-l to LINES-1)
  *   - Uses clrtoeol() to clear each line from cursor to end
  *   - No effect if not in curses mode
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Screen area management requiring curses environment
+ *   Approach: Integration testing with curses environment and screen state validation
+ *   Key Tests: Line clearing functionality, parameter validation, curses mode checking
+ *   Dependencies: Curses environment (move, clrtoeol), in_curses flag, LINES global
+ *   Mock Requirements: Curses functions, screen state, global variables
+ *   Complexity: Simple (11 lines) - straightforward loop with curses operations
  *
  * Notes:
  *   - Commonly used to clear message areas before new output
@@ -931,6 +1067,14 @@ clear_bottom PARM_1 (int, l)
  *   - If full=TRUE: printable chars shown as 'X'-, non-printable as ^X-
  *   - If full=FALSE: characters shown without decoration
  *   - Advances cursor position
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Character formatting with clear logic, minimal dependencies
+ *   Approach: Unit testing with mock curses output and character validation
+ *   Key Tests: Printable characters, non-printable characters, full vs compact formatting
+ *   Dependencies: Curses environment (addch), isprint() function, non_cntrl() function
+ *   Mock Requirements: Curses output functions, character classification
+ *   Complexity: Simple (16 lines) - straightforward character formatting logic
  *
  * Notes:
  *   - Used primarily for key binding displays and character references
