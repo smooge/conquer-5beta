@@ -811,6 +811,14 @@ upd_cvn PARM_0(void)
  *   - Finalizes multi-line messages for each nation
  *   - Generates debug output if DEBUG defined
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Moderate complexity coordinator function
+ *   Approach: Integration testing with military subsystem mocking
+ *   Key Tests: Nation iteration, subsystem coordination, message handling
+ *   Dependencies: World state, military update functions, message system
+ *   Mock Requirements: upd_army/navy/cvn functions, file I/O, memory allocation
+ *   Complexity: Moderate - testable with proper subsystem mocking
+ *
  * Notes:
  *   - Part of main update sequence, called after combat resolution
  *   - Skips inactive nations automatically
@@ -891,6 +899,14 @@ upd_military PARM_1(int, cntry)
  *   - Updates nation processing status to prevent double-processing
  *   - Calls verify_data() for data integrity checking
  *   - Generates update log messages for each nation processed
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - High complexity with full game engine requirements
+ *   Approach: System testing requiring complete game initialization
+ *   Key Tests: Command execution, automation logic, nation processing order
+ *   Dependencies: File I/O, command parsing, full world state, AI system
+ *   Mock Requirements: Extensive - file system, command interpreter, automation
+ *   Complexity: Complex - requires full game engine setup for meaningful testing
  *
  * Notes:
  *   - God (UNOWNED) commands processed first
@@ -991,6 +1007,14 @@ upd_input PARM_0(void)
  *   - Generates update log messages for unknown spell types
  *   - Would modify game state based on spell effects (unimplemented)
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple list iteration with framework structure
+ *   Approach: Unit tests with mock spell list and verification of logging
+ *   Key Tests: Spell list iteration, caster name resolution, error logging
+ *   Dependencies: Spell list structure, world nation array for name lookup
+ *   Mock Requirements: Minimal - mock spell list and nations for name resolution
+ *   Complexity: Simple - straightforward iteration logic suitable for unit testing
+ *
  * Notes:
  *   - Framework function - switch statement has no implemented cases
  *   - Handles spell caster identification (god, nation, or unknown)
@@ -1052,6 +1076,14 @@ upd_spells PARM_0(void)
  *
  * Side Effects:
  *   - Modifies the score field of the passed nation structure
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Pure calculation function with clear inputs/outputs
+ *   Approach: Unit tests with controlled nation data and global totals
+ *   Key Tests: Score calculation accuracy, overflow protection, component weighting
+ *   Dependencies: Nation structure, global world totals (WORLDMIL, WORLDCIV, etc.)
+ *   Mock Requirements: Minimal - mock global world totals for calculation base
+ *   Complexity: Simple - isolated calculation ideal for comprehensive unit testing
  *
  * Notes:
  *   - Previous score contributes 50% to new score (momentum factor)
@@ -1127,6 +1159,14 @@ score_ntn PARM_1(NTN_PTR, n1_ptr)
  *   - Writes news messages about nations meeting
  *   - Generates update log messages
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Diplomatic callback requiring world state setup
+ *   Approach: Integration testing with controlled nation and sector configurations
+ *   Key Tests: First contact detection, diplomatic status updates, bidirectional relationships
+ *   Dependencies: World state, nation diplomatic arrays, news/update file I/O
+ *   Mock Requirements: Mock world state, nation setup, file I/O for news/update logs
+ *   Complexity: Moderate - testable with controlled diplomatic scenario setup
+ *
  * Notes:
  *   - Used as callback function with map_loop() from leader locations
  *   - Only affects nations that haven't met before (DIP_UNMET status)
@@ -1171,6 +1211,14 @@ upd_seenem PARM_2(int, x, int, y)
  *
  * Side Effects:
  *   - Adds sector reach value to global_int accumulator
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple callback accumulator function
+ *   Approach: Unit tests with mock get_reach() function and controlled sectors
+ *   Key Tests: Reach value accumulation, global_int updates, zero value handling
+ *   Dependencies: get_reach() function, global_int accumulator variable
+ *   Mock Requirements: Mock get_reach() function returning controlled test values
+ *   Complexity: Simple - straightforward accumulation logic ideal for unit testing
  *
  * Notes:
  *   - Used as callback with map_loop() during population redistribution

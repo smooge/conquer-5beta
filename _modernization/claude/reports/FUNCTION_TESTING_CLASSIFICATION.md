@@ -79,20 +79,32 @@
 
 ### updateA.c - IN PROGRESS 🔄
 
-**Session**: Phase 3 Functions 1-6 Classification (2025-09-20)
-**Progress**: 6 of 17 functions classified (35% complete)
+**Sessions**:
+- Functions 1-6 Classification (2025-09-20): 6 of 17 functions (35% complete)
+- Functions 7-12 Classification (2025-09-20): 12 of 17 functions (71% complete)
+**Current Progress**: 12 of 17 functions classified (71% complete)
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
 | `upd_init()` | B - Integration | Moderate | Memory allocation + file I/O with global state | Integration testing |
 | `upd_finish()` | B - Integration | Moderate | File closure + external functions + cleanup | Integration testing |
-| `upd_rovers()` | C - System Level | Complex | Multi-system coordination with AI behavior | System testing |
-| `upd_army()` | C - System Level | Complex | 400+ lines, full world state, multi-pass logic | System testing |
 | `upd_navy()` | B - Integration | Moderate | Nation/navy state setup with status logic | Integration testing |
 | `upd_cvn()` | B - Integration | Moderate | Nation/caravan state with siege logic | Integration testing |
-| `update()` | C - System Level | Extremely Complex | Master game update function | System testing only |
+| `upd_rovers()` | C - System Level | Complex | Multi-system coordination with AI behavior | System testing |
+| `upd_army()` | C - System Level | Complex | 400+ lines, full world state, multi-pass logic | System testing |
+| `upd_military()` | B - Integration | Moderate | Coordinator function calling military subsystems | Integration testing |
+| `upd_input()` | C - System Level | Complex | Command execution and automation with full game state | System testing |
+| `upd_spells()` | A - Unit | Simple | Framework function with spell list iteration | Unit testing |
+| `score_ntn()` | A - Unit | Simple | Pure calculation function with nation scoring | Unit testing |
+| `upd_seenem()` | B - Integration | Moderate | Diplomatic callback requiring world state setup | Integration testing |
+| `upd_cntreach()` | A - Unit | Simple | Callback accumulator with minimal dependencies | Unit testing |
 
-**Next Session**: Continue with functions 7-12 (upd_military through wrld_totals)
+**Category Distribution (Functions 1-12)**:
+- **Category A (Unit)**: 3 functions (25%) - upd_spells, score_ntn, upd_cntreach
+- **Category B (Integration)**: 6 functions (50%) - upd_init, upd_finish, upd_navy, upd_cvn, upd_military, upd_seenem
+- **Category C (System)**: 3 functions (25%) - upd_rovers, upd_army, upd_input
+
+**Next Session**: Continue with functions 13-17 (upd_movepop through update)
 
 **Session**: Previous analysis
 **Key Findings**: Central orchestration function requiring full game engine state
