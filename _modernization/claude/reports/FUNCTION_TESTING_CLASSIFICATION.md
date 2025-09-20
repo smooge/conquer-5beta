@@ -689,6 +689,47 @@
 - **Session 1**: Complete File Analysis (2025-09-20) - All 9 functions classified in single efficient session
 - **Achievement**: Fourth Priority 1 file completed with excellent unit testing opportunities (44% Category A)
 
+### miscA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `sort_news()` | D - Mock Intensive | Moderate | External process execution with platform-specific system() calls | Mock-heavy testing |
+| `random_name()` | A - Unit | Simple | Pure function with mockable rand_val() dependency and clear algorithm | Unit testing |
+| `ntn_stats()` | B - Integration | Complex | Requires complete nation structure with all linked lists and file I/O | Integration testing |
+| `world_stats()` | B - Integration | Moderate | Orchestrates world data display calling ntn_stats() with file I/O | Integration testing |
+| `mk_sect()` | A - Unit | Simple | Static callback function with simple VIS_STORE operation, clear interface | Unit testing |
+| `mark_leaders()` | B - Integration | Moderate | Army list iteration with map operations and visibility system | Integration testing |
+| `dice_tester()` | D - Mock Intensive | Very Complex | Interactive curses interface with 172 lines and extensive UI dependencies | Mock-heavy testing |
+
+**FINAL STATUS**: ✅ **7 of 7 functions classified (100% COMPLETE)** ⭐
+
+**Final Category Distribution (All Functions 1-7)**:
+- **Category A (Unit)**: 2 functions (29%) - random_name, mk_sect
+- **Category B (Integration)**: 3 functions (43%) - ntn_stats, world_stats, mark_leaders
+- **Category D (Mock Intensive)**: 2 functions (28%) - sort_news, dice_tester
+
+**Key Findings**:
+- **Excellent Utility Foundation**: 2 Category A functions ready for immediate unit testing
+- **Core Statistics System**: Nation and world statistics with comprehensive data analysis
+- **Interactive Tools**: Complex dice testing system and file sorting utilities
+- **Mock-Intensive Components**: System call integration and full curses interface requirements
+
+**Architecture Analysis**:
+- **Name Generation**: Pure algorithm suitable for unit testing with controlled randomness
+- **Statistics Engine**: Comprehensive nation/world analysis requiring integration testing
+- **Map Influence**: Leader influence marking with army iteration and visibility system
+- **Interactive Utilities**: Complex user interface tools requiring extensive mocking
+
+**Complete miscA.c Testing Strategy**:
+- **Phase 1**: Unit test 2 Category A functions for immediate validation of algorithms
+- **Phase 2**: Integration test 3 Category B functions with controlled nation/world setup
+- **Phase 3**: Mock-intensive testing of 2 Category D functions with system/UI mocking
+- **Strategic Value**: Foundation for utility testing, statistics validation, and interactive tool development
+
+**Sessions Completed**:
+- **Session 1**: Complete File Analysis (2025-09-20) - All 7 functions classified in single efficient session
+- **Achievement**: ✅ **PRIORITY 1 COMPLETION** - Final Priority 1 file completed achieving 100% Priority 1 coverage ⭐
+
 ---
 
 ## Quick Reference Guidelines
@@ -913,7 +954,7 @@ Function identified for testing
 
 ## Remaining Files for Testing Documentation
 
-### Files Completed ✅ (13 files)
+### Files Completed ✅ (14 files)
 - ✅ **economyA.c** - 3 functions analyzed
 - ✅ **updateA.c** - 17 functions classified (100% complete)
 - ✅ **checkX.c** - 12 functions analyzed
@@ -927,6 +968,7 @@ Function identified for testing
 - ✅ **configA.c** - 9 functions classified (100% complete)
 - ✅ **npcA.c** - 6 functions classified (100% complete)
 - ✅ **monsterA.c** - 9 functions classified (100% complete)
+- ✅ **miscA.c** - 7 functions classified (100% complete)
 
 ### Data-Only Files (No Functions) 📊 (5 files)
 - 📊 **dataA.c** - Global data definitions (fantasy names, world state, spell lists)
@@ -935,12 +977,12 @@ Function identified for testing
 - 📊 **dataX.c** - Core game configuration (races, materials, terrain, economics)
 - 📊 **dataG.c** - User interface data (display modes, UI options, screen layouts)
 
-### Priority 1: Core Game Engine (Recommended Next) 🎯 (1 file remaining)
+### Priority 1: Core Game Engine ✅ COMPLETE (10 files)
 - ✅ **createA.c** - World/game creation functions (COMPLETED)
 - ✅ **configA.c** - Configuration management (COMPLETED)
 - ✅ **npcA.c** - NPC management and AI (COMPLETED)
 - ✅ **monsterA.c** - Monster system (COMPLETED)
-- **miscA.c** - Miscellaneous core utilities
+- ✅ **miscA.c** - Miscellaneous core utilities (COMPLETED)
 
 ### Priority 2: I/O and Data Management 📊 (7 files)
 - **ioX.c** - Core I/O operations
@@ -993,7 +1035,7 @@ Function identified for testing
 - **adduserA.c** - User addition utilities
 - **vms.c** - VMS compatibility layer
 
-### Total Remaining: 47 files (Data-only files excluded from testing documentation)
+### Total Remaining: 42 files (Data-only files excluded from testing documentation)
 
 ### Recommended Approach
 

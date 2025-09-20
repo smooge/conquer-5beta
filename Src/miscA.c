@@ -43,6 +43,14 @@
  *   - Executes external system command
  *   - May write to update log file in DEBUG mode
  *
+ * Testing Notes:
+ *   Category: D (Mock Intensive)
+ *   Approach: Mock system() calls and file operations for controlled testing
+ *   Key Tests: Platform-specific path construction, command execution, debug logging
+ *   Dependencies: newsfile, progdir, CONQ_SORT globals, system() call, fupdate file
+ *   Mock Requirements: system() function, sprintf globals, file I/O operations
+ *   Complexity: Moderate - External process execution with platform-specific behavior
+ *
  * Notes:
  *   - Depends on external CONQ_SORT program
  *   - File path construction is platform-specific (VMS vs others)
@@ -85,6 +93,14 @@ sort_news PARM_1(int, newsturn)
  *   - Modifies the str buffer with null-terminated random name
  *   - Uses global random number generator
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit test with mocked rand_val() for predictable random generation
+ *   Key Tests: Name length variation, character range validation, null termination
+ *   Dependencies: rand_val() function for random number generation
+ *   Mock Requirements: rand_val() function to control random output for testing
+ *   Complexity: Simple - Clear algorithm with well-defined output format
+ *
  * Notes:
  *   - Race parameter is marked ARGSUSED (not currently used)
  *   - Generated name length is random between 3 and NAMELTH-5+3 characters
@@ -124,6 +140,14 @@ random_name PARM_2( char *, str, int, race )
  * Side Effects:
  *   - Writes formatted statistics to fupdate file
  *   - Iterates through all nation's army, navy, caravan, city, and item lists
+ *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with controlled nation setup and mock file I/O
+ *   Key Tests: NULL nation handling, army/navy/caravan counting, average calculations
+ *   Dependencies: Complete NTN_PTR with all linked lists, fupdate file, unit macros
+ *   Mock Requirements: fupdate file operations, unit list structures
+ *   Complexity: Complex - Extensive list iteration and statistical calculations
  *
  * Notes:
  *   - Returns early if nation pointer is NULL
@@ -258,6 +282,14 @@ ntn_stats PARM_1(NTN_PTR, n1_ptr)
  *   - Writes world summary and formatted table headers to fupdate file
  *   - Calls ntn_stats() for each nation, generating detailed nation statistics
  *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with world structure setup and mock file I/O
+ *   Key Tests: World data display, demigod handling, nation iteration
+ *   Dependencies: world structure, fupdate file, LOGIN global, ntn_stats() function
+ *   Mock Requirements: fupdate file operations, world structure, MAPX/MAPY macros
+ *   Complexity: Moderate - Orchestrates world display and calls nation statistics
+ *
  * Notes:
  *   - Uses global world structure to access map size and nation data
  *   - Displays demigod as "[none]" if LOGIN matches world.demigod
@@ -311,6 +343,14 @@ world_stats PARM_0(void)
  *   - Modifies global visibility_data structure
  *   - Sets the specified map location as visible (TRUE)
  *
+ * Testing Notes:
+ *   Category: A (Unit)
+ *   Approach: Unit test with mocked VIS_STORE macro for visibility marking
+ *   Key Tests: Coordinate handling, visibility data modification
+ *   Dependencies: VIS_STORE macro for visibility data manipulation
+ *   Mock Requirements: VIS_STORE macro and underlying visibility system
+ *   Complexity: Simple - Two-line callback function with clear interface
+ *
  * Notes:
  *   - Static function, only used within this file
  *   - Used as callback in mark_leaders() function
@@ -342,6 +382,14 @@ mk_sect PARM_2(int, x, int, y)
  *   - Allocates/initializes global visibility_data structure
  *   - Modifies global army_tptr pointer
  *   - Marks map sectors as visible within leader influence ranges
+ *
+ * Testing Notes:
+ *   Category: B (Integration)
+ *   Approach: Integration testing with army list setup and mock map operations
+ *   Key Tests: Army list iteration, leader filtering, duplicate location handling
+ *   Dependencies: ntn_ptr, army lists, visibility_data, map_loop(), new_maplong()
+ *   Mock Requirements: Army structures, map functions, visibility system
+ *   Complexity: Moderate - Army iteration with spatial influence calculations
  *
  * Notes:
  *   - Uses global ntn_ptr to access current nation's army list
@@ -400,6 +448,14 @@ mark_leaders PARM_0(void)
  *   - Uses curses library for screen display and user input
  *   - Modifies global NUMDICE setting based on user input
  *   - Clears screen and redraws display during operation
+ *
+ * Testing Notes:
+ *   Category: D (Mock Intensive)
+ *   Approach: Mock curses interface and combat system for automated testing
+ *   Key Tests: Dice rolling statistics, histogram generation, user input handling
+ *   Dependencies: Curses library, combat_roll(), init_combat_roll(), UI functions
+ *   Mock Requirements: Complete curses interface, input functions, display system
+ *   Complexity: Very Complex - 172 lines with full interactive interface and statistics
  *
  * Notes:
  *   - Interactive function - runs until user presses 'Q'
