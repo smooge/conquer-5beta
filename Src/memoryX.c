@@ -874,6 +874,37 @@ new_maplong PARM_1(long *, mem_ptr)
  *   - Caller responsible for linking into display mode list
  *   - Must be freed by caller when no longer needed
  */
+/*
+ * new_dmode - Allocate memory for a display mode structure
+ *
+ * Allocates memory for a DMODE structure used to manage display settings
+ * and graphics mode configurations for the user interface.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated DMODE structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(DMODE_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Used for graphics and display mode management
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 DMODE_PTR
 new_dmode PARM_0(void)
 {
@@ -906,10 +937,20 @@ new_dmode PARM_0(void)
  * Side Effects:
  *   - Allocates sizeof(UNITNUM) bytes
  *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
  *
  * Notes:
  *   - Used for managing unit ID assignment ranges
  *   - Caller responsible for initialization and linking
+ *   - Consistent with other new_* allocation functions
  */
 UNUM_PTR
 new_unum PARM_0(void)
@@ -929,33 +970,34 @@ new_unum PARM_0(void)
 
 /*
  * new_map - Allocate memory for a map structure
- * new_army - Allocate memory for an army unit  
- * new_navy - Allocate memory for a naval unit
- * new_cvn - Allocate memory for a caravan unit
- * new_city - Allocate memory for a city structure
- * new_item - Allocate memory for an item/commodity
- * new_ntn - Allocate memory for a nation structure
  *
- * These functions follow identical patterns for allocating game entity
- * structures. Each allocates memory for the corresponding structure type
- * and provides error handling via errormsg() and abrt() on failure.
+ * Allocates memory for a MAP structure used to manage unit mapping
+ * and coordinate systems for the game world.
  *
  * Parameters:
- *   None (all functions)
+ *   None
  *
  * Returns:
- *   Pointer to newly allocated structure of appropriate type
- *   Functions terminate program via abrt() if allocation fails
+ *   Pointer to newly allocated MAP structure
+ *   Function terminates program via abrt() if allocation fails
  *
  * Side Effects:
- *   - Allocate sizeof(appropriate_STRUCT) bytes
- *   - Call errormsg() and abrt() on allocation failure
+ *   - Allocates sizeof(MAP_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
  *   - Memory is NOT initialized - caller must set values
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
  * Notes:
- *   - Centralized allocation for all major game entities
- *   - Consistent error handling across all allocation functions
- *   - Caller responsible for proper initialization and cleanup
+ *   - Used for unit mapping and coordinate management
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
  */
 
 /* NEW_MAP -- Allocate space for a new unit mapping structure */
@@ -975,7 +1017,37 @@ new_map PARM_0(void)
   return(m1_ptr);
 }
 
-/* NEW_ARMY -- Allocate space for a new army unit */
+/*
+ * new_army - Allocate memory for an army unit
+ *
+ * Allocates memory for an ARMY structure used to represent military
+ * units with combat capabilities, movement, and tactical attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated ARMY structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(ARMY_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core military unit allocation for game combat system
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 ARMY_PTR
 new_army PARM_0(void)
 {
@@ -992,7 +1064,37 @@ new_army PARM_0(void)
   return(a1_ptr);
 }
 
-/* NEW_NAVY -- Allocate space for a new naval unit */
+/*
+ * new_navy - Allocate memory for a naval unit
+ *
+ * Allocates memory for a NAVY structure used to represent naval
+ * units with sea combat capabilities, movement, and maritime attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated NAVY structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(NAVY_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core naval unit allocation for game maritime system
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 NAVY_PTR
 new_navy PARM_0(void)
 {
@@ -1009,7 +1111,37 @@ new_navy PARM_0(void)
   return(n1_ptr);
 }
 
-/* NEW_CVN -- Allocate space for a new cvn unit */
+/*
+ * new_cvn - Allocate memory for a caravan unit
+ *
+ * Allocates memory for a CVN structure used to represent caravan
+ * units with trade capabilities, movement, and economic attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated CVN structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(CVN_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core caravan unit allocation for game trade system
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 CVN_PTR
 new_cvn PARM_0(void)
 {
