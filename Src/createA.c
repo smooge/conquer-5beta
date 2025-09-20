@@ -402,6 +402,14 @@ cr_desertgrow PARM_2(int, x, int, y)
  *   - Displays progress messages to user
  *   - Frees temporary memory allocations
  *
+ * Testing Notes:
+ *   Category: C (System Level) - Requires complete game engine infrastructure
+ *   Approach: System-level testing with full world generation validation
+ *   Key Tests: [World generation integrity, terrain distribution, memory management]
+ *   Dependencies: [Complete global infrastructure - MAPX/MAPY, world config, fnews, m2alloc system, map_loop, helper functions, UI system]
+ *   Mock Requirements: [Impractical - would require mocking entire game engine infrastructure]
+ *   Complexity: Extremely Complex (700+ lines) - Master orchestration of entire world generation system
+ *
  * Notes:
  *   - Uses configurable parameters (PWATER, PMOUNT, world.smoothings)
  *   - Implements wrap-around world geography
