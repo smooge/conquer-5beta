@@ -535,7 +535,10 @@
 - Terrain modification functions (cr_*grow, fill_edge) require world state context
 - All functions designed as map_loop callbacks for systematic world processing
 
-**Next Steps**: Continue with functions 7-12 to reach next checkpoint (functions 7-12: createworld, bld_lizards, etc.)
+**Next Steps**: REVISED MULTI-SESSION STRATEGY for remaining 10 functions:
+- **Session 2**: Functions 7-9 (liz_takeit, pir_oksect, pir_takeit) - Helper functions only
+- **Session 3**: Function 10 (createworld) - Dedicated session for 700+ line mega function
+- **Session 4**: Functions 11-16 (bld_* nation builders, populate, rawmaterials) - Complete file
 
 ---
 
