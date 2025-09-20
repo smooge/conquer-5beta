@@ -170,6 +170,14 @@ static int cfg_world;
  *   - Sets all nation pointers in world.np[] array to NULL
  *   - Calls dest_ntn() for each existing nation
  *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Requires world.np[] array and dest_ntn() function for meaningful testing
+ *   Key Tests: NULL handling, remake flag behavior, complete array initialization
+ *   Dependencies: Global remake flag, world.np[] array, dest_ntn() function
+ *   Mock Requirements: Nation structure creation/destruction functions
+ *   Complexity: Simple (15 lines) - straightforward loop with conditional destruction
+ *
  * Notes:
  *   - Only destroys nations if global remake flag is TRUE
  *   - Critical for world regeneration scenarios
@@ -220,6 +228,14 @@ zeroworld PARM_0(void)
  *   - Initializes demigod to current LOGIN user
  *   - Sets passwords to initial values
  *   - Configures map type, size, and gameplay parameters
+ *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Pure assignment function with predictable outputs, minimal mocking required
+ *   Key Tests: All configuration parameters set to expected defaults, LOGIN handling
+ *   Dependencies: DFLT_* constants, LOGIN global variable, world structure
+ *   Mock Requirements: World structure initialization, LOGIN environment variable
+ *   Complexity: Simple (60 lines) - straightforward assignments with well-defined defaults
  *
  * Notes:
  *   - Uses DFLT_* constants for standard values
@@ -320,6 +336,14 @@ bld_defaults PARM_0(void)
  *   - Writes formatted text to screen at specified coordinates
  *   - Uses global col_width for alignment calculations
  *   - Accesses global world configuration variables
+ *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Requires curses interface and global world configuration for meaningful testing
+ *   Key Tests: All BLD_OPTIONS cases, format string validation, boundary conditions
+ *   Dependencies: Global world config, curses functions, col_width, BLD_OPTIONS constants
+ *   Mock Requirements: Curses interface mocking, world structure with all config fields
+ *   Complexity: Complex (260 lines) - massive switch statement with 50+ configuration cases
  *
  * Notes:
  *   - Handles all BLD_OPTIONS configuration parameters
@@ -614,6 +638,14 @@ bld_item PARM_3 (int, x, int, y, int, itemnum)
  *   - Applies standout highlighting to current selection
  *   - Uses global col_width and col_length for layout
  *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Requires curses interface and bld_item() function for testing display layout
+ *   Key Tests: Multi-column layout, selection highlighting, proper spacing calculations
+ *   Dependencies: bld_item() function, curses (standout/standend), col_width/col_length globals
+ *   Mock Requirements: Curses interface, bld_item() function, global layout variables
+ *   Complexity: Simple (25 lines) - straightforward layout logic with curses highlighting
+ *
  * Notes:
  *   - Layout adapts to different screen sizes
  *   - Highlighting makes current selection clear to user
@@ -671,6 +703,14 @@ bld_display PARM_1(int, curnum)
  *   - Calls get_number() for user input
  *   - Displays error message via errormsg() if invalid
  *   - Sets global no_input flag on cancellation
+ *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Pure validation function with clear input/output contract, minimal dependencies
+ *   Key Tests: Range validation, negative number handling, cancellation behavior, boundary values
+ *   Dependencies: get_number() function, errormsg() function, global no_input flag
+ *   Mock Requirements: Input functions (get_number, errormsg), global state minimal
+ *   Complexity: Simple (20 lines) - straightforward range checking with clear logic
  *
  * Notes:
  *   - Return value of (min_val - 1) indicates error/cancellation
@@ -730,6 +770,14 @@ in_and_check PARM_3(long, min_val, long, max_val, char *, hstr)
  *   - Displays prompts and error messages to user
  *   - May require password verification
  *   - Validates user existence for demigod setting
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: Requires complete interface setup, all global config, and full user interaction system
+ *   Key Tests: All BLD_OPTIONS cases, permission checking, password validation, range limits
+ *   Dependencies: Complete curses interface, all world config, user_exists(), get_string(), input system
+ *   Mock Requirements: Extensive - curses, file system, user management, password system, input validation
+ *   Complexity: Extremely Complex (590+ lines) - massive switch with 50+ cases, security, validation
  *
  * Notes:
  *   - Massive switch statement handling all BLD_OPTIONS
@@ -1356,6 +1404,14 @@ bld_change PARM_1 (int, itemnum)
  *   - Updates error bar with data directory information
  *   - Uses standout mode for title emphasis
  *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Simple display function with clear formatting logic, minimal dependencies
+ *   Key Tests: String centering calculations, title formatting, error bar content
+ *   Dependencies: sprintf(), errorbar(), standout()/standend(), global string buffer
+ *   Mock Requirements: Curses functions (errorbar, standout, mvaddstr), global variables
+ *   Complexity: Simple (10 lines) - straightforward formatting and display operations
+ *
  * Notes:
  *   - Centers title based on screen width (COLS)
  *   - Shows current datadirname for user context
@@ -1407,6 +1463,14 @@ bld_title PARM_2(char *, desc_str, char *, title_str)
  *   - Writes complete game database to files
  *   - Cleans up temporary and old files
  *   - Displays progress messages during creation
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: Requires complete game engine initialization, file system, and interface setup
+ *   Key Tests: Password validation, file creation, world generation pipeline, cleanup operations
+ *   Dependencies: Complete curses, file system, createworld(), rawmaterials(), write_data()
+ *   Mock Requirements: Extensive - curses, file I/O, world creation, data writing, system calls
+ *   Complexity: Very Complex (140 lines) - master orchestration with file management and full pipeline
  *
  * Notes:
  *   - Scenario reading (rflag=TRUE) is unimplemented
@@ -1590,6 +1654,14 @@ makeworld PARM_1 (int, rflag)
  *   - Calls bld_change() for parameter modifications
  *   - Sets global cfg_world flag based on mode
  *   - Updates world configuration based on user input
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: Requires complete interface, input system, and all configuration dependencies
+ *   Key Tests: Navigation controls, layout calculations, parameter editing, save/quit operations
+ *   Dependencies: Complete curses, bld_display(), bld_change(), input system, screen management
+ *   Mock Requirements: Extensive - full curses interface, keyboard input, screen layout, help system
+ *   Complexity: Very Complex (175 lines) - master interface with navigation, editing, and state management
  *
  * Notes:
  *   - Layout calculation handles 2-4 columns based on screen size

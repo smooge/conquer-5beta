@@ -506,6 +506,50 @@
 **Outcome**: Immediate completion, moved to completed files list
 **Impact**: Reduces Priority 1 workload, accelerates progress
 
+### configA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `zeroworld()` | B - Integration | Simple | Nation destruction loop requiring world.np[] array and dest_ntn() function | Integration testing |
+| `bld_defaults()` | A - Unit | Simple | Pure assignment function with predictable outputs and minimal dependencies | Unit testing |
+| `bld_item()` | B - Integration | Complex | Massive switch statement requiring curses interface and world configuration | Integration testing |
+| `bld_display()` | B - Integration | Simple | Layout function requiring curses and bld_item() for meaningful testing | Integration testing |
+| `in_and_check()` | A - Unit | Simple | Pure validation function with clear input/output contract and minimal dependencies | Unit testing |
+| `bld_change()` | C - System Level | Extremely Complex | Master input handler with 590+ lines and extensive system dependencies | System testing |
+| `bld_title()` | A - Unit | Simple | Simple display function with clear formatting logic and minimal dependencies | Unit testing |
+| `makeworld()` | C - System Level | Very Complex | Master world creation with complete file management and generation pipeline | System testing |
+| `bld_config()` | C - System Level | Very Complex | Master interface with navigation, editing, and complete state management | System testing |
+
+**FINAL STATUS**: ✅ **9 of 9 functions classified (100% COMPLETE)** ⭐
+
+**Final Category Distribution (All Functions 1-9)**:
+- **Category A (Unit)**: 3 functions (33%) - bld_defaults, in_and_check, bld_title
+- **Category B (Integration)**: 3 functions (33%) - zeroworld, bld_item, bld_display
+- **Category C (System Level)**: 3 functions (33%) - bld_change, makeworld, bld_config
+
+**Key Findings**:
+- **Perfect Category Balance**: Excellent distribution across all testing categories (33% each)
+- **Strong Unit Testing Pipeline**: 3 Category A functions ready for immediate unit testing
+- **Configuration Infrastructure**: Clean separation between utilities, interface, and master orchestration
+- **System Complexity**: Master functions (bld_change, makeworld, bld_config) require complete game engine
+
+**Architecture Analysis**:
+- **Configuration Utilities**: Pure functions (bld_defaults, in_and_check, bld_title) ideal for unit testing
+- **Interface Components**: Display functions (bld_item, bld_display) suitable for integration testing
+- **Master Controllers**: Complex orchestration functions requiring system-level testing
+- **Initialization Pipeline**: zeroworld() provides clean integration testing opportunity
+
+**Complete configA.c Testing Strategy**:
+- **Phase 1**: Unit test 3 Category A functions for immediate validation
+- **Phase 2**: Integration test 3 Category B functions with controlled interface setup
+- **Phase 3**: System test 3 Category C functions post-modernization
+- **Strategic Value**: Complete configuration management system from utilities to master orchestration
+
+**Sessions Completed**:
+- **Session 1**: Functions 1-6 (2025-09-20) - 6-function checkpoint strategy with mixed categories
+- **Session 2**: Functions 7-9 (2025-09-20) - Completion of remaining functions with system-level focus
+- **Achievement**: Second Priority 1 file completed with perfect category balance
+
 ### createA.c - COMPLETED ✅ - 100% COMPLETE
 
 | Function | Category | Complexity | Rationale | Testing Decision |
@@ -559,6 +603,91 @@
 - **Session 2**: Functions 7-9 (2025-09-20) - Helper functions, all Category B
 - **Session 3**: Function 10 (2025-09-20) - createworld() mega-function analysis
 - **Session 4**: Functions 11-16 (2025-09-20) - NPC nation builders and resource systems
+
+### npcA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `cpu_update()` | B - Integration | Simple | Placeholder AI with file I/O and nation dependencies | Integration testing |
+| `move_for_ntn()` | C - System Level | Complex | Central AI orchestration requiring complete game infrastructure | System testing |
+| `rover_value()` | A - Unit | Simple | Sector value calculation with clear input/output contract | Unit testing |
+| `build_rove()` | A - Unit | Simple | Trivial accumulator function with minimal dependencies | Unit testing |
+| `rove_loopfunc()` | B - Integration | Moderate | Multi-variable optimization requiring map infrastructure | Integration testing |
+| `rove_army()` | C - System Level | Complex | Multi-tier decision algorithm with extensive dependencies | System testing |
+
+**FINAL STATUS**: ✅ **6 of 6 functions classified (100% COMPLETE)** ⭐
+
+**Final Category Distribution (All Functions 1-6)**:
+- **Category A (Unit)**: 2 functions (33%) - rover_value, build_rove
+- **Category B (Integration)**: 2 functions (33%) - cpu_update, rove_loopfunc
+- **Category C (System Level)**: 2 functions (34%) - move_for_ntn, rove_army
+
+**Key Findings**:
+- **Perfect Balance**: Excellent distribution across all testing categories
+- **AI Infrastructure**: Complete NPC nation management from routing to movement
+- **Unit Testing Ready**: 2 Category A functions provide immediate testing opportunities
+- **Strategic Value**: Core AI decision-making and territory evaluation algorithms
+- **Complex Orchestration**: Master functions require complete game engine infrastructure
+
+**Architecture Analysis**:
+- **AI Routing System**: move_for_ntn() provides central orchestration for all AI behaviors
+- **Territory Evaluation**: rover_value() and build_rove() implement strategic sector analysis
+- **Movement Intelligence**: rove_army() demonstrates sophisticated decision algorithms
+- **Placeholder Infrastructure**: cpu_update() framework for future AI expansion
+- **Callback Patterns**: Multiple functions use callback pattern for map evaluation
+
+**Complete npcA.c Testing Strategy**:
+- **Phase 1**: Unit test 2 Category A functions for immediate validation of AI algorithms
+- **Phase 2**: Integration test 2 Category B functions with controlled AI infrastructure
+- **Phase 3**: System test 2 Category C functions post-modernization with complete game engine
+- **Strategic Value**: Foundation for comprehensive AI testing and validation
+
+**Session**: Complete File Analysis (2025-09-20) - All 6 functions classified in single session
+
+### monsterA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `monster_growth()` | B - Integration | Moderate | Requires complete world state setup with nations, armies, navies, cities | Integration testing |
+| `ev_test()` | A - Unit | Simple | Clear input/output contract with mockable dependencies for terrain evaluation | Unit testing |
+| `mn_cnt_type()` | A - Unit | Simple | Simple callback function with clear counting logic and mockable dependencies | Unit testing |
+| `mn_move_it()` | A - Unit | Simple | Simple callback with clear selection logic and mockable army position updates | Unit testing |
+| `monster_move_army()` | B - Integration | Moderate | Orchestrates multiple callback functions requiring map infrastructure coordination | Integration testing |
+| `upd_lizards()` | C - System Level | Complex | Complex behavioral AI requiring complete game infrastructure and tactical decisions | System testing |
+| `upd_savages()` | B - Integration | Moderate | Simpler AI pattern requiring army setup but manageable complexity | Integration testing |
+| `upd_nomads()` | B - Integration | Moderate | Similar to savages with specific terrain requirements but controlled complexity | Integration testing |
+| `upd_pirates()` | A - Unit | Simple | Trivial wrapper function calling only monster_growth(), easily mockable | Unit testing |
+
+**FINAL STATUS**: ✅ **9 of 9 functions classified (100% COMPLETE)** ⭐
+
+**Final Category Distribution (All Functions 1-9)**:
+- **Category A (Unit)**: 4 functions (44%) - ev_test, mn_cnt_type, mn_move_it, upd_pirates
+- **Category B (Integration)**: 4 functions (44%) - monster_growth, monster_move_army, upd_savages, upd_nomads
+- **Category C (System Level)**: 1 function (12%) - upd_lizards
+
+**Key Findings**:
+- **Excellent Unit Testing Pipeline**: 4 Category A functions ready for immediate testing (44% of file)
+- **Monster AI Architecture**: Complete monster behavior system from growth to tactical decisions
+- **Balanced Testing Distribution**: Strong unit testing foundation with manageable integration requirements
+- **Movement Intelligence**: Sophisticated two-phase relocation system with terrain preferences
+- **Behavioral Diversity**: Four distinct monster types with unique tactical patterns and complexity levels
+
+**Architecture Analysis**:
+- **Growth System**: monster_growth() provides foundation for all monster economic and military expansion
+- **Movement Intelligence**: Two-phase system (count + select) with terrain preference and random selection
+- **Behavioral Hierarchy**: From simple pirates (growth only) to complex lizards (tactical decision trees)
+- **Callback Patterns**: Sophisticated map evaluation using callback functions for movement decisions
+- **Terrain Integration**: Monster types have specific terrain preferences and movement patterns
+
+**Complete monsterA.c Testing Strategy**:
+- **Phase 1**: Unit test 4 Category A functions for immediate validation of movement algorithms and callbacks
+- **Phase 2**: Integration test 4 Category B functions with controlled monster nation and army infrastructure
+- **Phase 3**: System test 1 Category C function (upd_lizards) post-modernization with complete behavioral validation
+- **Strategic Value**: Foundation for comprehensive monster AI testing from utilities to complete behavioral systems
+
+**Sessions Completed**:
+- **Session 1**: Complete File Analysis (2025-09-20) - All 9 functions classified in single efficient session
+- **Achievement**: Fourth Priority 1 file completed with excellent unit testing opportunities (44% Category A)
 
 ---
 
@@ -784,7 +913,7 @@ Function identified for testing
 
 ## Remaining Files for Testing Documentation
 
-### Files Completed ✅ (10 files)
+### Files Completed ✅ (13 files)
 - ✅ **economyA.c** - 3 functions analyzed
 - ✅ **updateA.c** - 17 functions classified (100% complete)
 - ✅ **checkX.c** - 12 functions analyzed
@@ -795,6 +924,9 @@ Function identified for testing
 - ✅ **mainA.c** - 2 functions classified (100% complete)
 - ✅ **moveA.c** - 1 function classified (100% complete)
 - ✅ **magicA.c** - 0 functions (placeholder file with no implementation)
+- ✅ **configA.c** - 9 functions classified (100% complete)
+- ✅ **npcA.c** - 6 functions classified (100% complete)
+- ✅ **monsterA.c** - 9 functions classified (100% complete)
 
 ### Data-Only Files (No Functions) 📊 (5 files)
 - 📊 **dataA.c** - Global data definitions (fantasy names, world state, spell lists)
@@ -803,11 +935,11 @@ Function identified for testing
 - 📊 **dataX.c** - Core game configuration (races, materials, terrain, economics)
 - 📊 **dataG.c** - User interface data (display modes, UI options, screen layouts)
 
-### Priority 1: Core Game Engine (Recommended Next) 🎯 (5 files)
-- **createA.c** - World/game creation functions
-- **configA.c** - Configuration management
-- **npcA.c** - NPC management and AI
-- **monsterA.c** - Monster system
+### Priority 1: Core Game Engine (Recommended Next) 🎯 (1 file remaining)
+- ✅ **createA.c** - World/game creation functions (COMPLETED)
+- ✅ **configA.c** - Configuration management (COMPLETED)
+- ✅ **npcA.c** - NPC management and AI (COMPLETED)
+- ✅ **monsterA.c** - Monster system (COMPLETED)
 - **miscA.c** - Miscellaneous core utilities
 
 ### Priority 2: I/O and Data Management 📊 (7 files)

@@ -45,6 +45,14 @@
  *   - Increases material treasures in cities
  *   - Uses random number generation for probabilistic growth
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires complete world state initialization
+ *   Approach: Integration testing with minimal nation, army, navy, city setup
+ *   Key Tests: Growth rate calculations, probabilistic increases, boundary conditions
+ *   Dependencies: ntn_ptr, army/navy/city lists, rand_val(), growth constants
+ *   Mock Requirements: Nation structure, military units, random number generation
+ *   Complexity: Moderate - Multiple subsystem coordination with probabilistic logic
+ *
  * Notes:
  *   - Early return if no current nation (ntn_ptr == NULL)
  *   - Growth rates controlled by PMERCMONST, PMONSTER, and GROWTH constants
@@ -131,6 +139,14 @@ static int veg_type, ele_type;
  *   - Reads sector data from global sct array
  *   - Accesses global variables: veg_type, ele_type, country
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Clear input/output contract with mockable dependencies
+ *   Approach: Unit testing with mock sector data and global variables
+ *   Key Tests: Terrain validation, ownership logic, type matching, boundary conditions
+ *   Dependencies: sct array, veg_type/ele_type statics, country global
+ *   Mock Requirements: Sector data structure, global variables (veg_type, ele_type, country)
+ *   Complexity: Simple - Clear boolean logic with well-defined terrain criteria
+ *
  * Notes:
  *   - Rejects water sectors (ELE_WATER) and mountain peaks (ELE_PEAK)
  *   - Rejects wall-designated sectors (MAJ_WALL)
@@ -176,6 +192,14 @@ ev_test PARM_2(int, x, int, y)
  *   - Increments global_int counter for each valid sector
  *   - Calls ev_test() to determine sector suitability
  *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple callback function with clear counting logic
+ *   Approach: Unit testing with mock ev_test() and global_int verification
+ *   Key Tests: Counter increment, ev_test integration, coordinate processing
+ *   Dependencies: ev_test() function, global_int counter
+ *   Mock Requirements: Mock ev_test() return values, global_int initialization
+ *   Complexity: Simple - Straightforward callback with single responsibility
+ *
  * Notes:
  *   - Designed as callback for map_loop() function
  *   - Works in conjunction with mn_move_it() for two-phase relocation
@@ -211,6 +235,14 @@ mn_cnt_type PARM_2(int, x, int, y)
  *   - Modifies ARMY_XLOC and ARMY_YLOC when target sector is reached
  *   - Decrements global_int as countdown to selected sector
  *   - Updates current army position via global army_ptr
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple callback with clear selection logic
+ *   Approach: Unit testing with mock ev_test() and army position verification
+ *   Key Tests: Countdown logic, army relocation, coordinate assignment, ev_test integration
+ *   Dependencies: ev_test() function, global_int counter, army_ptr globals (ARMY_XLOC, ARMY_YLOC)
+ *   Mock Requirements: Mock ev_test(), global_int setup, mock army structure
+ *   Complexity: Simple - Clear countdown and assignment logic
  *
  * Notes:
  *   - Designed as callback for map_loop() function
@@ -251,6 +283,14 @@ mn_move_it PARM_2(int, x, int, y)
  *   - Modifies army position (ARMY_XLOC, ARMY_YLOC) if valid sector found
  *   - Uses global_int as working variable for counting and selection
  *   - Calls map_loop twice: once to count, once to select
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires map infrastructure and callback coordination
+ *   Approach: Integration testing with mock map_loop() and callback function verification
+ *   Key Tests: Two-phase operation, random selection, terrain preference handling
+ *   Dependencies: map_loop() function, callback functions (mn_cnt_type, mn_move_it), rand_val()
+ *   Mock Requirements: Mock map_loop(), army position, global variables, random functions
+ *   Complexity: Moderate - Orchestrates multiple callback functions with shared state
  *
  * Notes:
  *   - Search radius is fixed at 1 sector from current army position
@@ -293,6 +333,14 @@ monster_move_army PARM_2(int, vtype, int, etype)
  *   - Sets army status (garrison, defend, attack, sweep)
  *   - Relocates armies using monster_move_army()
  *   - Accesses and modifies global army_ptr chain
+ *
+ * Testing Notes:
+ *   Category: C (System Level) - Complex behavioral AI requiring complete game infrastructure
+ *   Approach: System testing with full game engine initialization and behavioral validation
+ *   Key Tests: AI decision trees, tactical preferences, size-based behavior, terrain adaptation
+ *   Dependencies: Complete world state, army management, fort detection, status system
+ *   Mock Requirements: Extensive - full game engine simulation impractical for unit testing
+ *   Complexity: Complex - Multi-tier decision algorithms with extensive game state dependencies
  *
  * Notes:
  *   - Small armies (< 200) and archers prefer defensive positions
@@ -373,6 +421,14 @@ upd_lizards PARM_0(void)
  *   - Relocates armies randomly (no terrain preference)
  *   - Accesses and modifies global army_ptr chain
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires army infrastructure but simpler than lizards
+ *   Approach: Integration testing with controlled army setup and status verification
+ *   Key Tests: Aggressive behavior, random movement probability, status assignment
+ *   Dependencies: World state, army management, monster_move_army(), status system
+ *   Mock Requirements: Army structure, monster_growth(), movement functions, random generation
+ *   Complexity: Moderate - Simple behavioral pattern with army infrastructure requirements
+ *
  * Notes:
  *   - Simplest monster behavior: always aggressive (ST_ATTACK)
  *   - 2/3 probability of movement each turn (rand_val(3))
@@ -423,6 +479,14 @@ upd_savages PARM_0(void)
  *   - Relocates armies to mountain terrain (ELE_MOUNTAIN)
  *   - Accesses and modifies global army_ptr chain
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Similar complexity to savages with terrain preferences
+ *   Approach: Integration testing with controlled army setup and terrain preference validation
+ *   Key Tests: Sweep behavior, mountain terrain preference, status assignment
+ *   Dependencies: World state, army management, monster_move_army(), status system
+ *   Mock Requirements: Army structure, monster_growth(), movement functions, terrain constants
+ *   Complexity: Moderate - Simple behavioral pattern with specific terrain requirements
+ *
  * Notes:
  *   - Tactical preference: sweep operations for systematic clearing
  *   - Terrain preference: mountain elevation (ELE_MOUNTAIN)
@@ -468,6 +532,14 @@ upd_nomads PARM_0(void)
  * Side Effects:
  *   - Calls monster_growth() for population/resource expansion
  *   - Expands naval fleets and increases material treasures
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Trivial wrapper function, easily testable
+ *   Approach: Unit testing with mock monster_growth() function
+ *   Key Tests: Function call verification, parameter passing, return behavior
+ *   Dependencies: monster_growth() function only
+ *   Mock Requirements: Mock monster_growth() implementation
+ *   Complexity: Simple - Single function call wrapper with minimal logic
  *
  * Notes:
  *   - Simplest implementation: only growth, no movement or tactics

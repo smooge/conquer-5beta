@@ -59,6 +59,14 @@ NPCINFO_STRUCT military_stats;
  *   - Would call strategic AI functions if NOT_DONE was undefined
  *   - Accesses nation's aggression level for update messaging
  *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with controlled file I/O and nation setup
+ *   Key Tests: Message formatting, aggressname array access, nation validation
+ *   Dependencies: Global ntn_ptr, fupdate file stream, aggressname array, n_aggression()
+ *   Mock Requirements: File I/O mocking for fupdate, nation structure setup
+ *   Complexity: Simple - Minimal complexity but requires I/O infrastructure
+ *
  * Notes:
  *   - Currently incomplete implementation (marked "not fully implemented")
  *   - Framework exists for: strategy assignment, sector duties, buildup,
@@ -121,6 +129,14 @@ cpu_update PARM_0(void)
  *   - Calls cpu_update() for normal computer-controlled nations
  *   - Writes update messages to fupdate file stream
  *   - Validates nation pointer consistency with global country variable
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: System testing with complete game engine initialization
+ *   Key Tests: Nation routing logic, monster type detection, error handling
+ *   Dependencies: Complete nation system, monster update functions, file I/O
+ *   Mock Requirements: Extensive - all monster update functions, nation structures
+ *   Complexity: Complex - Central orchestration requiring full game infrastructure
  *
  * Notes:
  *   - Early return if invalid nation data (NULL pointer or UNOWNED country)
@@ -185,6 +201,14 @@ move_for_ntn PARM_0(void)
  *   - Reads sector data from global sct array
  *   - Calls attract_val() to calculate base attractiveness
  *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with mock sector data and attract_val() function
+ *   Key Tests: Coordinate validation, ownership checks, attractiveness calculations
+ *   Dependencies: Global sct array, XY_ONMAP macro, attract_val() function
+ *   Mock Requirements: Sector data structure, attract_val() function
+ *   Complexity: Simple - Clear input/output with minimal dependencies
+ *
  * Notes:
  *   - Only considers unowned sectors (sct[x][y].owner == UNOWNED)
  *   - Rejects out-of-bounds coordinates (uses XY_ONMAP validation)
@@ -229,6 +253,14 @@ static int rvn_total;
  *   - Adds sector's rover value to global rvn_total accumulator
  *   - Calls rover_value() to get sector's individual attractiveness
  *
+ * Testing Notes:
+ *   Category: A - Unit
+ *   Approach: Unit testing with mock rover_value() and global accumulator
+ *   Key Tests: Accumulator behavior, rover_value() integration, callback pattern
+ *   Dependencies: Global rvn_total variable, rover_value() function
+ *   Mock Requirements: rover_value() function, global variable state
+ *   Complexity: Simple - Trivial accumulator function with clear behavior
+ *
  * Notes:
  *   - Designed as callback for map_loop() function
  *   - Works with rove_loopfunc() to evaluate sector neighborhoods
@@ -265,6 +297,14 @@ build_rove PARM_2(int, x, int, y)
  *     * rv_mntotal - individual value of best neighborhood sector
  *   - Calls map_loop with build_rove to calculate neighborhood totals
  *   - Uses rvn_total as working variable for neighborhood calculations
+ *
+ * Testing Notes:
+ *   Category: B - Integration
+ *   Approach: Integration testing with map_loop and rover evaluation infrastructure
+ *   Key Tests: Best sector tracking, neighborhood evaluation, global state updates
+ *   Dependencies: Global variables (rv_*), map_loop(), rover_value(), build_rove()
+ *   Mock Requirements: Map infrastructure, sector evaluation functions
+ *   Complexity: Moderate - Multi-variable optimization with neighborhood analysis
  *
  * Notes:
  *   - Designed as callback for map_loop() function called from rove_army()
@@ -320,6 +360,14 @@ rove_loopfunc PARM_2(int, x, int, y)
  *   - Calls map_loop with rove_loopfunc to evaluate movement options
  *   - Uses npc_movearmy() to execute actual movement
  *   - May perform multiple random movement attempts (up to 100 tries)
+ *
+ * Testing Notes:
+ *   Category: C - System Level
+ *   Approach: System testing with complete army and movement infrastructure
+ *   Key Tests: Movement decision logic, random fallback, flight mode handling
+ *   Dependencies: Complete army system, movement infrastructure, map functions
+ *   Mock Requirements: Extensive - army structures, movement system, map functions
+ *   Complexity: Complex - Multi-tier decision algorithm with extensive dependencies
  *
  * Notes:
  *   - Early return if army is NULL, has low movement (< 5), or current sector valuable
