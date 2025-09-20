@@ -295,7 +295,47 @@
 - Alliance merging requires diplomatic system integration making it system-level complexity
 - Side joining operations have well-defined interfaces suitable for integration testing
 
-**Next Steps**: Continue with functions 19-24 to approach completion of Phase 3 documentation coverage
+**Next Steps**: Continue with functions 25-29 to complete Phase 3 documentation coverage for combatA.c
+
+### combatA.c - ANALYZED ✅ (Functions 19-24)
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `set_hostilities()` | B - Integration | Moderate | Diplomatic hostility calculation with world state dependencies | Integration testing |
+| `order_attacks()` | A - Unit | Simple | Pure sorting algorithm with minimal dependencies | Unit testing |
+| `add_fightlist()` | A - Unit | Simple | Simple list management with clear interface | Unit testing |
+| `calc_strengths()` | B - Integration | Moderate | Mathematical calculations with function dependencies | Integration testing |
+| `give_zombies()` | C - System Level | Complex | Multi-stage unit creation with extensive global dependencies | System testing |
+| `luck_string()` | A - Unit | Simple | Pure calculation function with no dependencies | Unit testing |
+
+**Sessions**:
+- Functions 1-6: New Methodology Demonstration (2025-09-20)
+- Functions 7-12: 6-Function Checkpoint Strategy (2025-09-20)
+- Functions 13-18: 6-Function Checkpoint Strategy Continued (2025-09-20)
+- Functions 19-24: 6-Function Checkpoint Strategy Continued (2025-09-20)
+**Progress**: 24 of 29 functions classified (83% complete)
+
+**Category Distribution (Functions 1-24)**:
+- **Category A (Unit)**: 8 functions (33%) - add_cbmail, init_combat_roll, combat_roll, cb_destval, calc_relsize, order_attacks, add_fightlist, luck_string
+- **Category B (Integration)**: 11 functions (46%) - new_cunit, distance_add, cbval_army, cbval_navy, cbval_cvn, cb_value, get_cside, get_combat, join_sides, set_hostilities, calc_strengths
+- **Category C (System)**: 5 functions (21%) - combat_init, damage_unit, battle_grouping, merge_allies, give_zombies
+
+**Key Findings from Functions 19-24**:
+- **Strong Unit Testing Pipeline**: Three more functions added to Category A (order_attacks, add_fightlist, luck_string)
+- **Hostility System**: set_hostilities() provides diplomatic integration point between nations and combat
+- **Undead Generation**: give_zombies() represents one of the most complex functions requiring full game state
+- **Utility Functions**: Multiple simple utility functions suitable for immediate unit testing
+
+**Architecture Notes for Functions 19-24**:
+- Combat orchestration functions (set_hostilities, calc_strengths) bridge diplomatic and mathematical systems
+- Pure algorithms (order_attacks, luck_string) maintain clean interfaces ideal for testing
+- List management (add_fightlist) demonstrates simple data structure operations
+- Unit generation (give_zombies) showcases complex multi-system coordination requirements
+
+**Testing Implications for Functions 19-24**:
+- **Unit Testing Ready**: 8 total Category A functions provide strong foundation for immediate testing
+- **Integration Candidates**: 11 functions suitable for focused integration testing with controlled setup
+- **System Testing Deferral**: 5 functions require post-modernization system testing approach
 
 ---
 

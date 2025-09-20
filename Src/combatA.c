@@ -2113,6 +2113,16 @@ merge_allies PARM_1(COMBAT_PTR, cb_ptr)
  *   - Sets both ATTACKER and SWEEPER hostility ratings
  *   - Return value indicates if any battles will occur
  *   - Essential for determining which units fight which
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires world state and diplomatic data
+ *   Approach: Integration testing with mock world and nation structures
+ *   Key Tests: Null inputs, diplomatic status effects, ownership bonuses,
+ *             hostility threshold detection, rstat array updates
+ *   Dependencies: Global world.np[], cb_xloc/cb_yloc, sector ownership,
+ *                nation diplomatic status arrays, DIP_BELLICOSE constant
+ *   Mock Requirements: Mock world with nations, sectors, diplomatic relations
+ *   Complexity: Moderate - diplomatic logic with global state dependencies
  */
 /* SET_HOSTILITIES -- Set all of the hostility ratings */
 static int
@@ -2193,6 +2203,15 @@ set_hostilities PARM_2(COMBAT_PTR, cb_ptr, int, num_there)
  *   - att_wgt[0] will contain index of highest priority target
  *   - Returns early if invalid input parameters
  *   - TODO: Replace with more efficient sorting algorithm
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Pure sorting algorithm with minimal dependencies
+ *   Approach: Unit tests with various hostility patterns and edge cases
+ *   Key Tests: Empty arrays, single element, pre-sorted/reverse sorted,
+ *             duplicate values, boundary conditions, null parameters
+ *   Dependencies: Only input parameters and basic integer comparison
+ *   Mock Requirements: None - uses provided data structures directly
+ *   Complexity: Simple - isolated sorting algorithm ideal for unit testing
  */
 /* ORDER_ATTACKS -- Quickie sort to determine attack preference */
 static void
@@ -2250,6 +2269,15 @@ order_attacks PARM_4(CSIDE_PTR, cs_ptr, int, whichatk,
  *   - Silently ignores addition if list is full
  *   - Used for generating battle news reports
  *   - List size limited by MAX_COMBAT constant
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple list management with clear interface
+ *   Approach: Unit tests covering all list states and edge cases
+ *   Key Tests: Empty list addition, duplicate prevention, list overflow,
+ *             boundary values, UNOWNED marker handling, MAX_COMBAT limits
+ *   Dependencies: MAX_COMBAT constant and UNOWNED definition
+ *   Mock Requirements: None - operates on provided integer arrays
+ *   Complexity: Simple - isolated list utility perfect for unit testing
  */
 /* ADD_FIGHTLIGHT -- List the fighters in the battle */
 static void
@@ -2295,6 +2323,15 @@ add_fightlist PARM_2(int *, list, int, who)
  *   - Called before battle resolution to update combat values
  *   - Essential for accurate damage calculations
  *   - Uses cb_value() and cb_destval() for individual units
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Depends on combat value calculation functions
+ *   Approach: Integration testing with mock combat units and calculation functions
+ *   Key Tests: Empty unit lists, zero-size units, single/multiple units,
+ *             weighted average calculations, value function integration
+ *   Dependencies: calc_relsize(), cb_value(), cb_destval(), unit structures
+ *   Mock Requirements: Mock combat units with controlled sizes and types
+ *   Complexity: Moderate - mathematical calculations with function dependencies
  */
 /* CALC_STRENGTHS -- Compute the strength and bonuses of the side */
 static void
@@ -2363,6 +2400,17 @@ calc_strengths PARM_3(int, type, int, othtype, CSIDE_PTR, targ_ptr)
  *   - Nazguls created from zombie_rulers (max 1 per battle)
  *   - New units inherit status and location from existing undead
  *   - Handles memory allocation failures gracefully
+ *
+ * Testing Notes:
+ *   Category: C (System) - Complex unit creation with extensive global dependencies
+ *   Approach: System testing requiring full game state and army infrastructure
+ *   Key Tests: No undead present, various undead combinations, memory failures,
+ *             type validation, unit creation flow, global state consistency
+ *   Dependencies: Global army_ptr, ntn_ptr, country, world.np[], zombie_type,
+ *                lich_type, wraith_type, nazgul_type, msg system, crt_army(),
+ *                new_cunit(), unit status functions, random number generation
+ *   Mock Requirements: Extensive - army system, nations, unit types, messaging
+ *   Complexity: Complex - multi-stage unit creation with global state modification
  */
 /* GIVE_ZOMBIES -- Slap some undead onto a side */
 static long
@@ -2683,6 +2731,15 @@ give_zombies PARM_3(CUNIT_PTR, cu_list, int, dead_pool, int, dam_swing)
  *   - Higher rolls = worse luck: 80+="horrid"
  *   - Used in combat reporting for player feedback
  *   - Scale: superb, great, good, fair, average, poor, bad, worse, horrid
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Pure calculation function with no dependencies
+ *   Approach: Unit tests covering all luck ranges and boundary conditions
+ *   Key Tests: Each luck threshold (0, 19, 20, 29, 30, etc.), boundary values,
+ *             negative inputs, values > 100, string content verification
+ *   Dependencies: None - completely self-contained string generation
+ *   Mock Requirements: None - requires only integer input parameter
+ *   Complexity: Simple - ideal unit testing candidate with deterministic output
  */
 /* LUCK_STRING -- Return a string based on the luck roll of combat */
 static char *
