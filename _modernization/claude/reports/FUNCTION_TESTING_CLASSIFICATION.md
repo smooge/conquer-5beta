@@ -423,6 +423,65 @@
 - **Phase 3**: System test 8 Category C functions post-modernization
 - **Future**: Implement and test grab_battles() after distance combat implementation
 
+### mainA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `fname_char()` | A - Unit | Trivial | Pure character validation function, platform-specific logic | Unit testing |
+| `main()` | D - Mock Intensive | Complex | Entry point with extensive system dependencies and file I/O | Mock-heavy testing |
+
+**FINAL STATUS**: ✅ **2 of 2 functions classified (100% COMPLETE)** ⭐
+
+**Category Distribution**:
+- **Category A (Unit)**: 1 function (50%) - fname_char
+- **Category D (Mock Intensive)**: 1 function (50%) - main
+
+**Key Findings**:
+- **Perfect Unit Testing Candidate**: fname_char() is a trivial pure function ideal for unit testing
+- **Main Function Complexity**: main() requires extensive mocking of system calls, file I/O, and getopt
+- **Platform Variations**: fname_char() handles platform-specific path separators correctly
+- **Entry Point Testing**: main() demonstrates typical complexity of program entry points
+
+**Architecture Notes**:
+- Program initialization and command-line parsing in main()
+- Clean separation of utility functions (fname_char) from system integration
+- Well-documented functions with comprehensive Testing Notes sections
+- Both functions follow PARM_ macro patterns for K&R compatibility
+
+**Testing Strategy**:
+- **Phase 1**: Unit test fname_char() for immediate validation of character validation logic
+- **Phase 2**: Mock-intensive testing of main() for command-line parsing and initialization
+- **System Testing**: Integration testing of main() with actual file system for full validation
+
+### moveA.c - COMPLETED ✅ - 100% COMPLETE
+
+| Function | Category | Complexity | Rationale | Testing Decision |
+|----------|----------|------------|-----------|------------------|
+| `npc_movearmy()` | A - Unit | Simple | Well-contained movement logic with clear inputs/outputs | Unit testing |
+
+**FINAL STATUS**: ✅ **1 of 1 function classified (100% COMPLETE)** ⭐
+
+**Category Distribution**:
+- **Category A (Unit)**: 1 function (100%) - npc_movearmy
+
+**Key Findings**:
+- **Perfect Unit Testing Candidate**: npc_movearmy() has clear input validation, movement calculations, and boundary checking
+- **Minimal Dependencies**: Function operates on global army_ptr but logic is well-contained and mockable
+- **Excellent Test Coverage**: Function supports comprehensive testing including input validation, movement costs, and flying vs ground modes
+- **Clear Interface**: Well-defined parameters (x, y coordinates) and return values (TRUE/FALSE)
+
+**Architecture Notes**:
+- NPC army movement system with comprehensive input validation
+- Supports both ground and flying unit movement modes
+- Clean separation between validation logic and state updates
+- Well-documented with comprehensive Testing Notes section already included
+
+**Testing Strategy**:
+- **Phase 1**: Unit test npc_movearmy() for immediate validation of movement algorithms
+- **Key Test Areas**: Input validation, movement cost calculations, boundary checking, flying vs ground movement
+- **Mock Requirements**: army_ptr, map_within(), unit_flight(), move_cost(), set_grploc(), set_grpmove()
+- **High ROI**: Simple function with clear test scenarios and good coverage potential
+
 ---
 
 ## Quick Reference Guidelines
@@ -643,8 +702,110 @@ Function identified for testing
 6. **Function Documentation**: Ensure all functions include Testing Notes sections
 7. **Reference Standard**: Use as primary reference for all testing-related decisions
 
+---
+
+## Remaining Files for Testing Documentation
+
+### Files Completed ✅ (9 files)
+- ✅ **economyA.c** - 3 functions analyzed
+- ✅ **updateA.c** - 17 functions classified (100% complete)
+- ✅ **checkX.c** - 12 functions analyzed
+- ✅ **magicX.c** - 11 functions analyzed
+- ✅ **sectorA.c** - 19 functions analyzed
+- ✅ **convertX.c** - 15 functions analyzed
+- ✅ **combatA.c** - 29 functions classified (100% complete)
+- ✅ **mainA.c** - 2 functions classified (100% complete)
+- ✅ **moveA.c** - 1 function classified (100% complete)
+
+### Data-Only Files (No Functions) 📊 (5 files)
+- 📊 **dataA.c** - Global data definitions (fantasy names, world state, spell lists)
+- 📊 **datamilX.c** - Military unit definitions (army units, naval vessels, combat stats)
+- 📊 **datamagX.c** - Magic system data (spells, magical powers, class definitions)
+- 📊 **dataX.c** - Core game configuration (races, materials, terrain, economics)
+- 📊 **dataG.c** - User interface data (display modes, UI options, screen layouts)
+
+### Priority 1: Core Game Engine (Recommended Next) 🎯 (6 files)
+- **magicA.c** - Magic system core logic
+- **createA.c** - World/game creation functions
+- **configA.c** - Configuration management
+- **npcA.c** - NPC management and AI
+- **monsterA.c** - Monster system
+- **miscA.c** - Miscellaneous core utilities
+
+### Priority 2: I/O and Data Management 📊 (7 files)
+- **ioX.c** - Core I/O operations
+- **iodataX.c** - Data I/O management
+- **memoryX.c** - Memory management utilities
+- **executeX.c** - Command execution
+- **computeX.c** - Computational utilities
+- **selectX.c** - Selection utilities
+- **unitsX.c** - Unit management utilities
+
+### Priority 3: User Interface and Display 🖥️ (17 files)
+- **mainG.c** - Main GUI interface
+- **displayG.c** - Display management
+- **infoG.c** - Information display
+- **armyG.c** - Army interface
+- **caravanG.c** - Caravan interface
+- **customG.c** - Customization interface
+- **emailG.c** - Email interface
+- **enlistG.c** - Enlistment interface
+- **hexmapG.c** - Hex map display
+- **ieditG.c** - Interactive editing
+- **ioG.c** - I/O interface
+- **iodataG.c** - Data I/O interface
+- **jointG.c** - Joint operations interface
+- **keybindG.c** - Key binding interface
+- **magicG.c** - Magic interface
+- **mailG.c** - Mail interface
+- **miscG.c** - Miscellaneous interface
+- **moveG.c** - Movement interface
+
+### Priority 4: Game Content and Systems 🎮 (7 files)
+- **jointA.c** - Joint operations logic
+- **mailA.c** - Mail system
+- **mailX.c** - Mail utilities
+- **customX.c** - Customization utilities
+- **hexmapX.c** - Hex map utilities
+- **miscX.c** - Miscellaneous utilities
+- **moveX.c** - Movement utilities
+
+### Priority 5: Specialized and Interface Components 🔧 (11 files)
+- **navyG.c** - Navy interface
+- **ntninfoG.c** - Nation info interface
+- **pagerG.c** - Pager interface
+- **regionG.c** - Region interface
+- **selectG.c** - Selection interface
+- **sectorG.c** - Sector interface
+- **sectorX.c** - Sector utilities
+- **time_ckG.c** - Time checking interface
+- **xferG.c** - Transfer interface
+- **adduserA.c** - User addition utilities
+- **vms.c** - VMS compatibility layer
+
+### Total Remaining: 48 files (Data-only files excluded from testing documentation)
+
+### Recommended Approach
+
+**Phase 3 Continuation Strategy:**
+1. **Complete Priority 1 first** (9 files) - Core game engine functions are most critical
+2. **Focus on A-suffixed files** in Priority 1 - Core logic functions likely to have more Category A functions
+3. **Use 6-function checkpoint strategy** for large files to manage context usage
+4. **Document one complete file per session** to maintain momentum and clear progress tracking
+
+**Priority 1 Recommended Order:**
+1. **moveA.c** - Continue from partial analysis (already started)
+2. **magicA.c** - Magic core logic (companion to completed magicX.c)
+3. **createA.c** - World creation (likely self-contained functions)
+4. **configA.c** - Configuration (likely many utility functions)
+5. **npcA.c** - NPC logic
+6. **monsterA.c** - Monster system
+7. **miscA.c** - Miscellaneous utilities (likely many Category A candidates)
+
+---
+
 **File Status**: ✅ **ACTIVE MASTER REFERENCE** - Primary source for all testing strategy decisions
 
 Generated by Claude (claude-sonnet-4@20250514)
 Created: 2025-09-17 - Function Testing Classification System
-Updated: 2025-09-20 - Consolidated Master Reference with updateA.c completion
+Updated: 2025-09-20 - Added remaining files tracking and prioritization strategy
