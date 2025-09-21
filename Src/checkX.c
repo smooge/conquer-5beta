@@ -923,7 +923,36 @@ show_user PARM_1(int, fdval)
   }
 }
 
-/* CANSEELOGIN -- If the current user is able to view the info */
+/*
+ * canseelogin - Check if current user can view login information
+ *
+ * Determines whether the current user has permission to view detailed
+ * login information for other users. Checks against world settings
+ * and special administrative privileges.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Non-zero (TRUE) if user can view login info, 0 (FALSE) otherwise
+ *
+ * Side Effects:
+ *   None (read-only permission check)
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple permission logic with minimal dependencies
+ *   Approach: Unit testing with mock world state and login configurations
+ *   Key Tests: Permission scenarios, admin privileges, hide_login setting
+ *   Dependencies: World configuration, loginname global, demigod setting
+ *   Mock Requirements: Mock world configuration and login names
+ *   Complexity: Simple - Boolean logic with string comparisons
+ *
+ * Notes:
+ *   - Only compiled when LISTUSERS is defined
+ *   - Returns TRUE if hide_login is disabled OR user is admin/demigod
+ *   - Uses string comparison for privilege checking
+ *   - Part of user information visibility control system
+ */
 static int
 canseelogin PARM_0(void)
 {
@@ -953,6 +982,14 @@ canseelogin PARM_0(void)
  *   - Scans all nations for active login sessions
  *   - Displays user details if LISTUSERS is enabled and permissions allow
  *   - Counts and reports total active users
+ *
+ * Testing Notes:
+ *   Category: C (System) - Requires file system, nation data, and user tracking
+ *   Approach: System testing with comprehensive file system and user session simulation
+ *   Key Tests: User listing, file locking detection, permission checking, output formatting
+ *   Dependencies: File system, nation arrays, user session files, lock files
+ *   Mock Requirements: Mock file system with lock files, nation data, user sessions
+ *   Complexity: Complex - Multi-system integration with file I/O and user management
  *
  * Notes:
  *   - Uses file locking to detect active sessions
@@ -1096,6 +1133,14 @@ who_is_on PARM_0(void)
  *   - Removes stale lock files automatically (timestamp method)
  *   - May terminate program on compiler optimization detection
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires file system operations and locking mechanisms
+ *   Approach: Integration testing with mock file system and lock scenarios
+ *   Key Tests: Lock acquisition, lock detection, stale lock cleanup, error handling
+ *   Dependencies: File system, lock mechanisms (flock/lockf), timestamp functions
+ *   Mock Requirements: Mock file system with locking capabilities, time functions
+ *   Complexity: Complex - System-level file locking with multiple strategies
+ *
  * Notes:
  *   - Critical for preventing data corruption in multi-user environment
  *   - Two locking strategies: FILELOCK (real locks) vs timestamps
@@ -1191,6 +1236,14 @@ check_lock PARM_2 (char *, filename, int, keeplock)
  *   - Removes the lock file from filesystem
  *   - Logs warning if removal fails
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires file system operations and file descriptors
+ *   Approach: Integration testing with mock file system and file descriptor management
+ *   Key Tests: File descriptor closing, file unlinking, error handling and reporting
+ *   Dependencies: File system access, valid file descriptors, update logging
+ *   Mock Requirements: Mock file system with unlinkable files, file descriptors
+ *   Complexity: Moderate - File cleanup with error handling and logging
+ *
  * Notes:
  *   - Always call this to properly release locks
  *   - Essential for preventing lock file accumulation
@@ -1221,6 +1274,14 @@ kill_lock PARM_2(int, fid, char *, fname)
  *
  * Side Effects:
  *   None
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires system user database access
+ *   Approach: Integration testing with mock user database and system calls
+ *   Key Tests: Valid user detection, invalid user rejection, platform differences
+ *   Dependencies: System user database (getpwnam), platform-specific code
+ *   Mock Requirements: Mock user database and getpwnam system call
+ *   Complexity: Moderate - System integration with platform-specific behavior
  *
  * Notes:
  *   - Uses getpwnam() on Unix systems for validation
@@ -1259,6 +1320,14 @@ user_exists PARM_1 (char *, who)
  * Side Effects:
  *   - May allocate memory if outname is NULL
  *   - Calls abrt() on malloc failure
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires system user database and process info access
+ *   Approach: Integration testing with mock user database and process information
+ *   Key Tests: User ID retrieval, buffer management, memory allocation, error handling
+ *   Dependencies: System user database (getpwuid), process information (getuid), memory allocation
+ *   Mock Requirements: Mock user database, process info, memory management functions
+ *   Complexity: Moderate - System integration with memory management and platform differences
  *
  * Notes:
  *   - Uses getpwuid(getuid()) or cuserid() depending on availability
