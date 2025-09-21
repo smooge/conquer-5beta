@@ -1158,7 +1158,37 @@ new_cvn PARM_0(void)
   return(c1_ptr);
 }
 
-/* NEW_CITY -- Allocate space for a new city */
+/*
+ * new_city - Allocate memory for a city structure
+ *
+ * Allocates memory for a CITY structure used to represent cities
+ * with population, production, and infrastructure attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated CITY structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(CITY_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core city allocation for game civilization system
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 CITY_PTR
 new_city PARM_0(void)
 {
@@ -1175,7 +1205,37 @@ new_city PARM_0(void)
   return(c1_ptr);
 }
 
-/* NEW_ITEM -- Allocate space for a new item */
+/*
+ * new_item - Allocate memory for an item/commodity structure
+ *
+ * Allocates memory for an ITEM structure used to represent commodities,
+ * resources, and trade goods with economic and inventory attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated ITEM structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(ITEM_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core item allocation for game economic system
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 ITEM_PTR
 new_item PARM_0(void)
 {
@@ -1192,7 +1252,37 @@ new_item PARM_0(void)
   return(i1_ptr);
 }
 
-/* NEW_NTN -- Allocate space for a new nation */
+/*
+ * new_ntn - Allocate memory for a nation structure
+ *
+ * Allocates memory for a NTN (nation) structure used to represent
+ * player nations with complete game state, unit lists, and attributes.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly allocated NTN structure
+ *   Function terminates program via abrt() if allocation fails
+ *
+ * Side Effects:
+ *   - Allocates sizeof(NTN_STRUCT) bytes
+ *   - Calls errormsg() and abrt() on allocation failure
+ *   - Memory is NOT initialized - caller must set values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple allocation function with clear dependencies
+ *   Approach: Unit tests with mock malloc for allocation failure testing
+ *   Key Tests: Successful allocation, malloc failure handling, return pointer validation
+ *   Dependencies: malloc(), errormsg(), abrt()
+ *   Mock Requirements: Mock malloc to simulate failure conditions
+ *   Complexity: Simple - basic allocation pattern with error handling
+ *
+ * Notes:
+ *   - Core nation allocation for game player management
+ *   - Caller responsible for initialization and cleanup
+ *   - Consistent with other new_* allocation functions
+ */
 NTN_PTR
 new_ntn PARM_0(void)
 {
@@ -1229,6 +1319,14 @@ new_ntn PARM_0(void)
  *   - Deallocates army structure memory via free()
  *   - Calls army_sort(FALSE) to maintain list order and proximity links
  *   - Returns silently if unit ID not found
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Complex leader/follower relationships requiring army list setup
+ *   Approach: Integration testing with controlled army list setup and relationship management
+ *   Key Tests: Simple removal, leader removal with followers, follower removal, head/middle/tail removal, invalid ID
+ *   Dependencies: ntn_ptr->army_list, army structures with leader/follower relationships, army_sort()
+ *   Mock Requirements: Mock army structures with leadership chains, mock army_sort(), mock nation pointer
+ *   Complexity: Complex - leader/follower relationship management with list manipulation
  *
  * Notes:
  *   - Handles complex leader/follower relationships automatically
@@ -1292,7 +1390,39 @@ dest_army PARM_1(int, idnum)
   }
 }
 
-/* DEST_NAVY -- Remove a navy unit from the navy list */
+/*
+ * dest_navy - Remove and deallocate a naval unit from the nation
+ *
+ * Removes a naval unit from the nation's navy list, deallocates memory,
+ * and maintains list integrity. Simpler than dest_army as naval units
+ * do not have complex leader/follower relationships.
+ *
+ * Parameters:
+ *   idnum - ID number of the naval unit to remove
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes unit from ntn_ptr->navy_list linked list
+ *   - Deallocates navy structure memory via free()
+ *   - Returns silently if unit ID not found
+ *   - Sets next pointer to NULL before freeing
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Navy list management requiring list setup
+ *   Approach: Integration testing with controlled navy list setup
+ *   Key Tests: Head removal, middle removal, tail removal, invalid ID, empty list
+ *   Dependencies: ntn_ptr->navy_list, navy structures with navyid field
+ *   Mock Requirements: Mock navy structures with IDs, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - standard linked list removal with memory management
+ *
+ * Notes:
+ *   - Simpler than dest_army (no leader/follower relationships)
+ *   - Essential for naval unit destruction during combat or disbanding
+ *   - Does not require list resorting after removal
+ *   - Maintains list integrity with proper pointer management
+ */
 void
 dest_navy PARM_1(int, idnum)
 {
@@ -1331,7 +1461,39 @@ dest_navy PARM_1(int, idnum)
   }
 }
 
-/* DEST_CVN -- Remove a caravan from the caravan list */
+/*
+ * dest_cvn - Remove and deallocate a caravan unit from the nation
+ *
+ * Removes a caravan unit from the nation's caravan list, deallocates memory,
+ * and maintains list integrity. Handles trade unit destruction with proper
+ * memory management and list maintenance.
+ *
+ * Parameters:
+ *   idnum - ID number of the caravan unit to remove
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes unit from ntn_ptr->cvn_list linked list
+ *   - Deallocates caravan structure memory via free()
+ *   - Returns silently if unit ID not found
+ *   - Sets next pointer to NULL before freeing
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Caravan list management requiring list setup
+ *   Approach: Integration testing with controlled caravan list setup
+ *   Key Tests: Head removal, middle removal, tail removal, invalid ID, empty list
+ *   Dependencies: ntn_ptr->cvn_list, caravan structures with cvnid field
+ *   Mock Requirements: Mock caravan structures with IDs, mock nation pointer (ntn_ptr)
+ *   Complexity: Moderate - standard linked list removal with memory management
+ *
+ * Notes:
+ *   - Similar to dest_navy (no complex relationships)
+ *   - Essential for caravan destruction during combat or economic changes
+ *   - Does not require list resorting after removal
+ *   - Maintains list integrity with proper pointer management
+ */
 void
 dest_cvn PARM_1(int, idnum)
 {
