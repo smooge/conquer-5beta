@@ -2003,7 +2003,41 @@ crt_navy PARM_0(void)
   return (n1_ptr);
 }
 
-/* CRT_CVN -- Add a new caravan to the nation list */
+/*
+ * crt_cvn - Create and add a new caravan to the nation list
+ *
+ * Creates a new caravan unit with automatically assigned ID and adds it
+ * to the current nation's caravan list. Assigns the lowest available ID
+ * number starting from 1, checking for existing ID conflicts.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly created caravan on success
+ *   NULL if nation is NULL or maximum ID limit reached
+ *
+ * Side Effects:
+ *   - Allocates memory for new caravan via new_cvn()
+ *   - Clears allocated memory to zero
+ *   - Sets default values: ID (auto-assigned), STAT=ST_CARRY, EFF=100
+ *   - Adds caravan to nation's cvn_list as head node
+ *   - Calls cvn_sort() to maintain sorted order
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Caravan creation requiring nation state and list management
+ *   Approach: Integration testing with controlled nation setup and caravan list validation
+ *   Key Tests: NULL nation check, ID assignment sequence, list insertion, sorting verification, limit testing
+ *   Dependencies: ntn_ptr global, new_cvn(), clr_memory(), cvn_sort(), MAX_IDTYPE constant
+ *   Mock Requirements: Mock nation pointer, mock new_cvn allocation, mock cvn_sort
+ *   Complexity: Moderate - ID collision detection with list management and sorting
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr global to be set
+ *   - ID assignment starts at 1 and increments to avoid conflicts
+ *   - Returns NULL on ID exhaustion (>= MAX_IDTYPE)
+ *   - New caravan inserted at list head for efficiency
+ */
 CVN_PTR
 crt_cvn PARM_0(void)
 {
@@ -2040,7 +2074,41 @@ crt_cvn PARM_0(void)
   return (cvn_tptr);
 }
 
-/* CRT_ITEM -- Add a new item to the nation list */
+/*
+ * crt_item - Create and add a new item to the nation list
+ *
+ * Creates a new item with automatically assigned ID and adds it to the
+ * current nation's item list. Assigns the lowest available ID number
+ * starting from 1, checking for existing ID conflicts.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly created item on success
+ *   NULL if nation is NULL or maximum ID limit reached
+ *
+ * Side Effects:
+ *   - Allocates memory for new item via new_item()
+ *   - Clears allocated memory to zero
+ *   - Sets default values: ID (auto-assigned), EFF=100
+ *   - Adds item to nation's item_list as head node
+ *   - Calls item_sort() to maintain sorted order
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Item creation requiring nation state and list management
+ *   Approach: Integration testing with controlled nation setup and item list validation
+ *   Key Tests: NULL nation check, ID assignment sequence, list insertion, sorting verification, limit testing
+ *   Dependencies: ntn_ptr global, new_item(), clr_memory(), item_sort(), MAX_IDTYPE constant
+ *   Mock Requirements: Mock nation pointer, mock new_item allocation, mock item_sort
+ *   Complexity: Moderate - ID collision detection with list management and sorting
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr global to be set
+ *   - ID assignment starts at 1 and increments to avoid conflicts
+ *   - Returns NULL on ID exhaustion (>= MAX_IDTYPE)
+ *   - New item inserted at list head for efficiency
+ */
 ITEM_PTR
 crt_item PARM_0(void)
 {
@@ -2076,7 +2144,42 @@ crt_item PARM_0(void)
   return (i1_ptr);
 }
 
-/* CRT_CITY -- Add a new city to the nation city list */
+/*
+ * crt_city - Create and add a new city to the nation city list
+ *
+ * Creates a new city with the specified name and automatically assigned ID,
+ * adding it to the current nation's city list. Ensures city name uniqueness
+ * and assigns the lowest available city ID number.
+ *
+ * Parameters:
+ *   cname - Name for the new city (must be unique across all nations)
+ *
+ * Returns:
+ *   Pointer to newly created city on success
+ *   NULL if nation is NULL or city name already exists
+ *
+ * Side Effects:
+ *   - Checks city name uniqueness via citybyname()
+ *   - Allocates memory for new city via new_city()
+ *   - Copies cname to city->name field
+ *   - Sets default values: cityid (auto-assigned), pop=0
+ *   - Adds city to nation's city_list as head node
+ *   - Calls city_sort() to maintain sorted order
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - City creation requiring nation state, name validation, and list management
+ *   Approach: Integration testing with controlled nation setup and city list validation
+ *   Key Tests: NULL nation check, duplicate name rejection, ID assignment sequence, list insertion, sorting verification
+ *   Dependencies: ntn_ptr global, citybyname(), new_city(), strcpy(), city_sort()
+ *   Mock Requirements: Mock nation pointer, mock citybyname lookup, mock new_city allocation, mock city_sort
+ *   Complexity: Moderate - Name uniqueness checking with ID collision detection and list management
+ *
+ * Notes:
+ *   - Requires valid ntn_ptr global to be set
+ *   - City names must be globally unique across all nations
+ *   - ID assignment starts at 1 and increments to avoid conflicts
+ *   - New city inserted at list head for efficiency
+ */
 CITY_PTR
 crt_city PARM_1(char *, cname)
 {
@@ -2133,8 +2236,45 @@ crt_city PARM_1(char *, cname)
   return (c1_ptr);
 }
 
-/* DEST_NTN -- This routines frees up the memory associated with a
-                  nation structure.                                   */
+/*
+ * dest_ntn - Destroy a nation and free all associated memory
+ *
+ * Completely destroys a nation specified by name, freeing all memory
+ * associated with its armies, navies, cities, caravans, and items.
+ * Removes the nation from the world array without realigning diplomacy.
+ *
+ * Parameters:
+ *   nname - Name of the nation to destroy
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Searches world.np[] array to find nation by name
+ *   - Sets world.np[index] to NULL to unlink nation
+ *   - Frees all armies in nation's army_list
+ *   - Frees all navies in nation's navy_list
+ *   - Frees all cities in nation's city_list
+ *   - Frees all caravans in nation's cvn_list
+ *   - Frees all items in nation's item_list
+ *   - Frees the nation structure itself
+ *   - Does NOT realign diplomacy vectors (caller's responsibility)
+ *
+ * Testing Notes:
+ *   Category: C (System) - Nation destruction requiring full world state and complex cleanup
+ *   Approach: System testing with complete world initialization and memory validation
+ *   Key Tests: Valid nation destruction, non-existent nation handling, empty lists, full cleanup verification
+ *   Dependencies: world.np[] array, all entity lists (army, navy, city, cvn, item), strcmp(), free()
+ *   Mock Requirements: Mock world structure, mock entity lists with memory tracking
+ *   Complexity: Complex - Multi-entity cleanup with world state modification and memory management
+ *
+ * Notes:
+ *   - Performs linear search through world.np[] array
+ *   - Returns silently if nation not found
+ *   - Memory cleanup is thorough but doesn't handle diplomacy realignment
+ *   - Critical for game state management and memory leak prevention
+ *   - Order of cleanup: unlink nation, then free all entities
+ */
 void
 dest_ntn PARM_1 (char *, nname)
 {
@@ -2258,7 +2398,37 @@ dest_ntn PARM_1 (char *, nname)
 /* element to keep track of switched nations */
 static ntntype slot_val[ABSMAXNTN];
 
-/* NTN_SWAP -- Swap two nations and keep track of the swap */
+/*
+ * ntn_swap - Swap two nations in world array and track the swap
+ *
+ * Swaps two nation pointers in the world.np[] array and maintains
+ * corresponding swap tracking in the slot_val[] array. Used as a
+ * helper function for nation sorting operations.
+ *
+ * Parameters:
+ *   left - Index of first nation to swap
+ *   right - Index of second nation to swap
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Swaps world.np[left] and world.np[right] pointers
+ *   - Swaps slot_val[left] and slot_val[right] tracking values
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Simple array swapping with clear dependencies
+ *   Approach: Unit tests with mock world array and slot tracking validation
+ *   Key Tests: Basic swap operation, boundary indices, swap tracking verification
+ *   Dependencies: world.np[] array, slot_val[] static array
+ *   Mock Requirements: Mock world structure, mock slot_val array
+ *   Complexity: Simple - straightforward array element swapping
+ *
+ * Notes:
+ *   - Static function used internally by ntn_qsort()
+ *   - Essential for maintaining nation order tracking during sorts
+ *   - Both nation pointers and tracking values must be swapped together
+ */
 static void
 ntn_swap PARM_2(int, left, int, right)
 {
@@ -2276,7 +2446,39 @@ ntn_swap PARM_2(int, left, int, right)
   slot_val[right] = value;
 }
 
-/* NTN_QSORT -- This routine is from K&R Second Edition; Page 110 */
+/*
+ * ntn_qsort - Recursive quicksort for nations by name
+ *
+ * Implements the quicksort algorithm from K&R Second Edition (Page 110)
+ * to sort nations alphabetically by name. Uses ntn_swap() to maintain
+ * both nation pointer order and tracking information.
+ *
+ * Parameters:
+ *   left - Left boundary index for sorting range
+ *   right - Right boundary index for sorting range
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Recursively sorts world.np[] array in specified range
+ *   - Uses str_test() for string comparison
+ *   - Calls ntn_swap() to maintain tracking during swaps
+ *
+ * Testing Notes:
+ *   Category: A (Unit) - Recursive sorting algorithm with clear dependencies
+ *   Approach: Unit tests with mock nation arrays and string comparison validation
+ *   Key Tests: Empty range, single element, sorted array, reverse sorted, random order, boundary conditions
+ *   Dependencies: world.np[] array, str_test(), ntn_swap()
+ *   Mock Requirements: Mock world structure with nation names, mock str_test comparison function
+ *   Complexity: Simple - standard quicksort implementation with clear recursive structure
+ *
+ * Notes:
+ *   - Static function used internally by ntn_sort()
+ *   - Implements classic K&R quicksort algorithm
+ *   - Partition element selection uses midpoint strategy
+ *   - Recursive termination when left >= right
+ */
 static void
 ntn_qsort PARM_2(int, left, int, right)
 {
@@ -2441,6 +2643,14 @@ ntn_sort PARM_0(void)
  *     * Monsters: start at 50/100
  *     * Scouts/Agents: start at 200/1000
  *   - Calls startnumber() for each unit type class
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Unit numbering system requiring game state and configuration setup
+ *   Approach: Integration testing with controlled initialization state and numbering verification
+ *   Key Tests: Default numbering ranges, SAVE_SPACE flag variations, slot allocation verification, startnumber calls
+ *   Dependencies: resetnumbers(), newslotnumber(), startnumber(), SAVE_SPACE compilation flag
+ *   Mock Requirements: Mock numbering system functions, mock compilation flag testing
+ *   Complexity: Moderate - Configuration-dependent initialization with multiple subsystem calls
  *
  * Notes:
  *   - Compilation flag SAVE_SPACE affects starting numbers

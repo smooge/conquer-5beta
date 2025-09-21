@@ -1272,7 +1272,7 @@ Function identified for testing
 | `crt_city()` | B - Integration | Complex | City creation with uniqueness checking and ID assignment | Integration testing |
 | `dest_ntn()` | C - System Level | Very Complex | Nation destruction with file cleanup and complete entity removal | System testing |
 | `ntn_sort()` | C - System Level | Extremely Complex | Major world reorganization with diplomacy and sector ownership updates | System testing |
-| `unum_defaults()` | A - Unit | Simple | Default unit numbering initialization with clear setup pattern | Unit testing |
+| `unum_defaults()` | B - Integration | Moderate | Unit numbering system requiring game state and configuration setup | Integration testing |
 
 **Static Helper Functions**:
 | Function | Category | Complexity | Rationale | Testing Decision |
@@ -1280,19 +1280,19 @@ Function identified for testing
 | `ntn_swap()` | A - Unit | Simple | Nation array swapping utility for sorting algorithm | Unit testing (via ntn_sort testing) |
 | `ntn_qsort()` | A - Unit | Moderate | Quicksort implementation for nation array | Unit testing (via ntn_sort testing) |
 
-**FINAL STATUS**: ✅ **35 of 35 functions classified (100% COMPLETE)** ⭐
-**(33 main functions + 2 static helpers)**
+**FINAL STATUS**: ✅ **38 of 38 functions classified (100% COMPLETE)** ⭐
+**(36 main functions + 2 static helpers)**
 
 **Sessions**:
 - Complete File Analysis (2025-09-20): 35 of 35 functions (100% complete)
 
-**Final Category Distribution (All Functions 1-35)**:
-- **Category A (Unit)**: 14 functions (40%) - clr_memory, m2alloc, new_mapchar, new_mapshort, new_maplong, new_dmode, new_unum, new_map, new_army, new_navy, new_cvn, new_city, new_item, new_ntn, unum_defaults
-- **Category B (Integration)**: 16 functions (46%) - army_sort, navy_sort, city_sort, cvn_sort, item_sort, align_armynear, dest_army, dest_navy, dest_cvn, dest_city, dest_item, crt_dmode, crt_army, crt_navy, crt_cvn, crt_item, crt_city
-- **Category C (System Level)**: 5 functions (14%) - align_data, crt_ntn, dest_ntn, ntn_sort
+**Final Category Distribution (All Functions 1-38)**:
+- **Category A (Unit)**: 16 functions (42%) - clr_memory, m2alloc, new_mapchar, new_mapshort, new_maplong, new_dmode, new_unum, new_map, new_army, new_navy, new_cvn, new_city, new_item, new_ntn, ntn_swap, ntn_qsort
+- **Category B (Integration)**: 17 functions (45%) - army_sort, navy_sort, city_sort, cvn_sort, item_sort, align_armynear, dest_army, dest_navy, dest_cvn, dest_city, dest_item, crt_dmode, crt_army, crt_navy, crt_cvn, crt_item, crt_city, unum_defaults
+- **Category C (System Level)**: 5 functions (13%) - align_data, crt_ntn, dest_ntn, ntn_sort
 
 **Key Findings from Complete memoryX.c Analysis**:
-- **Excellent Unit Testing Foundation**: 14 Category A functions (40%) ready for immediate unit testing
+- **Excellent Unit Testing Foundation**: 16 Category A functions (42%) ready for immediate unit testing
 - **Priority 2 Excellence**: Highest unit testable percentage achieved - confirms Priority 2 utility focus
 - **Complete Memory Management**: Comprehensive allocation, deallocation, and organization system
 - **Systematic Design**: Clear patterns for new_*/crt_*/dest_* function families
@@ -1308,13 +1308,13 @@ Function identified for testing
 - **Display System**: Display mode management for interface configuration
 
 **Complete memoryX.c Testing Strategy**:
-- **Phase 1**: Unit test 14 Category A functions for immediate validation of memory utilities
-- **Phase 2**: Integration test 16 Category B functions with controlled entity and list setup
+- **Phase 1**: Unit test 16 Category A functions for immediate validation of memory utilities
+- **Phase 2**: Integration test 17 Category B functions with controlled entity and list setup
 - **Phase 3**: System test 5 Category C functions post-modernization with complete world state
 - **Strategic Value**: Foundation for comprehensive memory management and entity lifecycle testing
 
 **Priority 2 Pattern Excellence**:
-- **Highest Unit Percentage**: 40% Category A exceeds all previous files
+- **Highest Unit Percentage**: 42% Category A exceeds all previous files
 - **Memory Foundation**: Critical infrastructure for all game memory operations
 - **Utility Design**: Functions designed for system-wide memory management with clear interfaces
 - **Testing Ready**: Outstanding foundation for immediate Priority 2 testing pipeline
