@@ -1532,7 +1532,38 @@ dest_cvn PARM_1(int, idnum)
   }
 }
 
-/* DEST_CITY -- Remove a city from the national city list */
+/*
+ * dest_city - Remove a city from the national city list
+ *
+ * Searches through the nation's city list to find a city with the given
+ * name and removes it from the linked list. Performs string-based lookup
+ * using str_test() for case-insensitive comparison.
+ *
+ * Parameters:
+ *   cname - Name of the city to remove (null-terminated string)
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes city from ntn_ptr->city_list if found
+ *   - Frees memory allocated to the city structure
+ *   - Updates linked list pointers to maintain integrity
+ *   - No effect if city name not found or ntn_ptr is NULL
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - City list removal requiring nation state setup
+ *   Approach: Integration testing with controlled city list setup and name-based lookup
+ *   Key Tests: City found (head/middle/tail removal), city not found, NULL nation, empty list, NULL name
+ *   Dependencies: ntn_ptr->city_list, city structures with name field, str_test() function
+ *   Mock Requirements: Mock nation pointer with city list, mock str_test comparison
+ *   Complexity: Moderate - string comparison with linked list manipulation
+ *
+ * Notes:
+ *   - Uses str_test() for case-insensitive name comparison
+ *   - Handles removal from any position in the linked list
+ *   - Memory management: frees city structure after removal
+ */
 void
 dest_city PARM_1(char *, cname)
 {
@@ -1571,7 +1602,38 @@ dest_city PARM_1(char *, cname)
   }
 }
 
-/* DEST_ITEM -- Remove an item from the national commodity list */
+/*
+ * dest_item - Remove an item from the national commodity list
+ *
+ * Searches through the nation's item list to find an item with the given
+ * ID number and removes it from the linked list. Performs integer-based
+ * lookup for precise item identification.
+ *
+ * Parameters:
+ *   idnum - Unique ID number of the item to remove
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Removes item from ntn_ptr->item_list if found
+ *   - Frees memory allocated to the item structure
+ *   - Updates linked list pointers to maintain integrity
+ *   - No effect if item ID not found or ntn_ptr is NULL
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Item list removal requiring nation state setup
+ *   Approach: Integration testing with controlled item list setup and ID-based lookup
+ *   Key Tests: Item found (head/middle/tail removal), item not found, NULL nation, empty list, invalid ID
+ *   Dependencies: ntn_ptr->item_list, item structures with itemid field
+ *   Mock Requirements: Mock nation pointer with item list, mock item structures
+ *   Complexity: Moderate - integer comparison with linked list manipulation
+ *
+ * Notes:
+ *   - Uses itemid field for exact numeric matching
+ *   - Handles removal from any position in the linked list
+ *   - Memory management: frees item structure after removal
+ */
 void
 dest_item PARM_1(int, idnum)
 {
@@ -1610,7 +1672,40 @@ dest_item PARM_1(int, idnum)
   }
 }
 
-/* CRT_DMODE -- Initialize a new display mode into display mode list */
+/*
+ * crt_dmode - Initialize a new display mode into display mode list
+ *
+ * Creates or retrieves a display mode structure with the given name. If a
+ * display mode with the same name already exists, returns the existing one.
+ * Otherwise creates a new mode with default settings and adds it to the
+ * global display mode list.
+ *
+ * Parameters:
+ *   dmodename - Name of the display mode to create or retrieve
+ *
+ * Returns:
+ *   Pointer to DMODE structure (existing or newly created)
+ *   NULL if allocation fails (handled by new_dmode() abort)
+ *
+ * Side Effects:
+ *   - May allocate new DMODE structure via new_dmode()
+ *   - Adds new mode to global dmode_list if not found
+ *   - Initializes all display settings to default values
+ *   - Updates dmode_tptr global pointer during traversal
+ *
+ * Testing Notes:
+ *   Category: C (System) - Display mode management requiring global state initialization
+ *   Approach: System testing with full display mode system initialization
+ *   Key Tests: New mode creation, existing mode retrieval, empty list, list management
+ *   Dependencies: dmode_list global, dmode_tptr global, new_dmode(), strcmp()
+ *   Mock Requirements: Extensive mocking of display system globals and structures
+ *   Complexity: Complex - global state management with display mode configuration
+ *
+ * Notes:
+ *   - Manages global display mode linked list
+ *   - Initializes comprehensive display settings (focus, highlight, style, target)
+ *   - Uses string comparison for mode name matching
+ */
 DMODE_PTR
 crt_dmode PARM_1(char *, dmodename)
 {
@@ -1651,7 +1746,44 @@ crt_dmode PARM_1(char *, dmodename)
   return(d1_ptr);
 }
 
-/* CRT_NTN -- Initialize a new nation into the world */
+/*
+ * crt_ntn - Initialize a new nation into the world
+ *
+ * Creates a new nation structure and integrates it into the global world
+ * state. Assigns a unique nation slot, initializes all nation attributes
+ * to default values, and establishes diplomatic relationships with existing
+ * nations based on monster/player status.
+ *
+ * Parameters:
+ *   ntnname - Name of the new nation (copied to nation structure)
+ *   actval - Activity value indicating nation type (player/monster/NPC)
+ *
+ * Returns:
+ *   Pointer to newly created NTN structure
+ *   NULL if maximum nations reached (ABSMAXNTN exceeded)
+ *
+ * Side Effects:
+ *   - Allocates new NTN structure via new_ntn()
+ *   - Assigns nation to first available slot in world.np[] array
+ *   - Sets global_int to the assigned nation number
+ *   - Initializes all nation lists (army, navy, city, item, caravan) to NULL
+ *   - Sets up diplomatic status with all existing nations
+ *   - Copies global login name and password to nation
+ *
+ * Testing Notes:
+ *   Category: C (System) - Nation creation requiring full world state initialization
+ *   Approach: System testing with complete world state setup and nation management
+ *   Key Tests: First nation creation, maximum nations, diplomatic setup, attribute initialization
+ *   Dependencies: world.np[] array, global_int, loginname, world.passwd, bute_info[], various globals
+ *   Mock Requirements: Complete world state mocking, all global variables and structures
+ *   Complexity: Complex - comprehensive world state management with diplomatic system
+ *
+ * Notes:
+ *   - Manages global nation allocation in world.np[] array
+ *   - Establishes automatic war status between monsters and other nations
+ *   - Initializes all nation attributes from bute_info[] configuration
+ *   - Sets default capital position to world center
+ */
 NTN_PTR
 crt_ntn PARM_2(char *, ntnname, int, actval)
 {
@@ -1712,8 +1844,42 @@ crt_ntn PARM_2(char *, ntnname, int, actval)
   return(n1_ptr);
 }
 
-/* CRT_ARMY -- Build an army unit assigning an id number to it
-                  based on the type of the new unit.              */
+/*
+ * crt_army - Build an army unit assigning an ID number based on unit type
+ *
+ * Creates a new army unit of the specified type and assigns it a unique
+ * ID number within the appropriate range for that unit type. Initializes
+ * the unit with default values and adds it to the nation's army list in
+ * sorted order.
+ *
+ * Parameters:
+ *   utype - Unit type code determining ID range and unit characteristics
+ *
+ * Returns:
+ *   Pointer to newly created ARMY structure
+ *   NULL if nation is NULL, ID range exhausted, or allocation fails
+ *
+ * Side Effects:
+ *   - Allocates new ARMY structure via new_army()
+ *   - Assigns unique armyid via find_newarmynum()
+ *   - Adds unit to ntn_ptr->army_list at head position
+ *   - Calls army_sort(FALSE) to maintain list order
+ *   - Initializes all army attributes to default values
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Army creation requiring nation state and ID management
+ *   Approach: Integration testing with controlled nation setup and unit ID tracking
+ *   Key Tests: Various unit types, ID assignment, list management, maximum ID limits
+ *   Dependencies: ntn_ptr, find_newarmynum(), new_army(), army_sort(), set_speed()
+ *   Mock Requirements: Mock nation pointer, mock ID generation, mock army list management
+ *   Complexity: Moderate - unit creation with ID management and list integration
+ *
+ * Notes:
+ *   - Uses find_newarmynum() for type-specific ID assignment
+ *   - Enforces MAX_IDTYPE limit to prevent ID overflow
+ *   - Maintains sorted army list via army_sort()
+ *   - Initializes unit status to ST_DEFEND with normal speed
+ */
 ARMY_PTR
 crt_army PARM_1(int, utype)
 {
@@ -1760,7 +1926,41 @@ crt_army PARM_1(int, utype)
   return(a1_ptr);
 }
 
-/* CRT_NAVY -- Add a new navy to the nation list */
+/*
+ * crt_navy - Add a new navy to the nation list
+ *
+ * Creates a new naval unit and assigns it the lowest available ID number
+ * starting from EMPTY_HOLD + 1. Initializes the navy with default values
+ * and adds it to the nation's navy list in sorted order.
+ *
+ * Parameters:
+ *   None
+ *
+ * Returns:
+ *   Pointer to newly created NAVY structure
+ *   NULL if nation is NULL or ID range exhausted (>= MAX_IDTYPE)
+ *
+ * Side Effects:
+ *   - Allocates new NAVY structure via new_navy()
+ *   - Assigns lowest available navyid starting from EMPTY_HOLD + 1
+ *   - Adds unit to ntn_ptr->navy_list at head position
+ *   - Calls navy_sort() to maintain list order
+ *   - Initializes all navy attributes and ship arrays to default values
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Navy creation requiring nation state and ID management
+ *   Approach: Integration testing with controlled nation setup and naval ID tracking
+ *   Key Tests: First navy creation, ID collision avoidance, list management, maximum ID limits
+ *   Dependencies: ntn_ptr, new_navy(), navy_sort(), NSHP_NUMBER constant
+ *   Mock Requirements: Mock nation pointer, mock navy list management, mock ship arrays
+ *   Complexity: Moderate - naval unit creation with ID collision detection and list integration
+ *
+ * Notes:
+ *   - Scans existing navy list to find lowest available ID
+ *   - Initializes all ship types and efficiency arrays
+ *   - Sets default status to ST_CARRY for transport operations
+ *   - Maintains sorted navy list via navy_sort()
+ */
 NAVY_PTR
 crt_navy PARM_0(void)
 {

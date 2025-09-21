@@ -340,10 +340,18 @@
 
 **Next Steps**: Continue with functions 25-29 to complete Phase 3 documentation coverage for combatA.c
 
-### memoryX.c - ANALYZED ✅ (Functions 19-24)
+### memoryX.c - ANALYZED ✅ (Functions 25-30)
 
 | Function | Category | Complexity | Rationale | Testing Decision |
 |----------|----------|------------|-----------|------------------|
+| `dest_city()` | B - Integration | Moderate | City list removal requiring nation state and string comparison | Integration testing |
+| `dest_item()` | B - Integration | Moderate | Item list removal requiring nation state and ID lookup | Integration testing |
+| `crt_dmode()` | C - System Level | Complex | Display mode management requiring global state initialization | System testing |
+| `crt_ntn()` | C - System Level | Complex | Nation creation requiring full world state and diplomatic system | System testing |
+| `crt_army()` | B - Integration | Moderate | Army creation requiring nation state and ID management | Integration testing |
+| `crt_navy()` | B - Integration | Moderate | Navy creation requiring nation state and ID collision detection | Integration testing |
+
+**Previous Functions**:
 | `new_city()` | A - Unit | Simple | Basic allocation function with clear malloc pattern | Unit testing |
 | `new_item()` | A - Unit | Simple | Basic allocation function with clear malloc pattern | Unit testing |
 | `new_ntn()` | A - Unit | Simple | Basic allocation function with clear malloc pattern | Unit testing |
@@ -356,29 +364,31 @@
 - Functions 7-12: Entity sorting + map utilities (2025-09-20)
 - Functions 13-18: Structure allocation foundation (2025-09-20)
 - Functions 19-24: Allocation completion + destruction start (2025-09-21)
-**Progress**: 24 of 35 functions classified (69% complete)
+- Functions 25-30: Destruction completion + creation start (2025-09-21)
+**Progress**: 30 of 35 functions classified (86% complete)
 
-**Category Distribution (Functions 1-24)**:
-- **Category A (Unit)**: 14 functions (58%) - new_memory, new_dmode, new_unum, new_map, new_army, new_navy, new_cvn, new_mapchar, new_mapshort, new_maplong, new_city, new_item, new_ntn, and 1 other
-- **Category B (Integration)**: 9 functions (38%) - army_sort, navy_sort, cvn_sort, item_sort, align_armynear, dest_army, dest_navy, dest_cvn, and 1 other
-- **Category C (System)**: 1 function (4%) - set_memory (complete initialization)
+**Category Distribution (Functions 1-30)**:
+- **Category A (Unit)**: 14 functions (47%) - new_memory, new_dmode, new_unum, new_map, new_army, new_navy, new_cvn, new_mapchar, new_mapshort, new_maplong, new_city, new_item, new_ntn, and 1 other
+- **Category B (Integration)**: 13 functions (43%) - army_sort, navy_sort, cvn_sort, item_sort, align_armynear, dest_army, dest_navy, dest_cvn, dest_city, dest_item, crt_army, crt_navy, and 1 other
+- **Category C (System)**: 3 functions (10%) - set_memory, crt_dmode, crt_ntn
 
-**Key Findings from Functions 19-24**:
-- **Allocation Completion**: Functions 19-21 complete the new_* allocation pattern with excellent unit testing opportunities
-- **Destruction Pattern Start**: Functions 22-24 begin dest_* pattern with increasing complexity (army > navy/caravan)
-- **Leadership Complexity**: dest_army() stands out as most complex destruction function due to leader/follower relationships
-- **Unit Testing Excellence**: Three more Category A functions continue memoryX.c's exceptional unit testing foundation
+**Key Findings from Functions 25-30**:
+- **Destruction Pattern Completion**: dest_city() and dest_item() complete the dest_* removal system with consistent linked list patterns
+- **Creation System Introduction**: crt_* functions introduce complex entity creation requiring full game state initialization
+- **Complexity Escalation**: crt_dmode() and crt_ntn() represent system-level complexity requiring global state management
+- **Integration Balance**: crt_army() and crt_navy() maintain integration-level complexity with nation state dependencies
 
-**Architecture Notes for Functions 19-24**:
-- Allocation functions (new_city, new_item, new_ntn) maintain consistent malloc/error pattern
-- Destruction functions show complexity hierarchy: dest_army (complex leadership) > dest_navy/dest_cvn (standard removal)
-- Memory management patterns demonstrate systematic approach to resource lifecycle
-- Clear separation between simple allocation and complex relationship management
+**Architecture Notes for Functions 25-30**:
+- Destruction functions (dest_city, dest_item) maintain consistent list removal patterns with type-specific lookup
+- Creation functions show complexity hierarchy: crt_ntn > crt_dmode > crt_army/crt_navy (creation complexity)
+- System-level functions require comprehensive world state initialization and global variable management
+- Integration functions balance entity creation with manageable state dependencies
 
-**Testing Implications for Functions 19-24**:
-- **Exceptional Unit Testing Foundation**: 14 total Category A functions provide strongest unit testing base in Priority 2 files
-- **Integration Testing Opportunities**: 9 functions suitable for controlled integration testing with list management
-- **memoryX.c Leading Excellence**: Highest Category A percentage (58%) confirms exceptional unit testing suitability
+**Testing Implications for Functions 25-30**:
+- **Continued Unit Testing Foundation**: 14 Category A functions maintain exceptional unit testing base (47% of total)
+- **Integration Testing Growth**: 13 functions suitable for controlled integration testing (43% of total)
+- **System Testing Requirements**: 3 functions require full system state for meaningful testing (10% of total)
+- **memoryX.c Overall Excellence**: Balanced distribution with strong unit testing foundation and manageable complexity scaling
 
 ### combatA.c - ANALYZED ✅ (Functions 19-24)
 
