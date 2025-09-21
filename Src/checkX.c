@@ -103,6 +103,14 @@ extern struct passwd *getpwuid();
  *   - Removes invalid entities via dest_* functions
  *   - Logs all violations and fixes to update file
  *
+ * Testing Notes:
+ *   Category: C (System) - Requires full game engine initialization
+ *   Approach: System testing with comprehensive world state validation
+ *   Key Tests: Nation validation, army/navy/caravan integrity, cross-reference checks
+ *   Dependencies: Complete world state, all game entities, nation arrays
+ *   Mock Requirements: Full game world initialization required
+ *   Complexity: Complex - Comprehensive data validation and automatic fixing
+ *
  * Notes:
  *   - Automatically fixes many data integrity issues
  *   - Can remove units that violate fundamental constraints
@@ -624,6 +632,14 @@ verify_ntn PARM_2( char *, __file__, int, __line__ )
  *   - Prevents ownership of water sectors (except by unowned)
  *   - Logs all violations and corrections to update file
  *
+ * Testing Notes:
+ *   Category: C (System) - Requires full game world initialization
+ *   Approach: System testing with comprehensive world map validation
+ *   Key Tests: Sector validation, tradegood verification, population limits, ownership rules
+ *   Dependencies: Complete world map, sector data structures, tradegood definitions
+ *   Mock Requirements: Full world map initialization required
+ *   Complexity: Complex - Comprehensive map validation and automatic fixing
+ *
  * Notes:
  *   - Processes entire world map (MAPX * MAPY sectors)
  *   - Critical for preventing invalid map states
@@ -701,6 +717,14 @@ verify_sct PARM_2(char *, __file__, int, __line__ )
  *   - Calls verify_sct() to check all sector data
  *   - Indirectly logs all violations and fixes via sub-functions
  *
+ * Testing Notes:
+ *   Category: C (System) - Requires full game engine initialization
+ *   Approach: System testing with comprehensive world validation
+ *   Key Tests: Complete data integrity verification, coordination of all validators
+ *   Dependencies: Complete world state, all game data structures
+ *   Mock Requirements: Full game world initialization required
+ *   Complexity: Complex - Master coordination function for all validation
+ *
  * Notes:
  *   - Central coordination point for all data validation
  *   - Used during updates and debug verification
@@ -733,6 +757,14 @@ verify_data PARM_2( char *, __file__, int, __line__ )
  *   - Prints location information to update log
  *   - Calls verify_data() for complete integrity check
  *
+ * Testing Notes:
+ *   Category: B (Integration) - Debug utility with data verification dependency
+ *   Approach: Integration testing with file system and debug infrastructure
+ *   Key Tests: Debug output verification, data verification integration
+ *   Dependencies: File system access, debug build configuration, verify_data()
+ *   Mock Requirements: Mock file system for debug output testing
+ *   Complexity: Moderate - Debug utility with simple trace and verification
+ *
  * Notes:
  *   - Only compiled in DEBUG builds
  *   - Useful for tracking down data corruption sources
@@ -752,7 +784,38 @@ checkout PARM_2 ( char *, file, int, line )
 extern int gethostname(), ttyslot();
 #endif /* UNAME */
 
-/* STORE_USER -- Store information about the current user */
+/*
+ * store_user - Store current user session information to file descriptor
+ *
+ * Collects and writes current user session information including hostname,
+ * login name, terminal information, and timestamp to a specified file
+ * descriptor. Used for tracking active users in multi-user environments.
+ *
+ * Parameters:
+ *   fdval - Open file descriptor to write user information to
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Writes user session data to file descriptor fdval
+ *   - Logs warnings to update file if write operations fail
+ *   - Queries system for hostname, terminal name, and timestamp
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires system calls and file operations
+ *   Approach: Integration testing with mock file descriptors and system info
+ *   Key Tests: User info collection, file writing, error handling
+ *   Dependencies: File descriptors, system hostname, terminal info, time functions
+ *   Mock Requirements: Mock file descriptors, system calls (uname, gethostname, ttyname)
+ *   Complexity: Moderate - System integration with file I/O and error handling
+ *
+ * Notes:
+ *   - Only compiled when LISTUSERS is defined
+ *   - Uses platform-specific code for hostname detection (UNAME vs gethostname)
+ *   - Builds formatted string with user@host, terminal, and timestamp
+ *   - Writes both string length and string data to file descriptor
+ */
 static void
 store_user PARM_1(int, fdval)
 {
@@ -804,7 +867,38 @@ store_user PARM_1(int, fdval)
   }
 }
 
-/* SHOW_USER -- Display the user information stored within the file */
+/*
+ * show_user - Read and display user session information from file descriptor
+ *
+ * Reads previously stored user session information from a file descriptor
+ * and displays it to stdout. Companion function to store_user() for
+ * retrieving and displaying user tracking data.
+ *
+ * Parameters:
+ *   fdval - Open file descriptor to read user information from
+ *
+ * Returns:
+ *   None (void function)
+ *
+ * Side Effects:
+ *   - Reads user session data from file descriptor fdval
+ *   - Outputs user information to stdout via printf
+ *   - Silent failure if read operations fail (no error reporting)
+ *
+ * Testing Notes:
+ *   Category: B (Integration) - Requires file operations and I/O systems
+ *   Approach: Integration testing with mock file descriptors and output capture
+ *   Key Tests: File reading, data display, error handling (silent failures)
+ *   Dependencies: File descriptors, readable data, stdout access
+ *   Mock Requirements: Mock file descriptors with test data, output capture
+ *   Complexity: Moderate - File I/O with minimal error handling
+ *
+ * Notes:
+ *   - Only compiled when LISTUSERS is defined
+ *   - Expects data format written by store_user() (length + string)
+ *   - Returns silently on read errors (no error logging)
+ *   - Companion function to store_user() for user tracking display
+ */
 static void
 show_user PARM_1(int, fdval)
 {

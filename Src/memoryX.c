@@ -2522,6 +2522,14 @@ ntn_qsort PARM_2(int, left, int, right)
  *   - Prints progress messages to update log
  *   - Calls verify_data() in debug mode
  *
+ * Testing Notes:
+ *   Category: C (System) - Requires full game engine initialization
+ *   Approach: System testing with comprehensive world state validation
+ *   Key Tests: Nation sorting correctness, diplomacy vector updates, sector ownership consistency
+ *   Dependencies: Complete world state, nation arrays, diplomacy systems
+ *   Mock Requirements: Full game world initialization required
+ *   Complexity: Complex - Major world reorganization function
+ *
  * Notes:
  *   - Uses quicksort algorithm via ntn_qsort() helper function
  *   - Critical for maintaining game data integrity
